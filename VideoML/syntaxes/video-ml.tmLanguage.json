@@ -1,0 +1,57 @@
+{
+  "name": "video-ml",
+  "scopeName": "source.video-ml",
+  "fileTypes": [
+    ".vml"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "name": "keyword.control.video-ml",
+      "match": "\\b(app)\\b"
+    },
+    {
+      "name": "string.quoted.double.video-ml",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "string.quoted.single.video-ml",
+      "begin": "'",
+      "end": "'"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.video-ml",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.video-ml"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.video-ml"
+            }
+          }
+        },
+        {
+          "begin": "//",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.video-ml"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.video-ml"
+        }
+      ]
+    }
+  }
+}
