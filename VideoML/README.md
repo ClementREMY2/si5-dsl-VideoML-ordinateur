@@ -16,6 +16,7 @@ This folder contains all necessary files for your language extension.
 
 ## Get up and running straight away
 
+ * Run `npm i` to install Langium.
  * Run `npm run langium:generate` to generate TypeScript code from the grammar definition.
  * Run `npm run build` to compile all TypeScript code.
  * Press `F5` to open a new window with your extension loaded (you need to have the editor opened in this folder).
