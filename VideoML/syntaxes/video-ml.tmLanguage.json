@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.video-ml",
-      "match": "\\b(Actuator|and|app|bricks|initial|is|ms|not|or|Screen|Sensor|state|states|wait)\\b"
+      "match": "\\b(app)\\b"
     },
     {
       "name": "string.quoted.double.video-ml",
