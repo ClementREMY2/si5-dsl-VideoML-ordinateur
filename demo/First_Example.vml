@@ -1,7 +1,7 @@
 video project "output"
 
-load video "path/to/fiel" in video1
-load video "path/to/fiel" in video2
+load video "/Users/alexismalosse/NotInCloud/Courses/S9/B2/DSL/si5-dsl-VideoML-ordinateur/demo/first_sample.mp4" in video1
+load video "/Users/alexismalosse/NotInCloud/Courses/S9/B2/DSL/si5-dsl-VideoML-ordinateur/demo/second_sample.mp4" in video2
 
 // add "start" to timeline from 00:00 to 00:10
 // add "end" to timeline from 00:10 to 00:20
