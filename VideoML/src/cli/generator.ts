@@ -8,8 +8,20 @@ import {
     isVideo,
     Media,
     Video,
+    isRelativeTimelineElement,
+    RelativeTimelineElement,
+    isStartRelativeTimelineElement,
+    isEndRelativeTimelineElement,
+    FixedTimelineElement,
+    isFixedTimelineElement,
+    TimelineElement,
 } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
+
+function helperTimeToSeconds(time: string): number {
+    const timeArray = time.split(':');
+    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
+}
 
 export function generatePyFile(videoProject: VideoProject, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);
@@ -34,6 +46,10 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
+    videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode));
+
+    compileTimelineElementsOrdering(videoProject, fileNode);
+
     fileNode.append(
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
@@ -41,19 +57,60 @@ final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 
 function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     if (isMedia(element)) {
-        compileMedia(element, fileNode);
+        compileMedia(element, element, fileNode);
     }
 }
 
-function compileMedia(media: Media, fileNode: CompositeGeneratorNode) {
+function compileMedia(media: Media, element: Element, fileNode: CompositeGeneratorNode) {
     if (isVideo(media)) {
-        compileVideo(media, fileNode);
+        compileVideo(media, element, fileNode);
     }
 }
 
-function compileVideo(video: Video, fileNode: CompositeGeneratorNode) {
+function compileVideo(video: Video, element: Element, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Load the video clip
-video_${video.name} = moviepy.VideoFileClip("${video.path}")
+${element.name} = moviepy.VideoFileClip("${video.filePath}")
+`, NL);
+}
+
+function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode) {
+    if (isRelativeTimelineElement(te)) {
+        compileRelativeTimelineElement(te, fileNode);
+    } else if (isFixedTimelineElement(te)) {
+        compileFixedTimelineElement(te, fileNode);
+    }
+}
+
+function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
+    fileNode.append(`${rte.element.ref?.name} = ${rte.element.ref?.name}.with_start(${rte.relativeTo.ref?.name}`);
+    if (isStartRelativeTimelineElement(rte)) {
+        fileNode.append(`.start`);
+    } else if (isEndRelativeTimelineElement(rte)) {
+        fileNode.append(`.end`);
+    }
+
+    if (rte.offset) {
+        const timeSeconds = helperTimeToSeconds(rte.offset.slice(1));
+        const operator = rte.offset[0];
+        fileNode.append(` ${operator} ${timeSeconds}`);
+    }
+
+    fileNode.append(`)
+`, NL);
+}
+
+function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: CompositeGeneratorNode) {
+    fileNode.append(`${fte.element.ref?.name} = ${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`, NL);
+}
+
+function compileTimelineElementsOrdering(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
+    // Sort by layer (0 if undefined)
+    const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
+    
+    const timelineElementsJoined = orderedTimelineElements.map((te) => te.element.ref?.name).join(', ');
+    fileNode.append(
+`# Concatenate all clips
+final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
 `, NL);
 }

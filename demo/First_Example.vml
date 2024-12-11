@@ -3,5 +3,5 @@ video project "output"
 load video "/Users/alexismalosse/NotInCloud/Courses/S9/B2/DSL/si5-dsl-VideoML-ordinateur/demo/first_sample.mp4" in video1
 load video "/Users/alexismalosse/NotInCloud/Courses/S9/B2/DSL/si5-dsl-VideoML-ordinateur/demo/second_sample.mp4" in video2
 
-// add "start" to timeline from 00:00 to 00:10
-// add "end" to timeline from 00:10 to 00:20
+add video1 to timeline at 00:00
+add video2 to timeline at start of video1 delayed by +00:05
