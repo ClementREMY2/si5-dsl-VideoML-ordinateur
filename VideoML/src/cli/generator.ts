@@ -48,7 +48,7 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode));
 
-    compileTimelineElementsOrdering(videoProject, fileNode);
+    compileTimelineElementsOrdered(videoProject, fileNode);
 
     fileNode.append(
 `# Export the final video
@@ -104,7 +104,7 @@ function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: Compos
     fileNode.append(`${fte.element.ref?.name} = ${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`, NL);
 }
 
-function compileTimelineElementsOrdering(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
+function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
