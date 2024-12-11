@@ -61,12 +61,14 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     }
 }
 
+// We have media and element as separate parameters because in the AST subtypes are weirdly not used
 function compileMedia(media: Media, element: Element, fileNode: CompositeGeneratorNode) {
     if (isVideo(media)) {
         compileVideo(media, element, fileNode);
     }
 }
 
+// We have media and element as separate parameters because in the AST subtypes are weirdly not used
 function compileVideo(video: Video, element: Element, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Load the video clip
