@@ -2,16 +2,21 @@ import fs from 'fs';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
 import path from 'path';
 import {
-	App,
+	VideoProject,
+    Element,
+    isMedia,
+    isVideo,
+    Media,
+    Video,
 } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
-export function generateInoFile(app: App, filePath: string, destination: string | undefined): string {
+export function generatePyFile(videoProject: VideoProject, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);
-    const generatedFilePath = `${path.join(data.destination, data.name)}.ino`;
+    const generatedFilePath = `${path.join(data.destination, data.name)}.py`;
 
     const fileNode = new CompositeGeneratorNode();
-    compile(app,fileNode)
+    compile(videoProject, fileNode)
     
     
     if (!fs.existsSync(data.destination)) {
@@ -22,9 +27,33 @@ export function generateInoFile(app: App, filePath: string, destination: string 
 }
 
 
-function compile(app:App, fileNode:CompositeGeneratorNode){
+function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     fileNode.append(
-	`
-//Wiring code generated from an VideoML model
-// Application name: `+app.name, NL);
+`import moviepy
+`, NL);
+
+    videoProject.elements.forEach((element) => compileElement(element, fileNode));
+
+    fileNode.append(
+`# Export the final video
+final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
+}
+
+function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
+    if (isMedia(element)) {
+        compileMedia(element, fileNode);
     }
+}
+
+function compileMedia(media: Media, fileNode: CompositeGeneratorNode) {
+    if (isVideo(media)) {
+        compileVideo(media, fileNode);
+    }
+}
+
+function compileVideo(video: Video, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Load the video clip
+video_${video.name} = moviepy.VideoFileClip("${video.path}")
+`, NL);
+}

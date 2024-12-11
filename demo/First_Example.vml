@@ -1,1 +1,7 @@
-app RedButton
+video project "output"
+
+load video "path/to/fiel" in video1
+load video "path/to/fiel" in video2
+
+// add "start" to timeline from 00:00 to 00:10
+// add "end" to timeline from 00:10 to 00:20

@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.video-ml",
-      "match": "\\b(app)\\b"
+      "match": "\\b(in|load|project|video)\\b"
     },
     {
       "name": "string.quoted.double.video-ml",

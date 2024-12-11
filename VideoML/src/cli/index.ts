@@ -1,16 +1,16 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { App } from '../language-server/generated/ast';
+import { VideoProject } from '../language-server/generated/ast';
 import { VideoMlLanguageMetaData } from '../language-server/generated/module';
 import { createVideoMlServices } from '../language-server/video-ml-module';
 import { extractAstNode } from './cli-util';
-import { generateInoFile } from './generator';
+import { generatePyFile } from './generator';
 import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createVideoMlServices(NodeFileSystem).VideoMl;
-    const app = await extractAstNode<App>(fileName, services);
-    const generatedFilePath = generateInoFile(app, fileName, opts.destination);
+    const videoProject = await extractAstNode<VideoProject>(fileName, services);
+    const generatedFilePath = generatePyFile(videoProject, fileName, opts.destination);
     console.log(chalk.green(`Video code generated successfully: ${generatedFilePath}`));
 };
 
