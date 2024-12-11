@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.video-ml",
-      "match": "\\b(add|at|by|delayed|end|in|layer|load|of|project|start|timeline|to|video)\\b"
+      "match": "\\b(add|as|at|by|delayed|end|in|layer|load|of|project|start|timeline|to|video)\\b"
     },
     {
       "name": "string.quoted.double.video-ml",

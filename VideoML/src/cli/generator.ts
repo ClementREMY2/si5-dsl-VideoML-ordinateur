@@ -77,6 +77,7 @@ ${element.name} = moviepy.VideoFileClip("${video.filePath}")
 }
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode) {
+    fileNode.append(`${te.name} = `);
     if (isRelativeTimelineElement(te)) {
         compileRelativeTimelineElement(te, fileNode);
     } else if (isFixedTimelineElement(te)) {
@@ -85,7 +86,7 @@ function compileTimelineElement(te: TimelineElement, fileNode: CompositeGenerato
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${rte.element.ref?.name} = ${rte.element.ref?.name}.with_start(${rte.relativeTo.ref?.name}`);
+    fileNode.append(`${rte.element.ref?.name}.with_start(${rte.relativeTo.ref?.name}`);
     if (isStartRelativeTimelineElement(rte)) {
         fileNode.append(`.start`);
     } else if (isEndRelativeTimelineElement(rte)) {
@@ -103,14 +104,14 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: 
 }
 
 function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${fte.element.ref?.name} = ${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`, NL);
+    fileNode.append(`${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`, NL);
 }
 
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
-    const timelineElementsJoined = orderedTimelineElements.map((te) => te.element.ref?.name).join(', ');
+    const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
     fileNode.append(
 `# Concatenate all clips
 final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])

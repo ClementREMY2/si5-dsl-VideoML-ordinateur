@@ -19,13 +19,13 @@ Video:
 	'video' filePath=STRING;
 
 TimelineElement:
-	'add' element=[Element:ID] 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
+	'add' element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
 
 RelativeTimelineElement:
-	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[Element:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
 
 StartRelativeTimelineElement:
 	{infer StartRelativeTimelineElement}

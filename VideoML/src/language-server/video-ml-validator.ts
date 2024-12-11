@@ -31,7 +31,6 @@ export class VideoMlValidator {
     checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
         this.checkOutputFileName(videoProject, accept);
         this.checkOneTimelineElementAtStart(videoProject, accept);
-        this.checkElementUsedMultipleTimes(videoProject, accept);
     }
 
     checkVideo(video: Video, accept: ValidationAcceptor): void {
@@ -80,20 +79,5 @@ export class VideoMlValidator {
         if (element.layer === 0) {
             accept('error', 'Layer 0 is the default layer, use a number greater than 0 to specify another layer', { node: element, property: 'layer' });
         }
-    }
-
-    // Check if same element is used multiple times
-    checkElementUsedMultipleTimes(videoProject: VideoProject, accept: ValidationAcceptor): void {
-        const elementNames: string[] = [];
-        videoProject.timelineElements.forEach((te) => {
-            if (te.element.ref) {
-                if (elementNames.includes(te.element.ref?.name)) {
-                    // TODO : element duplication system
-                    accept('error', `Element "${te.element.ref?.name}" used multiple times in timeline, please duplicate it`, { node: te });
-                } else {
-                    elementNames.push(te.element.ref.name);
-                }
-            }
-        });
     }
 }
