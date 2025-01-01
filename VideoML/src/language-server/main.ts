@@ -1,7 +1,7 @@
-import { startLanguageServer } from 'langium';
+import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { createVideoMlServices } from './video-ml-module';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { createVideoMlServices } from './video-ml-module.js';
 
 // Create a connection to the client
 const connection = createConnection(ProposedFeatures.all);

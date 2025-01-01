@@ -6,6 +6,9 @@
         "fileExtensions": [".vml"],
         "textMate": {
             "out": "syntaxes/video-ml.tmLanguage.json"
+        },
+        "monarch": {
+            "out": "syntaxes/video-ml.monarch.ts"
         }
     }],
     "out": "src/language-server/generated"

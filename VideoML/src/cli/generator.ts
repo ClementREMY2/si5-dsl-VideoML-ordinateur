@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { CompositeGeneratorNode, NL, toString } from 'langium';
+import { CompositeGeneratorNode, NL, toString } from 'langium/generate';
 import path from 'path';
 import {
 	VideoProject,
@@ -15,8 +15,8 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
-} from '../language-server/generated/ast';
-import { extractDestinationAndName } from './cli-util';
+} from '../language-server/generated/ast.js';
+import { extractDestinationAndName } from './cli-util.js';
 
 function helperTimeToSeconds(time: string): number {
     const timeArray = time.split(':');

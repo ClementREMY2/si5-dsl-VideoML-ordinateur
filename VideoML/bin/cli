@@ -1,3 +1,5 @@
 #!/usr/bin/env node
 
-require("../out/cli").default();
+import cli from "../out/cli/index.js";
+
+cli();

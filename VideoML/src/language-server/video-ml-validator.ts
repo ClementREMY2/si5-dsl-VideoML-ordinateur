@@ -1,12 +1,12 @@
 import { ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
-    VideoMlAstType,
+    VideoMLAstType,
     Video,
     isFixedTimelineElement,
     TimelineElement,
-} from './generated/ast';
-import type { VideoMlServices } from './video-ml-module';
+} from './generated/ast.js';
+import type { VideoMlServices } from './video-ml-module.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,7 +16,7 @@ import path from 'path';
 export function registerValidationChecks(services: VideoMlServices) {
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.VideoMlValidator;
-    const checks: ValidationChecks<VideoMlAstType> = {
+    const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
         Video: validator.checkVideo,
         TimelineElement: validator.checkTimelineElement,
