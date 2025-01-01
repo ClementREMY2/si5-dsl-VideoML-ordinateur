@@ -54,17 +54,20 @@
         "esbuild:extension": "esbuild ./src/extension.ts --bundle --outfile=out/extension.cjs --external:vscode --format=cjs --platform=node",
         "esbuild:ls": "esbuild ./src/language-server/main.ts --bundle --outfile=out/language-server/main.cjs --format=cjs --platform=node",
         "build:web": "npm run build && npm run prepare:public && npm run build:worker && node scripts/copy-monaco-assets.mjs",
-        "build:worker": "esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./public/videoml-server-worker.js",
+        "build:worker": "esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./public/video-ml-server-worker.js",
+        "web:grammar": "node scripts/generate-monarch-grammar.mjs",
         "prepare:public": "node scripts/prepare-public.mjs",
-        "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+        "langium:generate": "langium generate && npm run web:grammar",
+        "langium:watch": "langium generate --watch",
+        "serve": "node ./out/web/app.js"
     },
     "dependencies": {
         "chalk": "^4.1.2",
         "chevrotain": "^10.4.1",
         "commander": "^8.0.0",
         "langium": "~3.0.0",
-        "monaco-editor-wrapper": "^6.0.0",
+        "monaco-editor-wrapper": "~4.0.1",
+        "shx": "^0.3.4",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1",
         "vscode-uri": "^3.0.2"
