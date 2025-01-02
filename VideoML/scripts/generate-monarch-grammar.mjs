@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const monarchFilePath = path.join(__dirname, '../syntaxes/video-ml.monarch.ts');
-const videoMlFilePath = path.join(__dirname, '../src/static/video-ml.ts');
+const videoMlFilePath = path.join(__dirname, '../web-ui/src/lib/video-ml.ts');
 
 const monarchContent = fs.readFileSync(monarchFilePath, 'utf-8');
 const monarchExport = monarchContent.match(/export\s+default\s+({[\s\S]*?});/);
@@ -17,7 +17,7 @@ if (monarchExport) {
 /**
  * Returns a Monarch grammar definition for MiniLogo
  */
-function getMonarchGrammar() {
+export function getMonarchGrammar() {
     return ${monarchGrammar};
 }
 // GENERATED CODE - END`;

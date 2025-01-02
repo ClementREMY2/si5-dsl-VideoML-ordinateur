@@ -1,5 +1,5 @@
-import { MonacoEditorLanguageClientWrapper, UserConfig } from "monaco-editor-wrapper/bundle";
-import { useWorkerFactory } from "monaco-editor-wrapper/workerFactory";
+/* eslint-disable no-useless-escape */
+import { UserConfig } from "monaco-editor-wrapper/bundle";
 
 export type WorkerUrl = string;
 
@@ -10,6 +10,7 @@ export interface ClassicConfig {
     code: string,
     languageId: string,
     worker: WorkerUrl | Worker,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     monarchGrammar: any;
 }
 
@@ -48,24 +49,11 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
     };
 }
 
-/**
- * Prepare to setup the wrapper, building the worker def & setting up styles
- */
-function setup() {
-    const workerUrl = new URL('monaco-editor-wrapper/dist/workers/editorWorker-es.js', window.location.href).href;
-    useWorkerFactory({
-        ignoreMapping: true,
-        workerLoaders: {
-            editorWorkerService: () => new Worker(workerUrl, { type: 'module' })
-        }
-    });
-}
-
 // GENERATED CODE - START
 /**
  * Returns a Monarch grammar definition for MiniLogo
  */
-function getMonarchGrammar() {
+export function getMonarchGrammar() {
     return {
     keywords: [
         'add','as','at','by','delayed','end','in','layer','load','of','project','start','timeline','to','video'
@@ -103,7 +91,7 @@ function getMonarchGrammar() {
 /**
  * Retrieves the program code to display, either a default or from local storage
  */
-function getMainCode() {
+export function getMainCode() {
     let mainCode = `
 video project "output"
 
@@ -129,7 +117,7 @@ add video2 as third to timeline at start of first delayed by +00:05
 /**
  * Creates & returns a fresh worker using the VideoML language server
  */
-function getWorker() {
+export function getWorker() {
     const workerURL = new URL('video-ml-server-worker.js', window.location.href);
     return new Worker(workerURL.href, {
         type: 'module',
@@ -137,82 +125,13 @@ function getWorker() {
     });
 }
 
-/**
- * Set a status message to display below the update button
- * @param msg Status message to display
- */
-function setStatus(msg: string) {
-    const elm = document?.getElementById('status-msg');
-    if (elm) {
-        elm.innerHTML = msg;
-    }
-}
-
-async function main() {
-    // setup worker def & styles
-    setup();
-    
-    // setup a new wrapper
-    // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
-    const wrapper = new MonacoEditorLanguageClientWrapper();
-    const userConfig = createUserConfig({
-        languageId: 'videoml',
-        code: getMainCode(),
-        worker: getWorker(),
-        monarchGrammar: getMonarchGrammar()
-    })
-    await wrapper.initAndStart(userConfig, document.getElementById("monaco-editor-root")!);
-
-    const client = wrapper.getLanguageClient();
-    if (!client) {
-        throw new Error('Unable to obtain language client for the Video/L!');
-    }
-
-    let running = false;
-    let timeout: NodeJS.Timeout | null = null;
-    client.onNotification('browser/DocumentChange', (resp) => {
-
-        // always store this new program in local storage
-        const value = wrapper.getModel()?.getValue();
-        if (window.localStorage && value) {
-            window.localStorage.setItem('mainCode', value);
-        }
-
-        // block until we're finished with a given run
-        if (running) {
-            return;
-        }
-        
-        // clear previous timeouts
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-
-        // set a timeout to run the current code
-        timeout = setTimeout(async () => {
-            running = true;
-            setStatus('');
-            console.info('generating & running current code...');
-
-            // decode & run commands
-            let result = JSON.parse(resp.content);
-            // let commands = result.$commands;
-            // try {
-            //     await updateMiniLogoCanvas(commands);
-            //     running = false;
-            // } catch (e) {
-            //     // failed at some point, log & disable running so we can try again
-            //     console.error(e);
-            //     running = false;
-            // }
-
-            let stringResult = result.$string;
-            running = false;
-
-            console.log({ stringResult });
-
-        }, 200);
-    });
-}
-
-main();
+// /**
+//  * Set a status message to display below the update button
+//  * @param msg Status message to display
+//  */
+// function setStatus(msg: string) {
+//     const elm = document?.getElementById('status-msg');
+//     if (elm) {
+//         elm.innerHTML = msg;
+//     }
+// }
