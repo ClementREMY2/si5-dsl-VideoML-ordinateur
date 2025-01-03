@@ -53,10 +53,10 @@
         "build:extension": "npm run esbuild:extension && npm run esbuild:ls",
         "esbuild:extension": "esbuild ./src/extension.ts --bundle --outfile=out/extension.cjs --external:vscode --format=cjs --platform=node",
         "esbuild:ls": "esbuild ./src/language-server/main.ts --bundle --outfile=out/language-server/main.cjs --format=cjs --platform=node",
-        "build:web": "npm run build && npm run build:worker && node scripts/copy-monaco-assets.mjs && node scripts/copy-libs-to-ui.mjs",
+        "build:ui": "npm run build && npm run build:worker && node scripts/copy-monaco-assets.mjs && node scripts/copy-libs-to-ui.mjs",
         "build:worker": "node scripts/build-worker.mjs",
-        "web:grammar": "node scripts/generate-monarch-grammar.mjs",
-        "langium:generate": "langium generate && npm run web:grammar",
+        "ui:grammar": "node scripts/generate-monarch-grammar.mjs",
+        "langium:generate": "langium generate && npm run ui:grammar",
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
