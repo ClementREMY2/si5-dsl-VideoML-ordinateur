@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 
-import { TimelineElementInfo } from '../../lib/generated/generator/types';
+import { TimelineElementInfo } from '../../../lib/generated/generator/types';
 
 interface TimelineContextProps {
     timelineElementInfos: TimelineElementInfo[];

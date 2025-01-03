@@ -1,6 +1,6 @@
 import React, { useState, ReactNode, useMemo } from 'react';
 import { TimelineContext, FileWithMetadata } from './Context';
-import { TimelineElementInfo } from '../../lib/generated/generator/types';
+import { TimelineElementInfo } from '../../../lib/generated/generator/types';
 
 interface TimelineProviderProps {
     children: ReactNode;

@@ -7,6 +7,7 @@ import {
     TimelineElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
+import { validateFilePath } from './validators/special-validators.js';
 
 const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
 
@@ -24,7 +25,7 @@ if (IS_ELECTRON) {
 
 let lastId = 10000000;
 // Function to simulate synchronous calls from worker to renderer process in Electron
-async function invokeFilePathChecker(command: string, path: string, indexName: string): Promise<any> {
+async function invokeFilePathValidator(command: string, path: string, indexName: string): Promise<any> {
     return new Promise((resolve) => {
         const id = Date.now() + lastId++;
         asyncRequestMap.set(indexName, resolve);
@@ -85,28 +86,18 @@ export class VideoMlValidator {
     async checkVideoPath(video: Video, accept: ValidationAcceptor): Promise<void> {
         if (!video.filePath) return;
 
+        let errors = [];
         if (!IS_ELECTRON) {
-            const path = await import('path');
-            const fs = await import('fs');
-    
-            // TODO : Make program usable without absolute path
-            // Check if path is an absolute path
-            if (!path.isAbsolute(video.filePath)) {
-                accept('error', 'Video path must be an absolute path', { node: video, property: 'filePath' });
-            }
-    
-            // Check if file exists
-            if (!fs.existsSync(video.filePath)) {
-                accept('error', 'Video file not found', { node: video, property: 'filePath' });
-            }
+            errors = await validateFilePath(video.filePath);
         } else {
-            // Code handled by Electron
+            // Filepath verification will be handled by Electron (main process)
             const indexName = `${video.filePath}-${video.$containerProperty}-${video.$containerIndex}`;
-            const errors = await invokeFilePathChecker('validate-file', video.filePath, indexName);
-            (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
-                accept(error.type, error.message, { node: video, property: 'filePath' });
-            });
+            errors = await invokeFilePathValidator('validate-file', video.filePath, indexName);
         }
+
+        (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+            accept(error.type, error.message, { node: video, property: 'filePath' });
+        });
     }
 
     // Check if at least one timeline element is present at start

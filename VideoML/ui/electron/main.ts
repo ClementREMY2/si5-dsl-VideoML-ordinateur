@@ -2,7 +2,8 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import fs from 'node:fs'
+
+import { validateFilePath } from '../lib/generated/validators/special-validators'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -49,20 +50,8 @@ function createWindow() {
   });
 
   // Handle file validation requests
-  ipcMain.handle('validate-file', (event, videoFilePath) => {
-    const errors = [];
-
-    // Check if path is an absolute path
-    if (!path.isAbsolute(videoFilePath)) {
-        errors.push({ type: 'error', message: 'Video path must be an absolute path' });
-    }
-
-    // Check if file exists
-    if (!fs.existsSync(videoFilePath)) {
-        errors.push({ type: 'error', message: 'Video file not found' });
-    }
-
-    return errors;
+  ipcMain.handle('validate-file', async (_, videoFilePath) => {
+    return await validateFilePath(videoFilePath);
   });
 
   if (VITE_DEV_SERVER_URL) {

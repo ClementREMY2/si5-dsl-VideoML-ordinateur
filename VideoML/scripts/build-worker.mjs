@@ -1,6 +1,6 @@
 import esbuild from 'esbuild'
 
-esbuild.build({
+await esbuild.build({
   entryPoints: ['./src/language-server/main-browser.js'],
   bundle: true,
   minify: true,
@@ -11,4 +11,6 @@ esbuild.build({
   },
   platform: 'browser',
   external: ['path', 'fs'],
-}).catch(() => process.exit(1));
+});
+
+console.log('Build worker done.');
