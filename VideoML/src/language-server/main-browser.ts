@@ -8,7 +8,8 @@ import { EmptyFileSystem, DocumentState } from 'langium';
 import { BrowserMessageReader, BrowserMessageWriter, Diagnostic, NotificationType, createConnection } from 'vscode-languageserver/browser.js';
 import { createVideoMlServices } from './video-ml-module.js';
 import { VideoProject } from './generated/ast.js';
-import { generatePythonProgram } from '../generator/generator.js';
+import { generateTimelineElementInfos } from '../generator/ui/ui-generator.js';
+import { TimelineElementInfo } from '../generator/ui/types.js';
 import { startLanguageServer } from 'langium/lsp';
 
 declare const self: DedicatedWorkerGlobalScope;
@@ -32,13 +33,13 @@ const jsonSerializer = VideoMl.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
         const videoProject = document.parseResult.value as VideoProject;
-        let json: string = '';
+        let json: TimelineElementInfo[] = [];
         
         if(document.diagnostics === undefined  || document.diagnostics.filter((i) => i.severity === 1).length === 0) {
-            json = generatePythonProgram(videoProject);
+            json = generateTimelineElementInfos(videoProject);
         }
         
-        (videoProject as unknown as {$string: string}).$string = json;
+        (videoProject as unknown as {$timelineElementInfos: TimelineElementInfo[]}).$timelineElementInfos = json;
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
             content: jsonSerializer.serialize(videoProject, { sourceText: true, textRegions: true }),

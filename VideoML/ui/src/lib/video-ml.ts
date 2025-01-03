@@ -105,7 +105,7 @@ add video2 as third to timeline at start of first delayed by +00:05
     
     // seek to restore any previous code from our last session
     if (window.localStorage) {
-        const storedCode = window.localStorage.getItem('mainCode');
+        const storedCode = window.localStorage.getItem('videoml_mainCode');
         if (storedCode !== null) {
             mainCode = storedCode;
         }
@@ -117,21 +117,9 @@ add video2 as third to timeline at start of first delayed by +00:05
 /**
  * Creates & returns a fresh worker using the VideoML language server
  */
-export function getWorker() {
-    const workerURL = new URL('video-ml-server-worker.js', window.location.href);
-    return new Worker(workerURL.href, {
+export function getWorker(path: string) {
+    return new Worker(path, {
         type: 'module',
         name: 'VideoML-LS'
     });
 }
-
-// /**
-//  * Set a status message to display below the update button
-//  * @param msg Status message to display
-//  */
-// function setStatus(msg: string) {
-//     const elm = document?.getElementById('status-msg');
-//     if (elm) {
-//         elm.innerHTML = msg;
-//     }
-// }

@@ -52,13 +52,12 @@
         "lint": "eslint src --ext ts",
         "build:extension": "npm run esbuild:extension && npm run esbuild:ls",
         "esbuild:extension": "esbuild ./src/extension.ts --bundle --outfile=out/extension.cjs --external:vscode --format=cjs --platform=node",
-        "esbuild:ls": "esbuild ./src/language-server/main.ts --bundle --outfile=out/language-server/main.cjs --format=cjs --platform=node",
-        "build:web": "npm run build && npm run build:worker && node scripts/copy-monaco-assets.mjs",
-        "build:worker": "esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./web-ui/public/video-ml-server-worker.js",
+        "esbuild:ls": "esbuild ./src/language-server/main.ts --bundle --outfile=out/language-server/main.cjs --external:electron --format=cjs --platform=node",
+        "build:web": "npm run build && npm run build:worker && node scripts/copy-monaco-assets.mjs && node scripts/copy-types-to-ui.mjs",
+        "build:worker": "node scripts/build-worker.mjs",
         "web:grammar": "node scripts/generate-monarch-grammar.mjs",
         "langium:generate": "langium generate && npm run web:grammar",
-        "langium:watch": "langium generate --watch",
-        "serve": "node ./out/web/app.js"
+        "langium:watch": "langium generate --watch"
     },
     "dependencies": {
         "chalk": "^4.1.2",
@@ -75,6 +74,7 @@
         "@types/vscode": "^1.56.0",
         "@typescript-eslint/eslint-plugin": "^5.28.0",
         "@typescript-eslint/parser": "^5.28.0",
+        "electron": "^33.2.1",
         "esbuild": "^0.20.2",
         "eslint": "^8.17.0",
         "langium-cli": "~3.0.1",

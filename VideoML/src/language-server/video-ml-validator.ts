@@ -7,8 +7,39 @@ import {
     TimelineElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
-import fs from 'fs';
-import path from 'path';
+
+const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
+
+// Used to call renderer process from worker in Electron in a synchronous way
+const asyncRequestMap = new Map();
+if (IS_ELECTRON) {
+    self.addEventListener('message', (event) => {
+        const { result } = event.data;
+        if (result?.content && result?.indexName && asyncRequestMap.has(result.indexName)) {
+            asyncRequestMap.get(result.indexName)(result.content);
+            asyncRequestMap.delete(result.indexName);
+        }
+    });
+} 
+
+let lastId = 10000000;
+// Function to simulate synchronous calls from worker to renderer process in Electron
+async function invokeFilePathChecker(command: string, path: string, indexName: string): Promise<any> {
+    return new Promise((resolve) => {
+        const id = Date.now() + lastId++;
+        asyncRequestMap.set(indexName, resolve);
+
+        self.postMessage({
+            jsonrpc: "2.0",
+            id,
+            method: `custom/${command}`,
+            params: {
+                path,
+                indexName,
+            },
+        });
+    });
+}
 
 /**
  * Register custom validation checks.
@@ -33,8 +64,8 @@ export class VideoMlValidator {
         this.checkOneTimelineElementAtStart(videoProject, accept);
     }
 
-    checkVideo(video: Video, accept: ValidationAcceptor): void {
-        this.checkVideoPath(video, accept);
+    async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
+        await this.checkVideoPath(video, accept);
     }
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
@@ -51,16 +82,30 @@ export class VideoMlValidator {
         }
     }
 
-    checkVideoPath(video: Video, accept: ValidationAcceptor): void {
-        // TODO : Make program usable without absolute path
-        // Check if path is an absolute path
-        if (!path.isAbsolute(video.filePath)) {
-            accept('error', 'Video path must be an absolute path', { node: video, property: 'filePath' });
-        }
+    async checkVideoPath(video: Video, accept: ValidationAcceptor): Promise<void> {
+        if (!video.filePath) return;
 
-        // Check if file exists
-        if (!fs.existsSync(video.filePath)) {
-            accept('error', 'Video file not found', { node: video, property: 'filePath' });
+        if (!IS_ELECTRON) {
+            const path = await import('path');
+            const fs = await import('fs');
+    
+            // TODO : Make program usable without absolute path
+            // Check if path is an absolute path
+            if (!path.isAbsolute(video.filePath)) {
+                accept('error', 'Video path must be an absolute path', { node: video, property: 'filePath' });
+            }
+    
+            // Check if file exists
+            if (!fs.existsSync(video.filePath)) {
+                accept('error', 'Video file not found', { node: video, property: 'filePath' });
+            }
+        } else {
+            // Code handled by Electron
+            const indexName = `${video.filePath}-${video.$containerProperty}-${video.$containerIndex}`;
+            const errors = await invokeFilePathChecker('validate-file', video.filePath, indexName);
+            (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+                accept(error.type, error.message, { node: video, property: 'filePath' });
+            });
         }
     }
 
