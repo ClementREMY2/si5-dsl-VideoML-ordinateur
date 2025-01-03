@@ -3,7 +3,7 @@ import { MonacoEditorLanguageClientWrapper } from "monaco-editor-wrapper/bundle"
 import { useEffect, useRef } from 'react';
 
 import { createUserConfig, getMainCode, getWorker, getMonarchGrammar } from '../../lib/video-ml';
-import { useTimeline } from '../Timeline/Context';
+import { useTimeline } from '../Timeline/Context/Context';
 
 type EditorProps = {
     className?: string;
@@ -15,7 +15,7 @@ type EditorProps = {
 export const Editor = ({ className, style, mc, vml }: EditorProps) => {
     const editorRef = useRef(null);
     const editorInitializedRef = useRef(false);
-    const { setTimelineElementInfos } = useTimeline();
+    const { handleNewTimelineElementInfos } = useTimeline();
 
     useWorkerFactory({
         ignoreMapping: true,
@@ -89,7 +89,7 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
                     const result = JSON.parse(resp.content);
                     const infos = result.$timelineElementInfos;
                     try {
-                        setTimelineElementInfos(infos);
+                        handleNewTimelineElementInfos(infos);
                         running = false;
                     } catch (e) {
                         // failed at some point, log & disable running so we can try again

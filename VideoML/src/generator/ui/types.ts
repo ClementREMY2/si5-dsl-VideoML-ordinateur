@@ -1,19 +1,15 @@
 export interface TimelineElementInfo {
     name: string;
-    element: {
+    startAt?: number;
+    layer: number;
+    videoElement?: {
         name: string;
         filePath?: string;
+        duration?: number;
     }
-    extractDuration?: number; // TODO : to finish when VideoExtract are implemented
-    layer: number;
-}
-
-export interface RelativeTimelineElementInfo extends TimelineElementInfo {
-    offset: number;
-    place: 'START' | 'END';
-    relativeTo: string; // TimelineElementInfo (timelineName)
-}
-
-export interface FixedTimelineElementInfo extends TimelineElementInfo {
-    startAt: number;
+    relativePlacement?: {
+        offset: number;
+        relativeTo: string; // TimelineElementInfo (timelineName)
+        place: 'START' | 'END';
+    }
 }

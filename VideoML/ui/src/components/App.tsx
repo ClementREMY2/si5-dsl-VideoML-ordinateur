@@ -1,7 +1,5 @@
 import { Editor } from './Editor/Editor'
-import { Container } from 'reactstrap';
-import FileLoader from './FileLoader/FileLoader';
-import { TimelineProvider } from './Timeline/Provider';
+import { TimelineProvider } from './Timeline/Context/Provider';
 import { Timeline } from './Timeline/Timeline';
 import { useEffect, useState } from 'react';
 
@@ -24,14 +22,11 @@ function App() {
   return monacoWorkerPath && videomlWorkerPath && (
     <TimelineProvider>
       <div className="bg-dark d-flex flex-column mh-100">
-        <div style={{ height: '50vh' }}>
-          <Container>
+        <div style={{ height: '50vh' }} className="overflow-auto">
             <Timeline />
-          </Container>
         </div>
-        <div className="d-flex flex-row" style={{ height: '50vh' }}>
-          <FileLoader className="w-25" />
-          <Editor className="h-100 w-75" mc={monacoWorkerPath} vml={videomlWorkerPath} />
+        <div style={{ height: '50vh' }} className="p-3">
+          <Editor className="h-100" mc={monacoWorkerPath} vml={videomlWorkerPath} />
         </div>
       </div>
     </TimelineProvider>

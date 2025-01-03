@@ -8,7 +8,7 @@ import {
     isFixedTimelineElement,
     TimelineElement,
 } from '../../language-server/generated/ast.js';
-import { TimelineElementInfo, RelativeTimelineElementInfo, FixedTimelineElementInfo } from './types.js';
+import { TimelineElementInfo } from './types.js';
 
 function helperTimeToSeconds(time: string): number {
     const timeArray = time.split(':');
@@ -22,45 +22,46 @@ export function generateTimelineElementInfos(videoProject: VideoProject): Timeli
 function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
     if (!te.element.ref) throw new Error('Element reference is missing');
 
-    const info = {
+    const info: TimelineElementInfo = {
         name: te.name,
-        element: {
+        videoElement: {
             name: te.element.ref.name,
-            filePath: isVideo(te.element.ref) ? te.element.ref.filePath : undefined
+            filePath: isVideo(te.element.ref) ? te.element.ref.filePath : undefined,
+            // duration: ??? // TODO : fill if it's an extract
         },
-        layer: te.layer
+        layer: te.layer || 0,
+        ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
+        ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
     };
 
-    if (isRelativeTimelineElement(te)) {
-        return compileRelativeTimelineElement(te, info);
-    } else if (isFixedTimelineElement(te)) {
-        return compileFixedTimelineElement(te, info);
-    }
-
-    throw new Error('Unknown timeline element type');
+    return info;
 }
 
-function compileRelativeTimelineElement(rte: RelativeTimelineElement, info: TimelineElementInfo): RelativeTimelineElementInfo {
+function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<TimelineElementInfo> {
     if (!rte.relativeTo.ref) throw new Error('Relative to reference is missing');
 
     let offset: number = 0;
     if (rte.offset) {
         const timeSeconds = helperTimeToSeconds(rte.offset.slice(1));
         const operator = rte.offset[0];
-        offset = parseInt(`${operator} ${timeSeconds}`);
+        if (operator === '-') {
+            offset = -timeSeconds;
+        } else if (operator === '+') {
+            offset = timeSeconds;
+        }
     }
 
     return {
-        ...info,
-        offset,
-        place: isStartRelativeTimelineElement(rte) ? 'START' : 'END',
-        relativeTo: rte.relativeTo.ref?.name,
+        relativePlacement: {
+            offset,
+            place: isStartRelativeTimelineElement(rte) ? 'START' : 'END',
+            relativeTo: rte.relativeTo.ref?.name,
+        }
     }
 }
 
-function compileFixedTimelineElement(fte: FixedTimelineElement, info: TimelineElementInfo): FixedTimelineElementInfo {
+function compileFixedTimelineElement(fte: FixedTimelineElement): Partial<TimelineElementInfo> {
     return {
-        ...info,
         startAt: helperTimeToSeconds(fte.startAt)
     }
 }
