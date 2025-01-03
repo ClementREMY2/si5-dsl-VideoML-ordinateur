@@ -14,7 +14,7 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
 
-    return relativeStartAt + element.relativePlacement.offset;
+    return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoElement?.duration || 0 : 0);
 }
   
 const loadVideoDuration = async (filePath: string): Promise<number> => {
