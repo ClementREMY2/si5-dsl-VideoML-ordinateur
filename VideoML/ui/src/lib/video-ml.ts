@@ -95,8 +95,8 @@ export function getMainCode() {
     let mainCode = `
 video project "output"
 
-load video "testPath.mp4" in video1
-load video "testPath2.mp4" in video2
+load video "put_a_real_path_here.mp4" in video1
+load video "put_a_real_path_here2.mp4" in video2
 
 add video1 as first to timeline at 00:00
 add video1 as second to timeline at 00:15 in layer 5
