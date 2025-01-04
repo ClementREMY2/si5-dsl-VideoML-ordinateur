@@ -83,13 +83,16 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
                 // set a timeout to run the current code
                 timeout = setTimeout(async () => {
                     running = true;
-                    console.info('processing code...', resp);
+                    // console.info('processing code...', resp);
 
                     // decode & extract timeline element infos
                     const result = JSON.parse(resp.content);
+                    // console.log('result:', { result });
                     const infos = result.$timelineElementInfos;
                     try {
-                        handleNewTimelineElementInfos(infos);
+                        if (result.$isValid) {
+                            handleNewTimelineElementInfos(infos);
+                        }
                         running = false;
                     } catch (e) {
                         // failed at some point, log & disable running so we can try again
