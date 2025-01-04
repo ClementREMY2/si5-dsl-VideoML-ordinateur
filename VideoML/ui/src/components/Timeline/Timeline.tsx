@@ -1,19 +1,14 @@
 import { useMemo } from 'react';
 
 import { useTimeline } from './Context/Context';
-import { formatTime, TIMELINE_SCALE_FACTOR } from './helper';
-import { TimelineTimecodes } from './Timecodes';
-
-export interface TimelineElement {
-  id: string;
-  startTime: number; // in seconds
-  endTime: number; // in seconds
-  layer: number;
-  title: string;
-}
+import { TimelineElementInfoFormatted } from './helper';
+import { TimelineLayoutTimecodes } from './Layout/Timecodes';
+import { TimelineLayoutLayerIndicator } from './Layout/LayerIndicator';
+import { TimelineElement } from './Element/Element';
+import { TimelineLayoutLayer } from './Layout/Layer';
 
 type TimelineLayers = {
-  [layer: string]: TimelineElement[];
+  [layer: string]: TimelineElementInfoFormatted[];
 }
 
 export const Timeline: React.FC = () => {
@@ -23,12 +18,13 @@ export const Timeline: React.FC = () => {
   const layers = useMemo(
     () => timelineElementInfos
       .reduce((acc, element) => {
-        const timelineElement = {
+        const timelineElement: TimelineElementInfoFormatted = {
           id: element.name,
           startTime: element.startAt || 0,
           endTime: element.finishAt || 0,
           layer: element.layer,
           title: element.videoElement?.name || 'unknown',
+          type: element.videoElement ? 'video' : 'unknown',
         }
 
         if (acc[element.layer]) {
@@ -50,36 +46,17 @@ export const Timeline: React.FC = () => {
 
     return { timelineStartTime: 0, timelineEndTime };
   }, [timelineElementInfos]);
-  console.log(timelineBounds);
 
   return (
     <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: '30px' }}>
       <div className="d-flex flex-column w-100 position-relative">
         {Object.entries(layers).map(([layer, elements]) => (
-          <div
-            key={layer}
-            className="position-relative bg-white mb-1"
-            style={{
-              height: '50px',
-              width: `${(timelineBounds.timelineEndTime - timelineBounds.timelineStartTime) * TIMELINE_SCALE_FACTOR}px`,
-            }}
-          >
-            {elements.map((element) => (
-              <div
-                key={element.id}
-                className="position-absolute h-100 bg-primary text-white text-center border border-primary cursor-pointer"
-                style={{
-                  left: `${element.startTime * TIMELINE_SCALE_FACTOR}px`,
-                  width: `${(element.endTime - element.startTime) * TIMELINE_SCALE_FACTOR}px`,
-                  lineHeight: '50px',
-                }}
-              >
-                {element.id} - {element.title} ({formatTime(element.endTime - element.startTime)})
-              </div>
-            ))}
-          </div>
+          <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
+            <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+            {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
+          </TimelineLayoutLayer>
         ))}
-        <TimelineTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+        <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
       </div>
     </div>
   );

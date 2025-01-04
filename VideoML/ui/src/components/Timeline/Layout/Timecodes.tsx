@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import { formatTime, TIMELINE_SCALE_FACTOR } from './helper';
+import { formatTime, TIMELINE_SCALE_FACTOR } from '../helper';
 
 import './Timecodes.css';
 
@@ -9,7 +9,7 @@ type TimelineTimecodesProps = {
     endTime: number;
 };
 
-export const TimelineTimecodes: React.FC<TimelineTimecodesProps> = ({
+export const TimelineLayoutTimecodes: React.FC<TimelineTimecodesProps> = ({
     startTime,
     endTime,
 }) => {

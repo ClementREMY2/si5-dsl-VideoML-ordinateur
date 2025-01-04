@@ -35,8 +35,6 @@ export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) 
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
 
 const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos: TimelineElementInfo[]) => {
-    console.log('New timeline element infos:', newTimelineElementInfos);
-
     // Populate video element with their duration
    const populatedDurationElements = await Promise.all(newTimelineElementInfos.map(async (element: PopulatedTimelineElementInfo) => {
         // Get duration for each element
