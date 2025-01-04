@@ -5,6 +5,8 @@ import {
     Video,
     isFixedTimelineElement,
     TimelineElement,
+    isRelativeTimelineElement,
+    RelativeTimelineElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -63,6 +65,8 @@ export class VideoMlValidator {
     checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
         this.checkOutputFileName(videoProject, accept);
         this.checkOneTimelineElementAtStart(videoProject, accept);
+        this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
+        this.checkUniqueNameForTimelineElements(videoProject, accept);
     }
 
     async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
@@ -71,6 +75,49 @@ export class VideoMlValidator {
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
         this.checkTimelineElementLayer(element, accept);
+    }
+
+    // Check if all timeline elements have unique names
+    checkUniqueNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        const names = new Set<string>();
+        for (const element of videoProject.timelineElements) {
+            if (names.has(element.name)) {
+                accept('error', `Name "${element.name}" is already used.`, { node: element, property: 'name' });
+            } else {
+                names.add(element.name);
+            }
+        }
+    }
+
+    checkRelativeTimelineElementsInfiniteRecursion(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // For each timeline elements, check if we have infinite recursion
+        let currentAnalyzingElement: RelativeTimelineElement | null = null;
+        let recursivePath: string[] = [];
+        const isInfiniteRecursion = (element: RelativeTimelineElement): boolean => {
+            if (element.relativeTo.ref === currentAnalyzingElement) {
+                recursivePath.push(element.relativeTo.ref.name);
+                return true;
+            }
+
+            if (isRelativeTimelineElement(element.relativeTo.ref)) {
+                recursivePath.push(element.relativeTo.ref.name);
+                return isInfiniteRecursion(element.relativeTo.ref);
+            }
+            return false;
+        }
+
+        for (let i = 0; i < videoProject.timelineElements.length; i++) {
+            const element = videoProject.timelineElements[i];
+            if (isRelativeTimelineElement(element)) {
+                currentAnalyzingElement = element;
+                recursivePath = [];
+                if (isInfiniteRecursion(element)) {
+                    accept('error', `Infinite recursion detected. Path: ${element.name} -> ${recursivePath.join(' -> ')}`, { node: element, property: 'relativeTo' });
+                    // Only show one error per project to avoid max call stack error
+                    break;
+                }
+            }
+        };
     }
 
     // Check if video output name is a valid file name
