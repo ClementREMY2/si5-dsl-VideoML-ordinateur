@@ -33,7 +33,12 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
                 useDiffEditor: false,
                 code: config.code,
                 theme: 'vs-dark',
-                languageDef: config.monarchGrammar
+                languageDef: config.monarchGrammar,
+                editorOptions: {
+                    minimap: {
+                        enabled: false,
+                    },
+                },
             },
             serviceConfig: {
                 debugLogging: false

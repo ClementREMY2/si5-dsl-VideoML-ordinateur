@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import { createUserConfig, getMainCode, getWorker, getMonarchGrammar } from '../../lib/video-ml';
 import { useTimeline } from '../Timeline/Context/Context';
+import { usePythonVisualizer } from '../PythonVisualizer/Context/Context';
 
 type EditorProps = {
     className?: string;
@@ -16,6 +17,7 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
     const editorRef = useRef(null);
     const editorInitializedRef = useRef(false);
     const { handleNewTimelineElementInfos } = useTimeline();
+    const { setPythonCode } = usePythonVisualizer();
 
     useWorkerFactory({
         ignoreMapping: true,
@@ -89,9 +91,11 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
                     const result = JSON.parse(resp.content);
                     // console.log('result:', { result });
                     const infos = result.$timelineElementInfos;
+                    const code = result.$pythonCode;
                     try {
                         if (result.$isValid) {
                             handleNewTimelineElementInfos(infos);
+                            setPythonCode(code);
                         }
                         running = false;
                     } catch (e) {

@@ -9,6 +9,7 @@ import { BrowserMessageReader, BrowserMessageWriter, Diagnostic, NotificationTyp
 import { createVideoMlServices } from './video-ml-module.js';
 import { VideoProject } from './generated/ast.js';
 import { generateTimelineElementInfos } from '../generator/ui/ui-generator.js';
+import { generatePythonProgram } from '../generator/generator.js';
 import { TimelineElementInfo } from '../generator/ui/types.js';
 import { startLanguageServer } from 'langium/lsp';
 
@@ -33,16 +34,19 @@ const jsonSerializer = VideoMl.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
         const videoProject = document.parseResult.value as VideoProject;
-        let json: TimelineElementInfo[] = [];
-        
+        let timelineJson: TimelineElementInfo[] = [];
+        let pythonCode: string = "";
+
         if(document.diagnostics === undefined  || document.diagnostics.filter((i) => i.severity === 1).length === 0) {
-            json = generateTimelineElementInfos(videoProject);
+            timelineJson = generateTimelineElementInfos(videoProject);
+            pythonCode = generatePythonProgram(videoProject);
             (videoProject as unknown as {$isValid: boolean}).$isValid = true;
         } else {
             (videoProject as unknown as {$isValid: boolean}).$isValid = false;
         }
         
-        (videoProject as unknown as {$timelineElementInfos: TimelineElementInfo[]}).$timelineElementInfos = json;
+        (videoProject as unknown as {$timelineElementInfos: TimelineElementInfo[]}).$timelineElementInfos = timelineJson;
+        (videoProject as unknown as {$pythonCode: string}).$pythonCode = pythonCode;
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
             content: jsonSerializer.serialize(videoProject, { sourceText: true, textRegions: true }),
