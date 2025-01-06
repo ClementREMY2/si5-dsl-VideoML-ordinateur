@@ -1,12 +1,12 @@
 import {
     VideoProject,
-    isVideo,
     isRelativeTimelineElement,
     RelativeTimelineElement,
     isStartRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
+    isVideoOriginal,
 } from '../../language-server/generated/ast.js';
 import { TimelineElementInfo } from './types.js';
 
@@ -26,7 +26,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
         name: te.name,
         videoElement: {
             name: te.element.ref.name,
-            filePath: isVideo(te.element.ref) ? te.element.ref.filePath : undefined,
+            filePath: isVideoOriginal(te.element.ref) ? te.element.ref.filePath : undefined,
             // duration: ??? // TODO : fill if it's an extract
         },
         layer: te.layer || 0,

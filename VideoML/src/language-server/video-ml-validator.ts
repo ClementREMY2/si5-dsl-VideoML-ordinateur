@@ -2,11 +2,14 @@ import { ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
     VideoMLAstType,
-    Video,
     isFixedTimelineElement,
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
+    Video,
+    VideoOriginal,
+    isVideoOriginal,
+    isVideoExtract
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -53,6 +56,7 @@ export function registerValidationChecks(services: VideoMlServices) {
     const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
         Video: validator.checkVideo,
+        VideoOriginal: validator.checkVideoOriginal,
         TimelineElement: validator.checkTimelineElement,
     };
     registry.register(checks, validator);
@@ -70,7 +74,11 @@ export class VideoMlValidator {
     }
 
     async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
-        await this.checkVideoPath(video, accept);
+        await this.checkVideoType(video, accept);
+    }
+
+    async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
+        await this.checkVideoOriginalPath(videoOriginal, accept);
     }
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
@@ -130,20 +138,26 @@ export class VideoMlValidator {
         }
     }
 
-    async checkVideoPath(video: Video, accept: ValidationAcceptor): Promise<void> {
-        if (!video.filePath) return;
+    async checkVideoType(video: Video, accept: ValidationAcceptor): Promise<void> {
+        if (!(isVideoOriginal) && !(isVideoExtract)) {
+            accept('error', 'Video must be of type VideoOriginal or VideoExtract', { node: video, property: 'type' });
+        }
+    }
+
+    async checkVideoOriginalPath(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
+        if (!videoOriginal.filePath) return;
 
         let errors = [];
         if (!IS_ELECTRON) {
-            errors = await validateFilePath(video.filePath);
+            errors = await validateFilePath(videoOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `${video.filePath}-${video.$containerProperty}-${video.$containerIndex}`;
-            errors = await invokeFilePathValidator('validate-file', video.filePath, indexName);
+            const indexName = `${videoOriginal.filePath}-${videoOriginal.$containerProperty}-${videoOriginal.$containerIndex}`;
+            errors = await invokeFilePathValidator('validate-file', videoOriginal.filePath, indexName);
         }
 
         (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
-            accept(error.type, error.message, { node: video, property: 'filePath' });
+            accept(error.type, error.message, { node: videoOriginal, property: 'filePath' });
         });
     }
 
