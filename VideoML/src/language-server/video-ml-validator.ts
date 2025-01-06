@@ -7,6 +7,7 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
+    FixedTimelineElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -150,7 +151,14 @@ export class VideoMlValidator {
     // Check if at least one timeline element is present at start
     checkOneTimelineElementAtStart(videoProject: VideoProject, accept: ValidationAcceptor): void {
         if (videoProject.timelineElements.length > 0) {
-            const elementAtStart = videoProject.timelineElements.find((element) => isFixedTimelineElement(element) && element.startAt === '00:00');
+            const elementAtStart = videoProject.timelineElements.find((element) => {
+                if (isFixedTimelineElement(element)) {
+                    console.log('elemengregjoreigjreoi', element);
+                    return (element as FixedTimelineElement).startAt === '00:00';
+                }
+                return false;
+            });
+            console.log(elementAtStart);
             if (!elementAtStart) {
                 accept('error', 'At least one timeline element must be present at start (00:00)', { node: videoProject, property: 'timelineElements' });
             }

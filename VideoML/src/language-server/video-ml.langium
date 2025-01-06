@@ -1,31 +1,35 @@
 grammar VideoMl
 
 entry VideoProject:
-	'video' 'project' outputName=STRING
+    'video' 'project' outputName=STRING
 
-	elements+=Element
-	(elements+=Element)*
+    elements+=Element
+    (elements+=Element)*
 
-	timelineElements+=TimelineElement
-	(timelineElements+=TimelineElement)*;
+
+    timelineElements+=TimelineElement*
+    (timelineElements+=TimelineElement)*;
 
 Element:
-	'load' (Media) 'in' name=ID;
+    'load' (Media) 'in' name=ID;
 
 Media:
-	(Video);
+    (Video);
 
 Video:
-	'video' filePath=STRING;
+    'video' filePath=STRING;
 
 TimelineElement:
-	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
+    ('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?
+    ('with' (Effect | TransitionEffect))*;
 
 FixedTimelineElement:
-	'at' startAt=TIME;
+    {infer FixedTimelineElement}
+    'at' startAt=TIME;
 
 RelativeTimelineElement:
-	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+    {infer RelativeTimelineElement}
+    'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
 
 StartRelativeTimelineElement:
 	{infer StartRelativeTimelineElement}
@@ -35,16 +39,43 @@ EndRelativeTimelineElement:
 	{infer EndRelativeTimelineElement}
 	'end';
 
+Effect:
+    'effect'
+        'name' effectName=STRING
+        ('brightness' brightness=FLOAT)?
+        ('contrast' contrast=FLOAT)?
+        ('saturation' saturation=FLOAT)?
+        ('opacity' opacity=FLOAT)?
+        ('position' position=Point)?
+        ('scale' scale=FLOAT)?
+        ('blendMode' blendMode=STRING)?
+        ('motion' motion=BOOLEAN)?
+    ;
+
+TransitionEffect:
+    'transition'
+        'type' transitionType=STRING
+        ('startPoint' startPoint=STRING)?
+        ('duration' duration=INT)?
+        ('easing' easing=STRING)?
+        ('borderWidth' borderWidth=INT)?
+        ('borderColor' borderColor=Color)?
+        ('overlap' overlap=BOOLEAN)?
+    ;
+
+Point:
+    'x' '=' x=FLOAT ',' 'y' '=' y=FLOAT;
+
+Color:
+    'rgb(' r=INT ',' g=INT ',' b=INT ')';
+
 hidden terminal WS: /\s+/;
-// ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
-// RELATIVE_TIME format: (+|-)TIME
 terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
-// TIME format: MM:SS
 terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
-// INT format: 0 or non-zero digit followed by zero or more digits
+terminal FLOAT: /[0-9]+\.[0-9]+/;
 terminal INT returns number: /[0-9]+/;
-// STRING format: "..."
+terminal BOOLEAN returns string: /true|false/;
 terminal STRING: /"[^"]*"|'[^']*'/;
 
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
