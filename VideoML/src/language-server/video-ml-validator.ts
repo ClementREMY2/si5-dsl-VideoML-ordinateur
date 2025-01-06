@@ -1,14 +1,48 @@
 import { ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
-    VideoMlAstType,
+    VideoMLAstType,
     Video,
     isFixedTimelineElement,
     TimelineElement,
-} from './generated/ast';
-import type { VideoMlServices } from './video-ml-module';
-import fs from 'fs';
-import path from 'path';
+    isRelativeTimelineElement,
+    RelativeTimelineElement,
+} from './generated/ast.js';
+import type { VideoMlServices } from './video-ml-module.js';
+import { validateFilePath } from './validators/special-validators.js';
+
+const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
+
+// Used to call renderer process from worker in Electron in a synchronous way
+const asyncRequestMap = new Map();
+if (IS_ELECTRON) {
+    self.addEventListener('message', (event) => {
+        const { result } = event.data;
+        if (result?.content && result?.indexName && asyncRequestMap.has(result.indexName)) {
+            asyncRequestMap.get(result.indexName)(result.content);
+            asyncRequestMap.delete(result.indexName);
+        }
+    });
+} 
+
+let lastId = 10000000;
+// Function to simulate synchronous calls from worker to renderer process in Electron
+async function invokeFilePathValidator(command: string, path: string, indexName: string): Promise<any> {
+    return new Promise((resolve) => {
+        const id = Date.now() + lastId++;
+        asyncRequestMap.set(indexName, resolve);
+
+        self.postMessage({
+            jsonrpc: "2.0",
+            id,
+            method: `custom/${command}`,
+            params: {
+                path,
+                indexName,
+            },
+        });
+    });
+}
 
 /**
  * Register custom validation checks.
@@ -16,7 +50,7 @@ import path from 'path';
 export function registerValidationChecks(services: VideoMlServices) {
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.VideoMlValidator;
-    const checks: ValidationChecks<VideoMlAstType> = {
+    const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
         Video: validator.checkVideo,
         TimelineElement: validator.checkTimelineElement,
@@ -31,14 +65,59 @@ export class VideoMlValidator {
     checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
         this.checkOutputFileName(videoProject, accept);
         this.checkOneTimelineElementAtStart(videoProject, accept);
+        this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
+        this.checkUniqueNameForTimelineElements(videoProject, accept);
     }
 
-    checkVideo(video: Video, accept: ValidationAcceptor): void {
-        this.checkVideoPath(video, accept);
+    async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
+        await this.checkVideoPath(video, accept);
     }
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
         this.checkTimelineElementLayer(element, accept);
+    }
+
+    // Check if all timeline elements have unique names
+    checkUniqueNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        const names = new Set<string>();
+        for (const element of videoProject.timelineElements) {
+            if (names.has(element.name)) {
+                accept('error', `Name "${element.name}" is already used.`, { node: element, property: 'name' });
+            } else {
+                names.add(element.name);
+            }
+        }
+    }
+
+    checkRelativeTimelineElementsInfiniteRecursion(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // For each timeline elements, check if we have infinite recursion
+        let currentAnalyzingElement: RelativeTimelineElement | null = null;
+        let recursivePath: string[] = [];
+        const isInfiniteRecursion = (element: RelativeTimelineElement): boolean => {
+            if (element.relativeTo.ref === currentAnalyzingElement) {
+                recursivePath.push(element.relativeTo.ref.name);
+                return true;
+            }
+
+            if (isRelativeTimelineElement(element.relativeTo.ref)) {
+                recursivePath.push(element.relativeTo.ref.name);
+                return isInfiniteRecursion(element.relativeTo.ref);
+            }
+            return false;
+        }
+
+        for (let i = 0; i < videoProject.timelineElements.length; i++) {
+            const element = videoProject.timelineElements[i];
+            if (isRelativeTimelineElement(element)) {
+                currentAnalyzingElement = element;
+                recursivePath = [];
+                if (isInfiniteRecursion(element)) {
+                    accept('error', `Infinite recursion detected. Path: ${element.name} -> ${recursivePath.join(' -> ')}`, { node: element, property: 'relativeTo' });
+                    // Only show one error per project to avoid max call stack error
+                    break;
+                }
+            }
+        };
     }
 
     // Check if video output name is a valid file name
@@ -51,17 +130,21 @@ export class VideoMlValidator {
         }
     }
 
-    checkVideoPath(video: Video, accept: ValidationAcceptor): void {
-        // TODO : Make program usable without absolute path
-        // Check if path is an absolute path
-        if (!path.isAbsolute(video.filePath)) {
-            accept('error', 'Video path must be an absolute path', { node: video, property: 'filePath' });
+    async checkVideoPath(video: Video, accept: ValidationAcceptor): Promise<void> {
+        if (!video.filePath) return;
+
+        let errors = [];
+        if (!IS_ELECTRON) {
+            errors = await validateFilePath(video.filePath);
+        } else {
+            // Filepath verification will be handled by Electron (main process)
+            const indexName = `${video.filePath}-${video.$containerProperty}-${video.$containerIndex}`;
+            errors = await invokeFilePathValidator('validate-file', video.filePath, indexName);
         }
 
-        // Check if file exists
-        if (!fs.existsSync(video.filePath)) {
-            accept('error', 'Video file not found', { node: video, property: 'filePath' });
-        }
+        (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+            accept(error.type, error.message, { node: video, property: 'filePath' });
+        });
     }
 
     // Check if at least one timeline element is present at start

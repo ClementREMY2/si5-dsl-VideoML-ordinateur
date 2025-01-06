@@ -3,3 +3,5 @@
 **/out
 
 !VideoML/generated
+
+.DS_Store

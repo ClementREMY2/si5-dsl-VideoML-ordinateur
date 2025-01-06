@@ -1,9 +1,10 @@
+import { Module, inject } from 'langium';
 import {
-    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
-    LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
-} from 'langium';
-import { VideoMlGeneratedModule, VideoMlGeneratedSharedModule } from './generated/module';
-import { VideoMlValidator, registerValidationChecks } from './video-ml-validator';
+    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext,
+    LangiumServices, LangiumSharedServices, PartialLangiumServices
+} from 'langium/lsp';
+import { VideoMlGeneratedModule, VideoMLGeneratedSharedModule } from './generated/module.js';
+import { VideoMlValidator, registerValidationChecks } from './video-ml-validator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -52,7 +53,7 @@ export function createVideoMlServices(context: DefaultSharedModuleContext): {
 } {
     const shared = inject(
         createDefaultSharedModule(context),
-        VideoMlGeneratedSharedModule
+        VideoMLGeneratedSharedModule
     );
     const VideoMl = inject(
         createDefaultModule({ shared }),

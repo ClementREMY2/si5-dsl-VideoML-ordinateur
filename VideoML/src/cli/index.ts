@@ -1,11 +1,16 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { VideoProject } from '../language-server/generated/ast';
-import { VideoMlLanguageMetaData } from '../language-server/generated/module';
-import { createVideoMlServices } from '../language-server/video-ml-module';
-import { extractAstNode } from './cli-util';
-import { generatePyFile } from './generator';
+import { VideoProject } from '../language-server/generated/ast.js';
+import { VideoMlLanguageMetaData } from '../language-server/generated/module.js';
+import { createVideoMlServices } from '../language-server/video-ml-module.js';
+import { extractAstNode } from './cli-util.js';
+import { generatePyFile } from './generator.js';
 import { NodeFileSystem } from 'langium/node';
+import { readFile } from 'fs/promises';
+
+const packageJson = JSON.parse(
+  (await readFile(new URL('../../package.json', import.meta.url))).toString()
+);
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createVideoMlServices(NodeFileSystem).VideoMl;
@@ -22,8 +27,7 @@ export default function(): void {
     const program = new Command();
 
     program
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        .version(require('../../package.json').version);
+        .version(packageJson.version);
 
     const fileExtensions = VideoMlLanguageMetaData.fileExtensions.join(', ');
     program

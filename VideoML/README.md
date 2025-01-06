@@ -13,16 +13,24 @@ This folder contains all necessary files for your language extension.
  * `src/cli/index.ts` - the entry point of the command line interface (CLI) of your language.
  * `src/cli/generator.ts` - the code generator used by the CLI to write output files from DSL documents.
  * `src/cli/cli-util.ts` - utility code for the CLI.
+ * `ui/` - contains the UI implementation using Electron, React and Monaco editor.
 
 ## Get up and running straight away
 
  * Run `npm i` to install Langium.
  * Run `npm run langium:generate` to generate TypeScript code from the grammar definition.
  * Run `npm run build` to compile all TypeScript code.
+ * Run `npm run build:extension` to compile the extension.
  * Press `F5` to open a new window with your extension loaded (you need to have the editor opened in this folder).
  * Create a new file with a file name suffix matching your language.
  * Verify that syntax highlighting, validation, completion etc. are working as expected.
  * Run `./bin/cli` to see options for the CLI; `./bin/cli generate <file>` generates code for a given DSL file. (NOTE : on windows, you might put "node" at the beginning of the command.)
+
+ ## Run the UI
+
+ * Run `npm run build:ui` to build the UI.
+ * Go in the `ui` folder and run `npm i` to install the dependencies.
+ * Run `npm run dev` to start the UI, it should open a new window with the UI loaded.
 
 ## Make changes
 

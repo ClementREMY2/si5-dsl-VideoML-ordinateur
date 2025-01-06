@@ -1,0 +1,63 @@
+import { useMemo } from 'react';
+
+import { useTimeline } from './Context/Context';
+import { TimelineElementInfoFormatted } from './helper';
+import { TimelineLayoutTimecodes } from './Layout/Timecodes';
+import { TimelineLayoutLayerIndicator } from './Layout/LayerIndicator';
+import { TimelineElement } from './Element/Element';
+import { TimelineLayoutLayer } from './Layout/Layer';
+
+type TimelineLayers = {
+  [layer: string]: TimelineElementInfoFormatted[];
+}
+
+export const Timeline: React.FC = () => {
+  const { timelineElementInfos } = useTimeline();
+
+  // Group elements by layers
+  const layers = useMemo(
+    () => timelineElementInfos
+      .reduce((acc, element) => {
+        const timelineElement: TimelineElementInfoFormatted = {
+          id: element.name,
+          startTime: element.startAt || 0,
+          endTime: element.finishAt || 0,
+          layer: element.layer,
+          title: element.videoElement?.name || 'unknown',
+          type: element.videoElement ? 'video' : 'unknown',
+        }
+
+        if (acc[element.layer]) {
+          acc[element.layer].push(timelineElement);
+        } else {
+          acc[element.layer] = [timelineElement];
+        }
+
+        return acc;
+      }, ({} as TimelineLayers)),
+      [timelineElementInfos],
+    );
+
+  const timelineBounds = useMemo(() => {
+    const maxEndTime = Math.max(...timelineElementInfos.map((element) => element.finishAt || 0));
+     // Round to the nearest 10 seconds
+    const timelineEndTime = maxEndTime + (10 - (maxEndTime % 10));
+
+
+    return { timelineStartTime: 0, timelineEndTime };
+  }, [timelineElementInfos]);
+
+  return (
+    <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: '30px' }}>
+      <div className="d-flex flex-column w-100 position-relative">
+        {Object.entries(layers).map(([layer, elements]) => (
+          <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
+            <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+            {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
+          </TimelineLayoutLayer>
+        ))}
+        <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+      </div>
+    </div>
+  );
+};

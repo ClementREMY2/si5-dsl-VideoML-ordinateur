@@ -19,7 +19,7 @@ Video:
 	'video' filePath=STRING;
 
 TimelineElement:
-	'add' element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
+	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
