@@ -28,9 +28,9 @@ This folder contains all necessary files for your language extension.
 
  ## Run the UI
 
- * Run `npm run build:ui` to build the UI.
  * Go in the `ui` folder and run `npm i` to install the dependencies.
- * Run `npm run dev` to start the UI, it should open a new window with the UI loaded.
+ * Go back in `VideoML` folder and run `npm run build:ui` to build the UI.
+ * Go in the `ui` folder and run `npm run dev` to start the UI, it should open a new window with the UI loaded.
 
 ## Make changes
 
