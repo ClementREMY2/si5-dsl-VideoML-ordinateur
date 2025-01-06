@@ -54,6 +54,15 @@ function createWindow() {
   ipcMain.handle('validate-file', async (_, videoFilePath) => {
     return await validateFilePath(videoFilePath);
   });
+  // Get NodeJS process
+  ipcMain.handle('get-process-platform', () => {
+    return process.platform;
+  });
+
+  // Resolve path (relative to absolute)
+  ipcMain.handle('resolve-path', (_, filePath) => {
+    return path.resolve(filePath);
+  }); 
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)

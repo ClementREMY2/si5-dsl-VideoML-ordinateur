@@ -16,11 +16,23 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 
     return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoElement?.duration || 0 : 0);
 }
+
+const resolvePath = async (filePath: string): Promise<string> => {
+    return window.ipcRenderer.invoke('resolve-path', filePath);
+}
+
+const getPlatformProcess = async (): Promise<NodeJS.Platform> => {
+    return window.ipcRenderer.invoke('get-process-platform');
+}
   
-const loadVideoDuration = async (filePath: string): Promise<number> => {
+const loadVideoDuration = async (absolutePath: string, platform: NodeJS.Platform): Promise<number> => {
     return new Promise((resolve, reject) => {
         const videoElement = document.createElement('video');
-        videoElement.src = `file://${filePath}`;
+        
+        // Handle Windows paths
+        const videoSrc = platform === 'win32' ? `file:///${absolutePath.replace(/\\/g, '/')}` : `file://${absolutePath}`;
+
+        videoElement.src = videoSrc;
         videoElement.onloadedmetadata = () => {
             resolve(videoElement.duration);
         };
@@ -49,7 +61,9 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                const duration = await loadVideoDuration(element.videoElement.filePath);
+                const resolvedPath = await resolvePath(element.videoElement.filePath);
+                const platform = await getPlatformProcess();
+                const duration = await loadVideoDuration(resolvedPath, platform);
                 element.videoElement.duration = duration;
             } catch (error) {
                 console.error('Error loading video:', error);
