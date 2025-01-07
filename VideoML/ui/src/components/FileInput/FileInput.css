@@ -1,0 +1,12 @@
+.dropzone-custom {
+  border: 1px solid #ffffff;
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  padding: 7px;
+  background-color: #696a6e;
+}
+
+.dropzone-custom:hover {
+  background-color: #4d4e52;
+}
