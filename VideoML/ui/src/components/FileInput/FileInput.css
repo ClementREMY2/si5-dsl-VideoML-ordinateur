@@ -6,12 +6,11 @@
   padding: 7px;
 }
 
-/* Flashind red white */
 .dropzone-custom-release {
-  animation: identifier 0.5s infinite;
+  animation: release 0.5s infinite;
 }
 
-@keyframes identifier {
+@keyframes release {
   0% {
     background-color: #ff0000;
   }
