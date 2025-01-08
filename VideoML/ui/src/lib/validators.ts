@@ -7,6 +7,6 @@ export const renderedValidationHandlers: {
     'get-video-original-duration': getVideoOriginalDuration,
 }
 
-async function getVideoOriginalDuration({ path }: { path: string}): Promise<number | null> {
+async function getVideoOriginalDuration({ path }: { path: string}): Promise<number> {
     return getCachedVideoDuration(path);
 }

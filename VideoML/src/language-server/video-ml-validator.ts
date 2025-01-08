@@ -117,7 +117,7 @@ export class VideoMlValidator {
                 { needNodeJs: false },
             );
         }
-        if (!duration) {
+        if (!duration || duration === -1) {
             accept('error', 'Failed to get source video duration', { node: videoExtract, property: 'source' });
             return;
         }
