@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Spinner } from 'reactstrap';
 
 import { useTimeline } from './Context/Context';
 import { TimelineElementInfoFormatted } from './helper';
@@ -12,7 +13,7 @@ type TimelineLayers = {
 }
 
 export const Timeline: React.FC = () => {
-  const { timelineElementInfos } = useTimeline();
+  const { timelineElementInfos, isTimelineLoaded } = useTimeline();
 
   // Group elements by layers
   const layers = useMemo(
@@ -50,6 +51,9 @@ export const Timeline: React.FC = () => {
   return (
     <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: '30px' }}>
       <div className="d-flex flex-column w-100 position-relative mb-3">
+        {!isTimelineLoaded && (
+          <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
+        )}
         {Object.entries(layers).map(([layer, elements]) => (
           <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
             <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />

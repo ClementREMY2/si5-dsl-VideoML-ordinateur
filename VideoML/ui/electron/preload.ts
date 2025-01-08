@@ -1,27 +1,21 @@
-import { ipcRenderer, contextBridge } from 'electron';
+import { ipcRenderer, contextBridge, IpcRendererEvent } from 'electron';
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
+  receive(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
-  },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
+    // Deliberately strip event as it includes `sender` 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subscription = (_: IpcRendererEvent, ...args: any[]) => listener(...args as [any]);
+    ipcRenderer.on(channel, subscription);
+    return () => {
+      ipcRenderer.removeListener(channel, subscription);
+    }
   },
   invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
     const [channel, ...omit] = args
     return ipcRenderer.invoke(channel, ...omit)
   },
-  removeListener(...args: Parameters<typeof ipcRenderer.removeListener>) {
-    const [channel, listener] = args
-    return ipcRenderer.removeListener(channel, listener)
-  },
   // You can expose other APTs you need here.
   // ...
-})
+});
