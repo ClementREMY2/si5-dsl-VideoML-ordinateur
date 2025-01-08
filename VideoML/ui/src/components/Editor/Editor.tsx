@@ -148,7 +148,7 @@ export const Editor = ({
             const newVideosToInsert = videosToInsert.join('\n');
 
             // Find the last occurrence of 'load video ... \n'
-            const loadVideoMatches = [...value.matchAll(/load video.*\n/g)];
+            const loadVideoMatches = [...value.matchAll(/load.*\n/g)];
             const lastLoadVideoMatch = loadVideoMatches[loadVideoMatches.length - 1];
             const loadVideoIndex = lastLoadVideoMatch ? lastLoadVideoMatch.index + lastLoadVideoMatch[0].length : -1;
 
