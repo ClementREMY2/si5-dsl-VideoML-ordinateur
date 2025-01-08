@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { spawn } from 'child_process';
 
 import { validateFilePath } from '../lib/generated/validators/special-validators'
 
@@ -62,7 +63,103 @@ function createWindow() {
   // Resolve path (relative to absolute)
   ipcMain.handle('resolve-path', (_, filePath) => {
     return path.resolve(filePath);
-  }); 
+  });
+
+  ipcMain.handle('get-pwd', async () => {
+    const pwd = spawn("pwd");
+
+    const result = await new Promise((resolve, reject) => {
+      pwd.stdout.on("data", (result) => {
+        resolve(result.toString());
+      });
+      pwd.stderr.on("data", (err) => {
+        console.log(err.toString());
+        reject(err.toString());
+      });
+    });
+
+    return result;
+  });
+
+  ipcMain.handle('generate-python-file', async (_, code, path) => {
+    const fullPath = path.replace(/\n$/, '') + '/video.py';
+    const quotedCode = `'''${code}'''`;
+    const pythonFile = spawn("echo", [quotedCode, ">", fullPath], { shell: true });
+
+    const result = await new Promise((resolve, reject) => {
+      pythonFile.stdout.on("data", (result) => {
+        resolve(result.toString());
+      });
+      pythonFile.stderr.on("data", (err) => {
+        console.log(err.toString());
+        reject(err.toString());
+      });
+      pythonFile.on("close", (code) => {
+        if (code === 0) {
+            resolve(`File created at ${fullPath}`);
+        } else {
+            reject(`Process exited with code ${code}`);
+        }
+    });
+    });
+
+    return result;
+  });
+
+  ipcMain.handle('generate-video', async (_, path) => {
+    const fullPath = path.replace(/\n$/, '') + '/video.py';
+    console.log('Generating video at:', fullPath);
+    const python = spawn("python", [fullPath]);
+
+    console.log('Generating video...');
+    const result = await new Promise((resolve, reject) => {
+      // python.stdout.on("data", (result) => {
+      //   // console.log('TEXT', result.toString());
+      //   // resolve(result.toString());
+      // });
+      python.stderr.on("data", (err) => {
+        // console.log(err.toString());
+        // frame_index:  10%|▉         | 134/1354 [00:01<00:16, 73.30it/s, now=None]
+        // Extract progess, processed frame, total frame, elapsed time, eta time, its
+
+        // Regex to capture the desired components
+        const regex = /frame_index:\s+(\d+)%\|.*?\|\s+(\d+)\/(\d+)\s+\[(\d{2}:\d{2})<(\d{2}:\d{2}),\s+([\d.]+)it\/s/;
+
+        const match = err.toString().match(regex);
+
+        if (match) {
+          const progress = parseInt(match[1], 10);       // Progress in percentage
+          const processedFrames = parseInt(match[2], 10); // Number of frames processed
+          const totalFrames = parseInt(match[3], 10);    // Total number of frames
+          const elapsedTime = match[4];                  // Elapsed time (hh:mm)
+          const etaTime = match[5];                      // Estimated time remaining (hh:mm)
+          const itPerSecond = parseFloat(match[6]);      // Iterations per second (it/s)
+
+          if (win) {
+              win.webContents.send('video-generation-progress', {
+                progress,
+                processedFrames,
+                totalFrames,
+                elapsedTime,
+                etaTime,
+                itPerSecond
+              });
+          }
+      }
+      });
+      python.on("close", (code) => {
+        if (code === 0) {
+          console.log('Video generated');
+          resolve(`Video generated at ${fullPath}`);
+        } else {
+          console.log('Video generation failed');
+          reject(`Process exited with code ${code}`);
+        }
+      });
+    });
+
+    return result;
+  });
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
