@@ -36,7 +36,9 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                element.videoElement.duration = await getCachedVideoDuration(element.videoElement.filePath);
+                const duration = await getCachedVideoDuration(element.videoElement.filePath);
+                if (!duration) throw new Error('Video duration not found');
+                element.videoElement.duration = duration;
             } catch (error) {
                 console.error('Error loading video:', error);
                 element.error = 'LOAD_VIDEO';

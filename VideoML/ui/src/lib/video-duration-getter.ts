@@ -1,6 +1,6 @@
 const cache = new Map<string, number>();
 
-export const getCachedVideoDuration = async (path: string): Promise<number> => {
+export const getCachedVideoDuration = async (path: string): Promise<number | null> => {
     if (cache.has(path)) {
         const duration = cache.get(path);
         if (duration) {
@@ -10,7 +10,7 @@ export const getCachedVideoDuration = async (path: string): Promise<number> => {
 
     const absolutePath = await window.ipcRenderer.invoke('resolve-path', path);
     const platform = await window.ipcRenderer.invoke('get-process-platform');
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const videoElement = document.createElement('video');
         
         // Handle Windows paths
@@ -22,8 +22,7 @@ export const getCachedVideoDuration = async (path: string): Promise<number> => {
             resolve(videoElement.duration);
         };
         videoElement.onerror = () => {
-            resolve(-1);
-            // reject(error);
+            resolve(null);
         };
         videoElement.load();
     });
