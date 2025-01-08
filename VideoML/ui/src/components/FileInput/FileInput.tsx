@@ -75,7 +75,7 @@ export const FileInput: React.FC<FileInputProps> = ({ className, style, onDrop }
     <section
       className={clsx('dropzone-parent', className)}
       ref={dropZoneRef}
-      style={{ ...style, width: '320px' }}
+      style={style}
       onClick={handleDivClick}
     >
       <div

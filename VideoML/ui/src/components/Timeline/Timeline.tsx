@@ -49,7 +49,7 @@ export const Timeline: React.FC = () => {
 
   return (
     <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: '30px' }}>
-      <div className="d-flex flex-column w-100 position-relative">
+      <div className="d-flex flex-column w-100 position-relative mb-3">
         {Object.entries(layers).map(([layer, elements]) => (
           <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
             <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
