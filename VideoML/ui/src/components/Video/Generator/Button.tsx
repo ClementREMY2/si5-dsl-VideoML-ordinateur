@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { Button } from "reactstrap"
+import { Button, Spinner } from "reactstrap"
 import { useVideoGenerator } from "../../Video/Generator/Context/Context"
 
 type VideoGeneratorButtonProps = {
@@ -8,7 +8,7 @@ type VideoGeneratorButtonProps = {
 }
 
 export const VideoGeneratorButton: React.FC<VideoGeneratorButtonProps> = ({ className, onGenerated }) => {
-    const { handleGenerateVideo } = useVideoGenerator();
+    const { handleGenerateVideo, isGenerating } = useVideoGenerator();
     
     const handleClick = useCallback(async () => {
         await handleGenerateVideo();
@@ -20,7 +20,9 @@ export const VideoGeneratorButton: React.FC<VideoGeneratorButtonProps> = ({ clas
             color="primary"
             onClick={handleClick}
             className={className}
+            disabled={isGenerating}
         >
+            {isGenerating && <Spinner className="me-2" size="sm" />}
             Generate
         </Button>
     )

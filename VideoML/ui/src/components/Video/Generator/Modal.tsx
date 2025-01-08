@@ -10,7 +10,7 @@ import { Line } from "rc-progress";
 import { VideoGenerationProgress } from "./Context/Context";
 
 type VideoGeneratorModalProps = {
-    generationProgress: VideoGenerationProgress;
+    generationProgress?: VideoGenerationProgress;
 }
 
 export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
@@ -25,20 +25,22 @@ export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
             <ModalHeader>Video generation in progres...</ModalHeader>
             <ModalBody>
                 <Line
-                    percent={generationProgress.progress}
+                    percent={generationProgress?.progress || 0}
                     strokeWidth={4}
                     strokeColor="#3FC7FA"
                     trailWidth={4}
                     trailColor="#D9D9D9"
                 />
                 <div className="mb-2">
-                    {generationProgress.processedFrames}/{generationProgress.totalFrames} frames processed
+                    {generationProgress
+                        ? <span>{generationProgress.processedFrames}/{generationProgress.totalFrames} frames processed</span>
+                        : 'Video generation starting...'}
                 </div>
                 <div>
-                    Elapsed time: {generationProgress.elapsedTime}
+                    Elapsed time: {generationProgress?.elapsedTime || '00:00'}
                 </div>
                 <div>
-                    Remaining time: {generationProgress.etaTime}
+                    Remaining time: {generationProgress?.etaTime || 'Calculating...'}
                 </div>
             </ModalBody>
             {/* <ModalFooter>

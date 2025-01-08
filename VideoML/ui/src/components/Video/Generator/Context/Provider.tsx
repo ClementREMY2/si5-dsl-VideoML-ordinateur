@@ -54,7 +54,7 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
 
     return (
         <VideoGeneratorContext.Provider value={value}>
-        {isGenerating && generationProgress && (
+        {isGenerating && (
             <VideoGeneratorModal generationProgress={generationProgress} />
         )} 
         {children}
