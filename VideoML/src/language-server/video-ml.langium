@@ -19,11 +19,9 @@ Video:
 	(VideoOriginal | VideoExtract);
 
 VideoOriginal:
-	{infer VideoOriginal}
 	'load' filePath=STRING;
 
 VideoExtract:
-	{infer VideoExtract}
 	'extract' source=[Element:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:

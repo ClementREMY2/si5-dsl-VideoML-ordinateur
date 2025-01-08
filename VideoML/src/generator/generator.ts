@@ -17,8 +17,7 @@ import {
     isVideoExtract,
 } from '../language-server/generated/ast.js';
 
-function helperTimeToSeconds(time: string | undefined): number {
-    if (!time) return 0;
+function helperTimeToSeconds(time: string): number {
     const timeArray = time.split(':');
     return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
 }
