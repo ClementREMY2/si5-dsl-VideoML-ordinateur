@@ -45,7 +45,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
             {!isGenerating && !errorTraceback && videoGeneratedPath && (
                 <div className="h-100 w-100 d-flex justify-content-center align-items-center" ref={videoContainerRef} />
             )}
-            {!isGenerating && !videoGeneratedPath && (
+            {!isGenerating && !videoGeneratedPath && !errorTraceback && (
                 <div>No video generated yet</div>
             )}
             {errorTraceback && (

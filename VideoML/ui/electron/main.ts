@@ -109,6 +109,54 @@ function createWindow() {
     return result;
   });
 
+  ipcMain.handle('is-python-installed', async () => {
+    try {
+      const pythonCheck = spawn("python3", ["--version"]);
+  
+      const result = await new Promise((resolve) => {
+        pythonCheck.stdout.on("data", () => {
+          resolve(true);
+        });
+        pythonCheck.stderr.on("data", () => {
+          resolve(false);
+        });
+        pythonCheck.on("close", (code) => {
+          if (code === 0) {
+              resolve(true);
+          } else {
+              resolve(false);
+          }
+        });
+      });
+
+      return result;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  ipcMain.handle('install-requirements', async () => {
+    const requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
+
+    const result = await new Promise((resolve, reject) => {
+      requirements.stdout.on("data", (result) => {
+        console.log(result.toString());
+      });
+      requirements.stderr.on("data", (err) => {
+        console.log('ERROR', err.toString());
+      });
+      requirements.on("close", (code) => {
+        if (code === 0) {
+            resolve(true);
+        } else {
+            reject(false);
+        }
+      });
+    });
+
+    return result;
+  });
+
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';

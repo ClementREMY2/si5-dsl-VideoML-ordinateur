@@ -18,6 +18,21 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
         setIsGenerating(true);
         setErrorTraceback(undefined);
 
+        // Check requirements
+        const isPythonInstalled = await window.ipcRenderer.invoke('is-python-installed');
+        if (!isPythonInstalled) {
+            setErrorTraceback('Python is not installed (need python 3.9+ and binary in PATH accessible by "python3" command)');
+            setIsGenerating(false);
+            return;
+        }
+
+        const requirementsInstallResult = await window.ipcRenderer.invoke('install-requirements');
+        if (!requirementsInstallResult) {
+            setErrorTraceback('Failed to install requirements, please check Electron logs.');
+            setIsGenerating(false);
+            return;
+        }
+
         const pwd = await window.ipcRenderer.invoke('get-pwd');
         // Extract the video filename, Export line is : 'final_video.write_videofile("XXX")', use regex
         const videoName = pythonCode.match(/final_video\.write_videofile\("(.+)"\)/)?.[1];
@@ -42,7 +57,10 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
         };
 
         const handleError = (error: string) => {
-            setErrorTraceback((prev) => prev ? `${prev}\n${error}` : error);
+            // Check if error traceback is not empty and don't contains only whitespaces
+            if (!error.match(/^\s*$/)) {
+                setErrorTraceback((prev) => prev ? `${prev}\n${error}` : error);
+            }
         };
 
         const eventProgressRemoveListener = window.ipcRenderer.receive('video-generation-progress', handleProgress);

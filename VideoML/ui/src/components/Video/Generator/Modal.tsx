@@ -39,7 +39,7 @@ export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
                 <div className="mb-2">
                     {generationProgress
                         ? <span>{generationProgress.processedFrames}/{generationProgress.totalFrames} frames processed</span>
-                        : 'Video generation starting...'}
+                        : 'Video generation starting, please wait... (this may take a while, it need to install some dependencies)'}
                 </div>
                 <div>
                     Elapsed time: {generationProgress?.elapsedTime || '00:00'}
