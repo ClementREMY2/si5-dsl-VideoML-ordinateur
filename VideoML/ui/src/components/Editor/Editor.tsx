@@ -28,7 +28,7 @@ export const Editor = ({
     const wrapperRef = useRef<MonacoEditorLanguageClientWrapper | null>(null);
 
     const { handleNewTimelineElementInfos } = useTimeline();
-    const { setPythonCode } = usePythonVisualizer();
+    const { setPythonCode, setIsPythonCodeLoaded } = usePythonVisualizer();
 
     useWorkerFactory({
         ignoreMapping: true,
@@ -108,6 +108,7 @@ export const Editor = ({
                         if (result.$isValid) {
                             handleNewTimelineElementInfos(infos);
                             setPythonCode(code);
+                            setIsPythonCodeLoaded(true);
                         }
                         running = false;
                     } catch (e) {

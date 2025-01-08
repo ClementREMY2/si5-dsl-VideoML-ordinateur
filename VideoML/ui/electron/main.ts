@@ -195,7 +195,6 @@ function createWindow() {
         const ignoreRegex = /chunk|frame_index/;
         const stringError = err.toString();
         if (!ignoreRegex.test(stringError) && win) {
-          console.log('sending message', 'here here');
           win.webContents.send('video-generation-error', stringError);
         }
       }

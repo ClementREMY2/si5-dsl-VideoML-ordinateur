@@ -45,8 +45,11 @@ const loadVideoDuration = async (absolutePath: string, platform: NodeJS.Platform
 
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
+const [isTimelineLoaded, setIsTimelineLoaded] = useState(false);
 
 const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos: TimelineElementInfo[]) => {
+    setIsTimelineLoaded(true);
+
     // Populate video element with their duration
    const populatedDurationElements = await Promise.all(newTimelineElementInfos.map(async (element: PopulatedTimelineElementInfo) => {
         // Get duration for each element
@@ -93,9 +96,11 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
 const value = useMemo(() => ({
     timelineElementInfos,
     handleNewTimelineElementInfos,
+    isTimelineLoaded,
 }), [
     timelineElementInfos,
     handleNewTimelineElementInfos,
+    isTimelineLoaded,
 ]);
 
 return (
