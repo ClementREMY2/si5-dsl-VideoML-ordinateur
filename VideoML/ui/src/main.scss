@@ -1,0 +1,10 @@
+// Modifier les variables Bootstrap
+$primary: #569CD6;          // Changer la couleur principale
+
+// Importer Bootstrap après avoir redéfini les variables
+@import 'bootstrap/scss/bootstrap';
+
+.bg-dark {
+    background-color: #1e1e1e !important;
+    color: white;
+}

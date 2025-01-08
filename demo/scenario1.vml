@@ -1,0 +1,11 @@
+video project "scenario1"
+
+load video "path/to/video1"
+load video "path/to/nom-de-fichier-trop-compliqué" as "video2"
+
+create text "bienvenue" as "text1" background black position 0,0 size 100,100 font size 12 font color black
+
+1: "text1" for 00:10
+2: "video1"
+3: "video2"
+4: text "fin" background black for 00:15

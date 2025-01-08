@@ -11,11 +11,22 @@ type EditorProps = {
     style?: React.CSSProperties;
     mc: string;
     vml: string;
+    videosToInsert: string[];
+    onInsertCode: () => void;
 };
 
-export const Editor = ({ className, style, mc, vml }: EditorProps) => {
+export const Editor = ({
+    className,
+    style,
+    mc,
+    vml,
+    videosToInsert,
+    onInsertCode,
+}: EditorProps) => {
     const editorRef = useRef(null);
     const editorInitializedRef = useRef(false);
+    const wrapperRef = useRef<MonacoEditorLanguageClientWrapper | null>(null);
+
     const { handleNewTimelineElementInfos } = useTimeline();
     const { setPythonCode } = usePythonVisualizer();
 
@@ -33,6 +44,7 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
             // setup a new wrapper
             // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
             const wrapper = new MonacoEditorLanguageClientWrapper();
+            wrapperRef.current = wrapper;
             const userConfig = createUserConfig({
                 languageId: 'videoml',
                 code: getMainCode(),
@@ -112,7 +124,38 @@ export const Editor = ({ className, style, mc, vml }: EditorProps) => {
             setup();
             editorInitializedRef.current = true;
         }
-    })
+    });
+
+    useEffect(() => {
+        if (!wrapperRef.current) return;
+
+        const model = wrapperRef.current.getModel();
+        if (model && videosToInsert.length > 0) {
+            const value = model.getValue();
+            const newVideosToInsert = videosToInsert.join('\n');
+
+            // Find the last occurrence of 'load video ... \n'
+            const loadVideoMatches = [...value.matchAll(/load video.*\n/g)];
+            const lastLoadVideoMatch = loadVideoMatches[loadVideoMatches.length - 1];
+            const loadVideoIndex = lastLoadVideoMatch ? lastLoadVideoMatch.index + lastLoadVideoMatch[0].length : -1;
+
+            // Find the index of 'video project ... \n'
+            const videoProjectMatches = [...value.matchAll(/video project.*\n/g)];
+            const videoProjectMatch = videoProjectMatches[0];
+            const videoProjectIndex = videoProjectMatch ? videoProjectMatch.index + videoProjectMatch[0].length : -1;
+
+            // Determine the insert index
+            const insertIndex = loadVideoIndex > -1 ? loadVideoIndex : videoProjectIndex > -1 ? videoProjectIndex : 0;
+
+            // Insert new videos after the determined index
+            const newValue = insertIndex > 0
+                ? value.slice(0, insertIndex) + (!lastLoadVideoMatch ? '\n' : '') + newVideosToInsert + '\n' + value.slice(insertIndex)
+                : 'video project "name_your_project"\n\n' + newVideosToInsert + '\n';
+
+            model.setValue(newValue);
+            onInsertCode();
+        }
+    }, [videosToInsert, onInsertCode]);
 
   return (
     <div className={className} ref={editorRef} style={style} />

@@ -5,3 +5,9 @@
 !VideoML/generated
 
 .DS_Store
+
+VideoML/syntaxes
+
+# Files generated for video
+VideoML/ui/video.py
+VideoML/ui/*.mp4
