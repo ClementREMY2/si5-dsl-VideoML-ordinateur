@@ -112,7 +112,7 @@ function createWindow() {
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
-    pythonProcess = spawn("python", [fullPath]);
+    pythonProcess = spawn("python3", [fullPath]);
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
@@ -141,6 +141,14 @@ function createWindow() {
               etaTime,
               itPerSecond
             });
+        }
+      } else {
+        // Send error to renderer process if it's not a progress update
+        const ignoreRegex = /chunk|frame_index/;
+        const stringError = err.toString();
+        if (!ignoreRegex.test(stringError) && win) {
+          console.log('sending message', 'here here');
+          win.webContents.send('video-generation-error', stringError);
         }
       }
     });

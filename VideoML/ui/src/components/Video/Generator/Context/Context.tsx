@@ -14,6 +14,7 @@ interface VideoGeneratorContextProps {
     handleGenerateVideo: () => Promise<void>,
     videoGeneratedPath: string | undefined,
     isGenerating: boolean,
+    errorTraceback: string | undefined,
 }
 
 export const VideoGeneratorContext = createContext<VideoGeneratorContextProps | undefined>(undefined);

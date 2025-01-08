@@ -10,7 +10,7 @@ type VideoPlayerProps = {
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
-    const { videoGeneratedPath, isGenerating } = useVideoGenerator();
+    const { videoGeneratedPath, isGenerating, errorTraceback } = useVideoGenerator();
     const videoContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -19,7 +19,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
         const setupVideo = async () => {
             if (!videoContainerRef.current) return;
             videoContainerRef.current.innerHTML = '';
-            if (!videoGeneratedPath) return;
+            if (!videoGeneratedPath || errorTraceback) return;
 
             const platform = await getPlatformProcess();
 
@@ -37,16 +37,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
         }
 
         setupVideo();
-    }, [videoGeneratedPath]);
+    }, [videoGeneratedPath, errorTraceback]);
 
     return (
         <div className={className}>
             {isGenerating && (<div>Generating...</div>)}
-            {!isGenerating && videoGeneratedPath && (
+            {!isGenerating && !errorTraceback && videoGeneratedPath && (
                 <div className="h-100 w-100 d-flex justify-content-center align-items-center" ref={videoContainerRef} />
             )}
             {!isGenerating && !videoGeneratedPath && (
                 <div>No video generated yet</div>
+            )}
+            {errorTraceback && (
+                <>
+                    <div className="text-danger mb-2">An error occured during generation:</div>
+                    <pre>{errorTraceback}</pre>
+                </>
             )}
         </div>
     )

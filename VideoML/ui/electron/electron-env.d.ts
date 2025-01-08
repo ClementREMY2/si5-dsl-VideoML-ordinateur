@@ -23,5 +23,11 @@ declare namespace NodeJS {
 
 // Used in Renderer process, expose in `preload.ts`
 interface Window {
-  ipcRenderer: import('electron').IpcRenderer
+  ipcRenderer: {
+    receive: (...args: Parameters<typeof ipcRenderer.on>) => () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    invoke: (...args: Parameters<typeof ipcRenderer.invoke>) => Promise<any>
+    // You can expose other APTs you need here.
+    // ...
+  }
 }
