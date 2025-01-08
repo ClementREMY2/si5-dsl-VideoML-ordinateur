@@ -1,13 +1,14 @@
 import {
-    // Button,
+    Button,
     Modal,
     ModalBody,
-    // ModalFooter,
+    ModalFooter,
     ModalHeader,
 } from "reactstrap";
 import { Line } from "rc-progress";
 
 import { VideoGenerationProgress } from "./Context/Context";
+import { useCallback } from "react";
 
 type VideoGeneratorModalProps = {
     generationProgress?: VideoGenerationProgress;
@@ -16,6 +17,10 @@ type VideoGeneratorModalProps = {
 export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
     generationProgress,
 }) => {
+    const handleCancelGeneration = useCallback(() => {
+        window.ipcRenderer.invoke('cancel-video-generation');
+    }, []);
+
     return (
         <Modal
             isOpen
@@ -43,11 +48,11 @@ export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
                     Remaining time: {generationProgress?.etaTime || 'Calculating...'}
                 </div>
             </ModalBody>
-            {/* <ModalFooter>
-                <Button color="secondary" onClick={() => console.log('clic clic pan pan pan')}>
+            <ModalFooter>
+                <Button color="secondary" onClick={handleCancelGeneration}>
                     Cancel
                 </Button>
-            </ModalFooter> */}
+            </ModalFooter>
         </Modal>
     )
 }; 

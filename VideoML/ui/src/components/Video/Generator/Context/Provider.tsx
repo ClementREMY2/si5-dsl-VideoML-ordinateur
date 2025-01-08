@@ -19,14 +19,11 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
         const pwd = await window.ipcRenderer.invoke('get-pwd');
         // Extract the video filename, Export line is : 'final_video.write_videofile("XXX")', use regex
         const videoName = pythonCode.match(/final_video\.write_videofile\("(.+)"\)/)?.[1];
+        setVideoGeneratedPath(`${pwd}/${videoName}`);
 
         await window.ipcRenderer.invoke('generate-python-file', pythonCode, pwd);
 
-        await window.ipcRenderer.invoke('generate-video', pwd);
-
-        setIsGenerating(false);
-        setVideoGeneratedPath(`${pwd}/${videoName}`);
-        setGenerationProgress(undefined);
+        window.ipcRenderer.invoke('generate-video', pwd);
     }, [pythonCode]);
 
     useEffect(() => {
@@ -34,9 +31,16 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
             setGenerationProgress(progress);
         };
 
+        const handleFinished = (_: Electron.IpcRendererEvent, code: number) => {
+            setGenerationProgress(undefined);
+            setIsGenerating(false);
+        };
+
         window.ipcRenderer.on('video-generation-progress', handleProgress);
+        window.ipcRenderer.on('video-generation-finished', handleFinished);
         return () => {
             window.ipcRenderer.removeListener('video-generation-progress', handleProgress);
+            window.ipcRenderer.removeListener('video-generation-finished', handleFinished);
         };
     }, []);
 
