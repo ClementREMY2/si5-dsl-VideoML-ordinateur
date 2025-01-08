@@ -27,7 +27,7 @@ export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
             toggle={() => console.log('clic clic pan pan pan')}
             backdrop="static"
         >
-            <ModalHeader>Video generation in progres...</ModalHeader>
+            <ModalHeader>Video generation in progress...</ModalHeader>
             <ModalBody>
                 <Line
                     percent={generationProgress?.progress || 0}

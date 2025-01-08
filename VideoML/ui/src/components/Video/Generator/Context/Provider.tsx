@@ -34,6 +34,9 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
         const handleFinished = (_: Electron.IpcRendererEvent, code: number) => {
             setGenerationProgress(undefined);
             setIsGenerating(false);
+            if (!Number.isInteger(code)) {
+                setVideoGeneratedPath(undefined);
+            }
         };
 
         window.ipcRenderer.on('video-generation-progress', handleProgress);
@@ -48,7 +51,7 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
         generationProgress,
         handleGenerateVideo,
         isGenerating,
-        videoGeneratedPath,
+        videoGeneratedPath: isGenerating ? undefined : videoGeneratedPath,
     }), [
         generationProgress,
         handleGenerateVideo,

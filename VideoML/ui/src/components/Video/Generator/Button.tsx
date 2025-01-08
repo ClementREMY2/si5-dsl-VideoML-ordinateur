@@ -17,7 +17,7 @@ export const VideoGeneratorButton: React.FC<VideoGeneratorButtonProps> = ({ clas
 
     return (
         <Button
-            color="primary"
+            color="primary text-white"
             onClick={handleClick}
             className={className}
             disabled={isGenerating}
