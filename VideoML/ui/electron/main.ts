@@ -54,10 +54,13 @@ function createWindow() {
     return path.join(app.getAppPath(), 'public', 'video-ml-server-worker.js');
   });
 
+  // START - HANDLERS FOR VALIDATOR
   // Handle file validation requests
-  ipcMain.handle('validate-file', async (_, videoFilePath) => {
+  ipcMain.handle('validate-file', async (_, { path: videoFilePath }) => {
     return await validateFilePath(videoFilePath);
   });
+  // END - HANDLERS FOR VALIDATOR
+
   // Get NodeJS process
   ipcMain.handle('get-process-platform', () => {
     return process.platform;

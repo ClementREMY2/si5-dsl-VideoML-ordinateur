@@ -16,11 +16,7 @@ import {
     VideoExtract,
     isVideoExtract,
 } from '../language-server/generated/ast.js';
-
-function helperTimeToSeconds(time: string): number {
-    const timeArray = time.split(':');
-    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
-}
+import { helperTimeToSeconds } from '../lib/helper.js';
 
 export function generatePythonProgram(videoProject: VideoProject): string {
     const fileNode = new CompositeGeneratorNode();
@@ -72,7 +68,7 @@ ${element.name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
 function compileVideoExtract(videoExtract: VideoExtract, element: Element, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Extract a subclip from the video
-${element.name} = ${videoExtract.source?.ref?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
+${element.name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
 `, NL);
 }
 

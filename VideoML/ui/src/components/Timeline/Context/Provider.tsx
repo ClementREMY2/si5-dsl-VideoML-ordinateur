@@ -1,6 +1,7 @@
 import React, { useState, ReactNode, useMemo, useCallback } from 'react';
 import { TimelineContext, PopulatedTimelineElementInfo } from './Context';
 import { TimelineElementInfo } from '../../../../lib/generated/generator/types';
+import { getCachedVideoDuration } from '../../../lib/video-duration-getter';
 
 interface TimelineProviderProps {
     children: ReactNode;
@@ -16,32 +17,6 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 
     return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoElement?.duration || 0 : 0);
 }
-
-const resolvePath = async (filePath: string): Promise<string> => {
-    return window.ipcRenderer.invoke('resolve-path', filePath);
-}
-
-const getPlatformProcess = async (): Promise<NodeJS.Platform> => {
-    return window.ipcRenderer.invoke('get-process-platform');
-}
-  
-const loadVideoDuration = async (absolutePath: string, platform: NodeJS.Platform): Promise<number> => {
-    return new Promise((resolve, reject) => {
-        const videoElement = document.createElement('video');
-        
-        // Handle Windows paths
-        const videoSrc = platform === 'win32' ? `file:///${absolutePath.replace(/\\/g, '/')}` : `file://${absolutePath}`;
-
-        videoElement.src = videoSrc;
-        videoElement.onloadedmetadata = () => {
-            resolve(videoElement.duration);
-        };
-        videoElement.onerror = (error) => {
-            reject(error);
-        };
-        videoElement.load();
-    });
-};
 
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
@@ -61,10 +36,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                const resolvedPath = await resolvePath(element.videoElement.filePath);
-                const platform = await getPlatformProcess();
-                const duration = await loadVideoDuration(resolvedPath, platform);
-                element.videoElement.duration = duration;
+                element.videoElement.duration = await getCachedVideoDuration(element.videoElement.filePath);
             } catch (error) {
                 console.error('Error loading video:', error);
                 element.error = 'LOAD_VIDEO';

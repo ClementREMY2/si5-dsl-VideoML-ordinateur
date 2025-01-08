@@ -6,13 +6,14 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    Video,
     VideoOriginal,
+    VideoExtract,
+    isVideoExtract,
     isVideoOriginal,
-    isVideoExtract
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
+import { helperTimeToSeconds } from '../lib/helper.js';
 
 const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
 
@@ -30,7 +31,14 @@ if (IS_ELECTRON) {
 
 let lastId = 10000000;
 // Function to simulate synchronous calls from worker to renderer process in Electron
-async function invokeFilePathValidator(command: string, path: string, indexName: string): Promise<any> {
+async function invokeSpecialCommand(
+    command: string,
+    commandParams: object,
+    indexName: string,
+    executionParams: {
+        needNodeJs: boolean;
+    },
+): Promise<any> {
     return new Promise((resolve) => {
         const id = Date.now() + lastId++;
         asyncRequestMap.set(indexName, resolve);
@@ -40,8 +48,9 @@ async function invokeFilePathValidator(command: string, path: string, indexName:
             id,
             method: `custom/${command}`,
             params: {
-                path,
+                commandParams,
                 indexName,
+                executionParams,
             },
         });
     });
@@ -55,8 +64,8 @@ export function registerValidationChecks(services: VideoMlServices) {
     const validator = services.validation.VideoMlValidator;
     const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
-        Video: validator.checkVideo,
         VideoOriginal: validator.checkVideoOriginal,
+        VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
     };
     registry.register(checks, validator);
@@ -73,12 +82,49 @@ export class VideoMlValidator {
         this.checkUniqueNameForTimelineElements(videoProject, accept);
     }
 
-    async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
-        await this.checkVideoType(video, accept);
-    }
-
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
+    }
+
+    async checkVideoExtract(videoExtract: VideoExtract, accept: ValidationAcceptor): Promise<void> {
+        await this.checkVideoExtractValidTimeCodes(videoExtract, accept);
+    }
+
+    async checkVideoExtractValidTimeCodes(videoExtract: VideoExtract, accept: ValidationAcceptor): Promise<void> {
+        if (!videoExtract.start || !videoExtract.end) return;
+
+        // Check if Start time is less than End time
+        if (helperTimeToSeconds(videoExtract.start) >= helperTimeToSeconds(videoExtract.end)) {
+            accept('error', 'Start time must be before end time', { node: videoExtract, property: 'start' });
+        }
+
+        // Check if End time is less or equal to the video duration
+        const source = videoExtract.source?.ref;
+        if (!source) {
+            accept('error', 'Source video not found', { node: videoExtract, property: 'source' });
+            return;
+        }
+
+        let duration;
+        if (isVideoExtract(source)) {
+            duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
+        } else if (isVideoOriginal(source)) {
+            const indexName = `get-video-original-duration-${source.filePath}-${source.$containerProperty}-${source.$containerIndex}`;
+            duration = await invokeSpecialCommand(
+                'get-video-original-duration',
+                { path: source.filePath },
+                indexName,
+                { needNodeJs: false },
+            );
+        }
+        if (!duration || duration === -1) {
+            accept('error', 'Failed to get source video duration', { node: videoExtract, property: 'source' });
+            return;
+        }
+
+        if (helperTimeToSeconds(videoExtract.end) > duration) {
+            accept('error', 'End time is greater than source video duration', { node: videoExtract, property: 'end' });
+        }
     }
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
@@ -138,12 +184,6 @@ export class VideoMlValidator {
         }
     }
 
-    async checkVideoType(video: Video, accept: ValidationAcceptor): Promise<void> {
-        if (!(isVideoOriginal) && !(isVideoExtract)) {
-            accept('error', 'Video must be of type VideoOriginal or VideoExtract', { node: video, property: 'type' });
-        }
-    }
-
     async checkVideoOriginalPath(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         if (!videoOriginal.filePath) return;
 
@@ -152,8 +192,13 @@ export class VideoMlValidator {
             errors = await validateFilePath(videoOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `${videoOriginal.filePath}-${videoOriginal.$containerProperty}-${videoOriginal.$containerIndex}`;
-            errors = await invokeFilePathValidator('validate-file', videoOriginal.filePath, indexName);
+            const indexName = `validate-file-${videoOriginal.filePath}-${videoOriginal.$containerProperty}-${videoOriginal.$containerIndex}`;
+            errors = await invokeSpecialCommand(
+                'validate-file',
+                { path: videoOriginal.filePath },
+                indexName,
+                { needNodeJs: true },
+            );
         }
 
         (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {

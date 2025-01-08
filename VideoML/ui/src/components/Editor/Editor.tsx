@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { createUserConfig, getMainCode, getWorker, getMonarchGrammar } from '../../lib/video-ml';
 import { useTimeline } from '../Timeline/Context/Context';
 import { usePythonVisualizer } from '../PythonVisualizer/Context/Context';
+import { renderedValidationHandlers } from '../../lib/validators';
 
 type EditorProps = {
     className?: string;
@@ -58,10 +59,22 @@ export const Editor = ({
                 throw new Error('Unable to obtain worker for the VideoML!');
             }
 
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener('message', async (event) => {
                 const { id, method, params } = event.data || {};
                 if (id && method && params && method.startsWith('custom/')) {
-                    window.ipcRenderer.invoke(method.slice(7), params.path).then((result) => {
+                    if (params.executionParams.needNodeJs) {
+                        window.ipcRenderer.invoke(method.slice(7), { ...params.commandParams, indexName: params.indexName }).then((result) => {
+                            worker.postMessage({
+                                jsonrpc: "2.0",
+                                id,
+                                result: {
+                                    content: result,
+                                    indexName: params.indexName,
+                                }
+                            });
+                        });
+                    } else {
+                        const result = await renderedValidationHandlers[method.slice(7)](params.commandParams);
                         worker.postMessage({
                             jsonrpc: "2.0",
                             id,
@@ -70,7 +83,7 @@ export const Editor = ({
                                 indexName: params.indexName,
                             }
                         });
-                    });
+                    }
                 }
             });
 

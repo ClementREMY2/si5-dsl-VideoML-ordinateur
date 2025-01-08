@@ -10,7 +10,7 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(VisualElement) 'in' name=ID;
+	(VisualElement) 'as' name=ID;
 
 VisualElement:
 	(Video);
@@ -22,7 +22,7 @@ VideoOriginal:
 	'load' filePath=STRING;
 
 VideoExtract:
-	'extract' source=[Element:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
 	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;

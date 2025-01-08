@@ -8,12 +8,8 @@ import {
     TimelineElement,
     isVideoOriginal,
 } from '../../language-server/generated/ast.js';
+import { helperTimeToSeconds } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
-
-function helperTimeToSeconds(time: string): number {
-    const timeArray = time.split(':');
-    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
-}
 
 export function generateTimelineElementInfos(videoProject: VideoProject): TimelineElementInfo[] {
     return videoProject.timelineElements.map(compileTimelineElement);
