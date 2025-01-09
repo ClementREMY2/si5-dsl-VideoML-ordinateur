@@ -9,7 +9,7 @@ type TimelineElementWrapperProps = {
 export const TimelineElementWrapper: React.FC<TimelineElementWrapperProps> = ({ children, element, color = 'primary' }) => (
     <div
         key={element.id}
-        className={`position-absolute h-100 bg-${color} text-white text-center rounded cursor-pointer`}
+        className={`position-absolute h-100 bg-${color} text-white text-center rounded cursor-pointer overflow-hidden`}
         style={{
             left: `${element.startTime * TIMELINE_SCALE_FACTOR}px`,
             width: `${(element.endTime - element.startTime) * TIMELINE_SCALE_FACTOR}px`,
