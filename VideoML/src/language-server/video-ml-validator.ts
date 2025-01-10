@@ -10,6 +10,7 @@ import {
     VideoExtract,
     isVideoExtract,
     isVideoOriginal,
+    Audio,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -81,6 +82,13 @@ export class VideoMlValidator {
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkUniqueNameForTimelineElements(videoProject, accept);
     }
+
+    async checkAudio(audio: Audio, accept: ValidationAcceptor): Promise<void> {
+        await this.checkAudioPath(audio, accept);
+        //await this.checkAudioValidTimeCodes(audio, accept);
+    }
+
+    //TODO : checkAudioValidTimeCodes? how to proceed?
 
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
@@ -203,6 +211,28 @@ export class VideoMlValidator {
 
         (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
             accept(error.type, error.message, { node: videoOriginal, property: 'filePath' });
+        });
+    }
+
+    async checkAudioPath(audio: Audio, accept: ValidationAcceptor): Promise<void> {
+        if (!audio.filePath) return;
+
+        let errors = [];
+        if (!IS_ELECTRON) {
+            errors = await validateFilePath(audio.filePath);
+        } else {
+            // Filepath verification will be handled by Electron (main process)
+            const indexName = `validate-file-${audio.filePath}-${audio.$containerProperty}-${audio.$containerIndex}`;
+            errors = await invokeSpecialCommand(
+                'validate-file',
+                { path: audio.filePath },
+                indexName,
+                { needNodeJs: true },
+            );
+        }
+
+        (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+            accept(error.type, error.message, { node: audio, property: 'filePath' });
         });
     }
 

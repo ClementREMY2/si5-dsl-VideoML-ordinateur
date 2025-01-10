@@ -15,6 +15,8 @@ import {
     isVideoOriginal,
     VideoExtract,
     isVideoExtract,
+    Audio,
+    isAudio,
 } from '../language-server/generated/ast.js';
 import { helperTimeToSeconds } from '../lib/helper.js';
 
@@ -45,7 +47,18 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     if (isVisualElement(element)) {
         compileVisualElement(element, element, fileNode);
     }
+    else if (isAudio(element)) {
+        compileAudio(element, element, fileNode);
+    }
 }
+
+function compileAudio(audio: Audio, element: Element, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Load the audio clip
+${element.name} = moviepy.AudioFileClip("${audio.filePath}")
+`, NL);
+}
+
 
 // We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
 function compileVisualElement(visualElement: VisualElement, element: Element, fileNode: CompositeGeneratorNode) {
@@ -107,9 +120,33 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
-    const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
+    const timelineElementsVideoJoined = orderedTimelineElements
+        .filter(te => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+        .map(te => te.name)
+        .join(', ');
+    
+        const timelineElementsAudioJoined = orderedTimelineElements
+            .filter(te => isAudio(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+            .map(te => isAudio(te.element.ref) ? te.name : `${te.name}.audio`)
+            .join(', ');
+
+    console.log(timelineElementsAudioJoined);
+    
+
     fileNode.append(
 `# Concatenate all clips
-final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
+final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `, NL);
+
+    if (videoProject.timelineElements.some(te => isAudio(te.element.ref))) {
+        fileNode.append(
+`# Concatenate all audios
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
+`, NL);
+    }
+        fileNode.append(
+`# Assign audio's concatenation to the final video
+final_video.audio = final_audio
+`, NL);   
+
 }
