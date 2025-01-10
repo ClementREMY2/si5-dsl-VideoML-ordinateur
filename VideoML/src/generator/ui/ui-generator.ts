@@ -39,7 +39,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             videoExtractElement: {
                 name: te.element.ref.name,
                 duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
-                source: "prout"
+                //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
             },
             layer: te.layer || 0,
             ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),

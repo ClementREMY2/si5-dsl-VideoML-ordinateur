@@ -5,7 +5,7 @@ export interface TimelineElementInfo {
     audioElement?: {
         name: string;
         filePath: string;
-        video?: string;
+        duration?: number;
     }
     videoExtractElement?: {
         name: string;

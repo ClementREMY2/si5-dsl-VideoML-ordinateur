@@ -21,6 +21,9 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     else if (element.videoExtractElement) {
         return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoExtractElement?.duration || 0 : 0);
     }
+    else if (element.audioElement) {
+        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.audioElement?.duration || 0 : 0);
+    }
     else {
         return 0;
     }
@@ -54,6 +57,24 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
                 element.error = 'LOAD_VIDEO';
             }
         }
+        else if (element.audioElement) {
+
+            if (element.audioElement.duration) {
+                return element;
+            }
+
+            if (!element['audioElement']['filePath']) {
+                element['error'] = 'NO_FILEPATH';
+                return element;
+            }
+
+            try {
+                element.audioElement.duration = await getCachedVideoDuration(element.audioElement.filePath);
+            } catch (error) {
+                console.error('Error loading audio:', error);
+                element.error = 'LOAD_VIDEO';
+            }
+        }
 
 
         return element;
@@ -73,7 +94,9 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         else if (element.videoExtractElement) {
             element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
         }
-
+        else if (element.audioElement) {
+            element.finishAt = (element.startAt || 0) + (element.audioElement.duration || 0);
+        }
         return element;
     });
 
