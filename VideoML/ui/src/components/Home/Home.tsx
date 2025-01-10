@@ -20,7 +20,7 @@ export const Home: React.FC = () => {
     setVideosToInsert(acceptedFiles.map((file) => {
       // Get varname from file name e.g. video.mp4 -> video (whitespace removed)
       const varName = file.name.replace(/\s/g, '').replace(/\.[^/.]+$/, '');
-      return `load video "${file.path}" in ${varName}`;
+      return `load "${file.path}" as ${varName}`;
     }));
   }, []);
 

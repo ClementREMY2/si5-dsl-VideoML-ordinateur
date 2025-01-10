@@ -5,8 +5,8 @@ type TimelineElementVideoProps = {
     element: TimelineElementInfoFormatted;
 };
 
-export const TimelineElementVideo: React.FC<TimelineElementVideoProps> = ({ element }) => (
+export const TimelineElementVideoOriginal: React.FC<TimelineElementVideoProps> = ({ element }) => (
     <TimelineElementWrapper element={element}>
-        {element.id} - {element.title} ({formatTime(element.endTime - element.startTime)})
+            {element.id} - {element.title} ({formatTime(element.endTime - element.startTime)})
     </TimelineElementWrapper>
-)
+);
