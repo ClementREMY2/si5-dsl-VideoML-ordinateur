@@ -160,10 +160,11 @@ final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `# Concatenate all audios
 final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
 `, NL);
-    }
+    
         fileNode.append(
 `# Assign audio's concatenation to the final video
 final_video.audio = final_audio
-`, NL);   
+`, NL);  
+    } 
 
 }
