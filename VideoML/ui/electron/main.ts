@@ -2,12 +2,14 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
 import { validateFilePath } from '../lib/generated/validators/special-validators'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 
 // The built directory structure
 //
@@ -69,49 +71,41 @@ function createWindow() {
   });
 
   ipcMain.handle('get-pwd', async () => {
-    const pwd = spawn("pwd");
+    // const pwd = spawn("pwd");
 
-    const result = await new Promise((resolve, reject) => {
-      pwd.stdout.on("data", (result) => {
-        resolve(result.toString());
-      });
-      pwd.stderr.on("data", (err) => {
-        console.log(err.toString());
-        reject(err.toString());
-      });
-    });
+    // const result = await new Promise((resolve, reject) => {
+    //   pwd.stdout.on("data", (result) => {
+    //     resolve(result.toString());
+    //   });
+    //   pwd.stderr.on("data", (err) => {
+    //     console.log(err.toString());
+    //     reject(err.toString());
+    //   });
+    // });
 
-    return result;
+    // return result;
+    return process.cwd();
   });
 
-  ipcMain.handle('generate-python-file', async (_, code, path) => {
-    const fullPath = path.replace(/\n$/, '') + '/video.py';
-    const quotedCode = `'''${code}'''`;
-    const pythonFile = spawn("echo", [quotedCode, ">", fullPath], { shell: true });
+  ipcMain.handle('generate-python-file', async (_, code, dirPath) => {
+    const fullPath = path.join(dirPath.replace(/\n$/, ''), 'video.py');
 
-    const result = await new Promise((resolve, reject) => {
-      pythonFile.stdout.on("data", (result) => {
-        resolve(result.toString());
-      });
-      pythonFile.stderr.on("data", (err) => {
-        console.log(err.toString());
-        reject(err.toString());
-      });
-      pythonFile.on("close", (code) => {
-        if (code === 0) {
-            resolve(`File created at ${fullPath}`);
+    try {
+        await fs.promises.writeFile(fullPath, code);
+        return `File created at ${fullPath}`;
+    } catch (err) {
+        console.error(err);
+        if (err instanceof Error) {
+            throw new Error(`Failed to create file: ${err.message}`);
         } else {
-            reject(`Process exited with code ${code}`);
+            throw new Error('Failed to create file: Unknown error');
         }
-    });
-    });
-
-    return result;
-  });
+    }
+});
 
   ipcMain.handle('is-python-installed', async () => {
     try {
-      const pythonCheck = spawn("python3", ["--version"]);
+      const pythonCheck = spawn(process.platform === "win32" ? "py" : "python3", ["--version"]);
   
       const result = await new Promise((resolve) => {
         pythonCheck.stdout.on("data", () => {
@@ -136,7 +130,13 @@ function createWindow() {
   });
 
   ipcMain.handle('install-requirements', async () => {
-    const requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
+    let requirements;
+    if (process.platform === "win32") {
+      requirements = spawn("py", ["-m", "pip", "install", "-r", "requirements.txt"]);
+    }
+    else {
+       requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
+    }
 
     const result = await new Promise((resolve, reject) => {
       requirements.stdout.on("data", (result) => {
@@ -160,10 +160,17 @@ function createWindow() {
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
-    pythonProcess = spawn("python3", [fullPath]);
+    if (process.platform === "win32") {
+      pythonProcess = spawn("py", [fullPath]);
+    }
+    else {
+      pythonProcess = spawn("python3", [fullPath]);
+    }
+
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
+      console.error('Python process error:', err.toString());
       // frame_index:  10%|▉         | 134/1354 [00:01<00:16, 73.30it/s, now=None]
       // Extract progess, processed frame, total frame, elapsed time, eta time, its
 
