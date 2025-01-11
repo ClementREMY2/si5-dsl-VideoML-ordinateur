@@ -1,6 +1,7 @@
 import { TimelineElementInfoFormatted } from "../helper";
 import { TimelineElementText } from "./Text";
-import { TimelineElementVideo } from "./Video";
+import { TimelineElementVideoOriginal } from "./VideoOriginal";
+import { TimelineElementVideoExtract } from "./VideoExtract";
 
 type TimelineElementProps = {
     element: TimelineElementInfoFormatted;
@@ -8,11 +9,13 @@ type TimelineElementProps = {
 
 export const TimelineElement: React.FC<TimelineElementProps> = ({ element }) => {
     switch (element.type) {
-        case 'video':
-            return <TimelineElementVideo element={element} />;
-        case 'text':
+        case 'VideoOriginal':
+            return <TimelineElementVideoOriginal element={element} />;
+        case 'VideoExtract':
+            return <TimelineElementVideoExtract element={element} />;
+        case 'Text':
             return <TimelineElementText element={element} color='secondary' />;
-        case 'subtitle':
+        case 'Subtitle':
             return <TimelineElementText element={element} color='success' />;
         default:
             return null;

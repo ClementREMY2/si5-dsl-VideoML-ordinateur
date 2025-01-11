@@ -39,7 +39,7 @@ function createWindow() {
   })
 
   // Open the DevTools.
-  // win.webContents.openDevTools();
+  win.webContents.openDevTools();
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
@@ -54,10 +54,13 @@ function createWindow() {
     return path.join(app.getAppPath(), 'public', 'video-ml-server-worker.js');
   });
 
+  // START - HANDLERS FOR VALIDATOR
   // Handle file validation requests
-  ipcMain.handle('validate-file', async (_, videoFilePath) => {
+  ipcMain.handle('validate-file', async (_, { path: videoFilePath }) => {
     return await validateFilePath(videoFilePath);
   });
+  // END - HANDLERS FOR VALIDATOR
+
   // Get NodeJS process
   ipcMain.handle('get-process-platform', () => {
     return process.platform;
@@ -109,6 +112,54 @@ function createWindow() {
     return result;
   });
 
+  ipcMain.handle('is-python-installed', async () => {
+    try {
+      const pythonCheck = spawn("python3", ["--version"]);
+  
+      const result = await new Promise((resolve) => {
+        pythonCheck.stdout.on("data", () => {
+          resolve(true);
+        });
+        pythonCheck.stderr.on("data", () => {
+          resolve(false);
+        });
+        pythonCheck.on("close", (code) => {
+          if (code === 0) {
+              resolve(true);
+          } else {
+              resolve(false);
+          }
+        });
+      });
+
+      return result;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  ipcMain.handle('install-requirements', async () => {
+    const requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
+
+    const result = await new Promise((resolve, reject) => {
+      requirements.stdout.on("data", (result) => {
+        console.log(result.toString());
+      });
+      requirements.stderr.on("data", (err) => {
+        console.log('ERROR', err.toString());
+      });
+      requirements.on("close", (code) => {
+        if (code === 0) {
+            resolve(true);
+        } else {
+            reject(false);
+        }
+      });
+    });
+
+    return result;
+  });
+
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
@@ -141,6 +192,13 @@ function createWindow() {
               etaTime,
               itPerSecond
             });
+        }
+      } else {
+        // Send error to renderer process if it's not a progress update
+        const ignoreRegex = /chunk|frame_index/;
+        const stringError = err.toString();
+        if (!ignoreRegex.test(stringError) && win) {
+          win.webContents.send('video-generation-error', stringError);
         }
       }
     });

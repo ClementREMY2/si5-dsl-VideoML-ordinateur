@@ -10,6 +10,7 @@ export type PopulatedTimelineElementInfo = TimelineElementInfo & {
 interface TimelineContextProps {
     timelineElementInfos: PopulatedTimelineElementInfo[];
     handleNewTimelineElementInfos: (timelineElementInfos: TimelineElementInfo[]) => void;
+    isTimelineLoaded: boolean;
 }
 
 export const TimelineContext = createContext<TimelineContextProps | undefined>(undefined);

@@ -3,10 +3,7 @@ import {
     VideoProject,
     Element,
     Text,
-    isMedia,
-    isVideo,
-    Media,
-    Video,
+    isVisualElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
     isStartRelativeTimelineElement,
@@ -24,12 +21,13 @@ import {
     isBackgroundSizeSetting,
     isSubtitle,
     Subtitle,
+    VisualElement,
+    VideoOriginal,
+    isVideoOriginal,
+    VideoExtract,
+    isVideoExtract,
 } from '../language-server/generated/ast.js';
-
-function helperTimeToSeconds(time: string): number {
-    const timeArray = time.split(':');
-    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
-}
+import { helperTimeToSeconds } from '../lib/helper.js';
 
 export function generatePythonProgram(videoProject: VideoProject): string {
     const fileNode = new CompositeGeneratorNode();
@@ -55,29 +53,39 @@ final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
 function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if (isMedia(element)) {
-        compileMedia(element, element, fileNode);
+    if (isVisualElement(element)) {
+        compileVisualElement(element, element, fileNode);
     }
 }
 
-// We have media and element as separate parameters because in the AST subtypes are weirdly not used
-function compileMedia(media: Media, element: Element, fileNode: CompositeGeneratorNode) {
-    if (isVideo(media)) {
-        compileVideo(media, element, fileNode);
+// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
+function compileVisualElement(visualElement: VisualElement, element: Element, fileNode: CompositeGeneratorNode) {
+    if (isVideoOriginal(visualElement)) {
+        compileVideoOriginal(visualElement, element, fileNode);
     }
-    else if (isText(media)) {
-        compileText(media, element, fileNode);
+    else if (isVideoExtract(visualElement)) {
+        compileVideoExtract(visualElement, element, fileNode);
     }
-    else if(isSubtitle(media)){
-        compileSubtitle(media, element, fileNode);
+    else if (isText(visualElement)) {
+        compileText(visualElement, element, fileNode);
+    }
+    else if(isSubtitle(visualElement)){
+        compileSubtitle(visualElement, element, fileNode);
     }
 }
 
-// We have media and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVideo(video: Video, element: Element, fileNode: CompositeGeneratorNode) {
+// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
+function compileVideoOriginal(videoOriginal: VideoOriginal, element: Element, fileNode: CompositeGeneratorNode) {
     fileNode.append(
-`# Load the video clip
-${element.name} = moviepy.VideoFileClip("${video.filePath}")
+`# Load the video clip original
+${element.name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
+`, NL);
+}
+
+function compileVideoExtract(videoExtract: VideoExtract, element: Element, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Extract a subclip from the video
+${element.name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
 `, NL);
     fileNode.append(
         `# Resize the video clip
