@@ -7,19 +7,22 @@ import {
     isRelativeTimelineElement,
     RelativeTimelineElement,
     Subtitle,
-    isBackgroundColorSetting,
-    isFontColorSetting,
-    FontSetting,
-    isFontSetting,
-    isFontSizeSetting,
-    isAlignmentSetting,
-    isPositionSetting,
-    TextSetting,
     isVideo,
     VideoOriginal,
     VideoExtract,
     isVideoExtract,
     isVideoOriginal,
+    Element,
+    isTextFontColor,
+    isTextualElement,
+    isVisualElementPosition,
+    isSubtitle,
+    isTextFont,
+    isTextAligment,
+    isTextFontSize,
+    TextFont,
+    isVisualElementSize,
+    isVisualElementBackground,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -77,9 +80,8 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
-        Subtitle: validator.checkSubtitle,
-        FontSetting: validator.checkFontSetting,
-        TextSetting: validator.checkTextSetting,
+        Element: validator.checkElement
+
     };
     registry.register(checks, validator);
 }
@@ -237,41 +239,44 @@ export class VideoMlValidator {
         }
     }
 
-    checkSubtitle(subtitle: Subtitle, accept: ValidationAcceptor): void {
-        this.checkSubtitleLength(subtitle, accept);
-        subtitle.settings.forEach((setting) => {
-            if(isBackgroundColorSetting(setting)) {
-                this.checkColor(setting.color, subtitle, 'settings', accept);
-            } else if (isFontColorSetting(setting)) {
-                this.checkColor(setting.color, subtitle, 'settings', accept);
+
+    checkElement(element: Element, accept: ValidationAcceptor): void {
+        if(isTextualElement(element)) {
+            this.checkTextualElement(element, accept);
+        }
+    }
+
+    checkTextualElement(element: Element, accept: ValidationAcceptor): void {
+        if (isSubtitle(element)) {
+            this.checkSubtitleLength(element, accept);
+        }
+        if (!element.options) return;
+        element.options.forEach((option) => {
+            if (isTextFontColor(option)) {
+                this.checkColor(option.color, option, 'color', accept);
+            } else if(isVisualElementPosition(option) && isSubtitle(element)){
+                accept('error', 'Position is not allowed in subtitle elements', { node: option });
+            } else if (isTextFont(option)) {
+                this.checkFontSetting(option, accept);
+            } else if (isTextAligment(option)) {
+                const validAlignments = ['left', 'center', 'right'];
+                if (!validAlignments.includes(option.alignment)) {
+                    accept('error', 'Alignment must be "left", "center" or "right"', { node: option, property: 'alignment' });
+                }
+            } else if (isTextFont(option)) {
+                this.checkFontSetting(option, accept);
+            } else if (isTextFontSize(option)) {
+                if (option.size < 0 || option.size > 128) {
+                    accept('error', 'Font size must be between 0 and 128', { node: option, property: 'size' });
+                }
+            }
+            if(!(isVisualElementPosition(option) || isTextFont(option) || isTextAligment(option) || isTextFontColor(option) || isTextFontSize(option) || isVisualElementSize(option) || isVisualElementBackground(option))) {
+                accept('error', 'Invalid option for textual element', { node: option });
             }
         });
     }
 
-     checkTextSetting(textSetting: TextSetting, accept: ValidationAcceptor): void {
-        if (isFontSetting(textSetting)) {
-            this.checkFontSetting(textSetting, accept);
-        } else if (isFontSizeSetting(textSetting)) {
-            if (textSetting.size < 0 || textSetting.size > 128) {
-                accept('error', 'Font size must be between 0 and 128', { node: textSetting, property: 'size' });
-            }
-        } else if (isAlignmentSetting(textSetting)) {
-            const validAlignments = ['left', 'center', 'right'];
-            if (!validAlignments.includes(textSetting.value)) {
-                accept('error', 'Alignment must be "left", "center" or "right"', { node: textSetting, property: 'value' });
-            }
-        } else if (isPositionSetting(textSetting)) {
-            if (textSetting.x < 0 || textSetting.y < 0) {
-                accept('error', 'Position must be positive', { node: textSetting, property: 'x' });
-            }
-        } else if (isBackgroundColorSetting(textSetting)) {
-            this.checkColor(textSetting.color, textSetting, 'color', accept);
-        } else if (isFontColorSetting(textSetting)) {
-            this.checkColor(textSetting.color, textSetting, 'color', accept);
-        } 
-    }
-
-    checkFontSetting(fontSetting: FontSetting, accept: ValidationAcceptor): void {
+    checkFontSetting(fontSetting: TextFont, accept: ValidationAcceptor): void {
         const validFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino Linotype', 'Book Antiqua', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact'];
         if (!validFonts.includes(fontSetting.name)) {
             accept('error', 'Font must be a valid font name', { node: fontSetting, property: 'name' });

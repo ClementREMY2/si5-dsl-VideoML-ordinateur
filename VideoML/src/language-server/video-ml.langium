@@ -10,42 +10,49 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(VisualElement) 'in' name=ID;
+	(Video | TextualElement) options+=Option* 'in' name=ID;
 
-VisualElement:
-	(Video | Text | Subtitle);
+Option:
+	(VisualElementOption);
+
+VisualElementOption:
+	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+
+VisualElementBackground:
+	'background' color=STRING;
+
+VisualElementPosition:
+	'position' x=INT ',' y=INT;
+
+VisualElementSize:
+	'size' width=INT ',' height=INT;
+
+TextOption:
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+
+TextFontSize:
+	'fontsize' size=INT;
+
+TextFontColor:
+	'fontcolor' color=STRING;
+
+TextFont:
+	'font' name=STRING;
+
+TextShadow:
+	'shadow' color=STRING;
+
+TextAligment:
+	'alignment' alignment=STRING;
+
+TextualElement:
+	(Text | Subtitle);
 
 Text:
-	'text' text=STRING
-	settings+=TextSetting*;
+	'text' text=STRING;
 
 Subtitle:
-	'subtitle' text=STRING
-	settings+=TextSetting*;
-
-TextSetting:
-	BackgroundColorSetting | BackgroundSizeSetting | FontSetting | FontSizeSetting | FontColorSetting | AlignmentSetting | PositionSetting;
-
-	BackgroundColorSetting:
-		'backgroundcolor' color=STRING;
-
-	BackgroundSizeSetting:
-		'backgroundsize' x=INT ',' y=INT;
-
-	FontSetting:
-		'font' name=STRING;
-
-	FontSizeSetting:
-		'fontsize' size=INT;
-
-	FontColorSetting:
-		'fontcolor' color=STRING;
-
-	AlignmentSetting:
-		'alignment' value=('left' | 'center' | 'right');
-
-	PositionSetting:
-		'position' x=INT ',' y=INT;
+	'subtitle' text=STRING;
 
 Video:
 	(VideoOriginal | VideoExtract);
