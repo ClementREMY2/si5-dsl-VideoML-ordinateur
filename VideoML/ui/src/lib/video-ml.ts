@@ -61,15 +61,16 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'add','as','at','by','delayed','end','in','layer','load','of','project','start','timeline','to','video'
+        'as','at','by','delayed','end','in','layer','load','of','project','start','video'
     ],
     operators: [
-        '+'
+        ':'
     ],
-    symbols: /\+/,
+    symbols: /:/,
 
     tokenizer: {
         initial: [
+            { regex: /#[0-9]+/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },

@@ -64,9 +64,9 @@ export function registerValidationChecks(services: VideoMlServices) {
 export class VideoMlValidator {
     checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
         this.checkOutputFileName(videoProject, accept);
-        this.checkOneTimelineElementAtStart(videoProject, accept);
+        this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
-        this.checkUniqueNameForTimelineElements(videoProject, accept);
+        this.checkNameForTimelineElements(videoProject, accept);
     }
 
     async checkVideo(video: Video, accept: ValidationAcceptor): Promise<void> {
@@ -77,15 +77,27 @@ export class VideoMlValidator {
         this.checkTimelineElementLayer(element, accept);
     }
 
-    // Check if all timeline elements have unique names
-    checkUniqueNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
-        const names = new Set<string>();
+    // Check timeline elemnts names (unique and ordered, first must be 1)
+    checkNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // Check if first is 1
+        const firstElement = videoProject.timelineElements[0];
+        if (firstElement && firstElement.name !== '#1') {
+            accept('error', 'First timeline element must have identifier 1', { node: firstElement, property: 'name' });
+            return;
+        }
+
+        // Check if ordered and unique
+        const ids = new Set<string>();
+        let lastId = 0;   
         for (const element of videoProject.timelineElements) {
-            if (names.has(element.name)) {
-                accept('error', `Name "${element.name}" is already used.`, { node: element, property: 'name' });
-            } else {
-                names.add(element.name);
+            if (ids.has(element.name)) {
+                accept('error', 'Timeline elements must have unique identifiers', { node: element, property: 'name' });
             }
+            ids.add(element.name);
+            if (parseInt(element.name.slice(1)) !== lastId + 1) {
+                accept('error', `Timeline elements must have ordered identifiers (this one should be #${lastId + 1})`, { node: element, property: 'name' });
+            }
+            lastId = parseInt(element.name.slice(1));
         }
     }
 
@@ -108,7 +120,7 @@ export class VideoMlValidator {
 
         for (let i = 0; i < videoProject.timelineElements.length; i++) {
             const element = videoProject.timelineElements[i];
-            if (isRelativeTimelineElement(element)) {
+            if (isRelativeTimelineElement(element) && element.relativeTo.ref) {
                 currentAnalyzingElement = element;
                 recursivePath = [];
                 if (isInfiniteRecursion(element)) {
@@ -147,12 +159,12 @@ export class VideoMlValidator {
         });
     }
 
-    // Check if at least one timeline element is present at start
-    checkOneTimelineElementAtStart(videoProject: VideoProject, accept: ValidationAcceptor): void {
+    // Check paramaters of the first element in the timeline
+    checkTimelineElementAtStart(videoProject: VideoProject, accept: ValidationAcceptor): void {
         if (videoProject.timelineElements.length > 0) {
-            const elementAtStart = videoProject.timelineElements.find((element) => isFixedTimelineElement(element) && element.startAt === '00:00');
-            if (!elementAtStart) {
-                accept('error', 'At least one timeline element must be present at start (00:00)', { node: videoProject, property: 'timelineElements' });
+            const firstElement = videoProject.timelineElements[0];
+            if (isRelativeTimelineElement(firstElement) || isFixedTimelineElement(firstElement)) {
+                accept('error', 'First element in timeline must not have time parameters, it will be the starting point of the video (00:00)', { node: firstElement });
             }
         }
     }

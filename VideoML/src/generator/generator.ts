@@ -20,6 +20,11 @@ function helperTimeToSeconds(time: string): number {
     return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
 }
 
+function formatTimelineElementName(name: string | undefined): string {
+    if (!name) throw new Error('Timeline element name is missing');
+    return `timeline_element_${name.slice(1)}`;
+}
+
 export function generatePythonProgram(videoProject: VideoProject): string {
     const fileNode = new CompositeGeneratorNode();
     compile(videoProject, fileNode)
@@ -65,16 +70,18 @@ ${element.name} = moviepy.VideoFileClip("${video.filePath}")
 }
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${te.name} = `);
+    fileNode.append(`${formatTimelineElementName(te.name)} = `);
     if (isRelativeTimelineElement(te)) {
         compileRelativeTimelineElement(te, fileNode);
     } else if (isFixedTimelineElement(te)) {
         compileFixedTimelineElement(te, fileNode);
+    } else {
+        fileNode.append(`${te.element.ref?.name}`, NL);
     }
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${rte.element.ref?.name}.with_start(${rte.relativeTo.ref?.name}`);
+    fileNode.append(`${rte.element.ref?.name}.with_start(${formatTimelineElementName(rte.relativeTo.ref?.name)}`);
     if (isStartRelativeTimelineElement(rte)) {
         fileNode.append(`.start`);
     } else if (isEndRelativeTimelineElement(rte)) {
@@ -99,7 +106,7 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
-    const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
+    const timelineElementsJoined = orderedTimelineElements.map((te) => formatTimelineElementName(te.name)).join(', ');
     fileNode.append(
 `# Concatenate all clips
 final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])

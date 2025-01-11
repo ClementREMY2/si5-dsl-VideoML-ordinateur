@@ -10,22 +10,22 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	'load' (Media) 'in' name=ID;
+	(Media) 'as' name=ID;
 
 Media:
 	(Video);
 
 Video:
-	'video' filePath=STRING;
+	'load' filePath=STRING;
 
 TimelineElement:
-	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
+	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('in' 'layer' layer=INT)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
 
 RelativeTimelineElement:
-	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
 
 StartRelativeTimelineElement:
 	{infer StartRelativeTimelineElement}
@@ -36,6 +36,8 @@ EndRelativeTimelineElement:
 	'end';
 
 hidden terminal WS: /\s+/;
+// Hashtag ID forma
+terminal HASHTAG_ID returns string: /#[0-9]+/;
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME

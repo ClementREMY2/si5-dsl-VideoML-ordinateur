@@ -58,7 +58,7 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
 
         const handleError = (error: string) => {
             // Check if error traceback is not empty and don't contains only whitespaces
-            if (!error.match(/^\s*$/)) {
+            if (!error.match(/^\s*$/) && error.indexOf('warnings.warn') === -1) {
                 setErrorTraceback((prev) => prev ? `${prev}\n${error}` : error);
             }
         };
