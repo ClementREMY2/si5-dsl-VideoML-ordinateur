@@ -10,7 +10,6 @@ import { validateFilePath } from '../lib/generated/validators/special-validators
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -26,6 +25,8 @@ process.env.APP_ROOT = path.join(__dirname, '..')
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+
+const PYTHON_PATH = process.platform === "win32" ? "py" : "python3";
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
@@ -92,7 +93,7 @@ function createWindow() {
 
   ipcMain.handle('is-python-installed', async () => {
     try {
-      const pythonCheck = spawn(process.platform === "win32" ? "py" : "python3", ["--version"]);
+      const pythonCheck = spawn(PYTHON_PATH, ["--version"]);
   
       const result = await new Promise((resolve) => {
         pythonCheck.stdout.on("data", () => {
@@ -117,12 +118,7 @@ function createWindow() {
   });
 
   ipcMain.handle('install-requirements', async () => {
-    let requirements;
-    if (process.platform === "win32") {
-      requirements = spawn("py", ["-m", "pip", "install", "-r", "requirements.txt"]);
-    } else {
-       requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
-    }
+    const requirements = spawn(PYTHON_PATH, ["-m", "pip", "install", "-r", "requirements.txt"]);
 
     const result = await new Promise((resolve, reject) => {
       requirements.stdout.on("data", (result) => {
@@ -146,12 +142,7 @@ function createWindow() {
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
-    if (process.platform === "win32") {
-      pythonProcess = spawn("py", [fullPath]);
-    } else {
-      pythonProcess = spawn("python3", [fullPath]);
-    }
-
+    pythonProcess = spawn(PYTHON_PATH, [fullPath]);
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
