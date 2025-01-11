@@ -14,7 +14,7 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
 
-    return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoElement?.duration || 0 : 0);
+    return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoElement?.duration || relativeToElement.textElement?.duration || 0 : 0);
 }
 
 const resolvePath = async (filePath: string): Promise<string> => {
@@ -82,7 +82,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             element.startAt = getStartAtRecursively(element, populatedDurationElements);
         }
 
-        element.finishAt = (element.startAt || 0) + (element.videoElement?.duration || 0);
+        element.finishAt = (element.startAt || 0) + (element.videoElement?.duration || element.textElement?.duration || 0);
 
         return element;
     });

@@ -7,6 +7,8 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
+    isText,
+    isSubtitle,
 } from '../../language-server/generated/ast.js';
 import { TimelineElementInfo } from './types.js';
 
@@ -24,11 +26,21 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
 
     const info: TimelineElementInfo = {
         name: te.name,
-        videoElement: {
-            name: te.element.ref.name,
-            filePath: isVideo(te.element.ref) ? te.element.ref.filePath : undefined,
-            // duration: ??? // TODO : fill if it's an extract
-        },
+        ...(isVideo(te.element.ref) ? {
+            videoElement: {
+                name: te.element.ref.name,
+                filePath: te.element.ref.filePath,
+                // duration: ??? // TODO : fill if it's an extract
+            }
+        } : {}),
+        ...(isText(te.element.ref) || isSubtitle(te.element.ref) ? {
+            textElement: {
+                name: te.element.ref.name,
+                text: te.element.ref.text,
+                duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
+                isSubtitle: isSubtitle(te.element.ref)
+            }
+        } : {}),
         layer: te.layer || 0,
         ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
         ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),

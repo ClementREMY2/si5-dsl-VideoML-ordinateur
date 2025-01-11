@@ -23,8 +23,8 @@ export const Timeline: React.FC = () => {
           startTime: element.startAt || 0,
           endTime: element.finishAt || 0,
           layer: element.layer,
-          title: element.videoElement?.name || 'unknown',
-          type: element.videoElement ? 'video' : 'unknown',
+          title: element.videoElement?.name || element.textElement?.name || 'Unknown',
+          type: element.videoElement ? 'video' : element.textElement ? element.textElement.isSubtitle ? 'subtitle' : 'text' : 'unknown',
         }
 
         if (acc[element.layer]) {

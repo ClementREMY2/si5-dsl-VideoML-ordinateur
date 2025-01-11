@@ -112,7 +112,7 @@ function createWindow() {
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
-    pythonProcess = spawn("python", [fullPath]);
+    pythonProcess = spawn("python3", [fullPath]);
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
