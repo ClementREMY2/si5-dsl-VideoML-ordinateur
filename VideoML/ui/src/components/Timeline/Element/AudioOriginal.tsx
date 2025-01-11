@@ -5,7 +5,7 @@ type TimelineElementAudioProps = {
     element: TimelineElementInfoFormatted;
 };
 
-export const TimelineElementAudio: React.FC<TimelineElementAudioProps> = ({ element }) => (
+export const TimelineElementAudioOriginal: React.FC<TimelineElementAudioProps> = ({ element }) => (
     <TimelineElementWrapper element={element} color="secondary">
             {element.id} - {element.title} ({formatTime(element.endTime - element.startTime)})
     </TimelineElementWrapper>

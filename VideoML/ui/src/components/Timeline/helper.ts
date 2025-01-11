@@ -13,5 +13,5 @@ export interface TimelineElementInfoFormatted {
     endTime: number; // in seconds
     layer: number;
     title: string;
-    type: 'VideoOriginal' | 'VideoExtract' | 'Audio' | 'unknown';
+    type: 'VideoOriginal' | 'VideoExtract' | 'AudioOriginal' | 'AudioExtract' | 'unknown';
   }

@@ -14,20 +14,26 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     if (!relativeToElement) return 0;
 
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
+    const offset = element.relativePlacement.offset;
+    const place = element.relativePlacement.place === 'END';
 
     if (element.videoOriginalElement) { 
-        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoOriginalElement?.duration || 0 : 0);
+        return relativeStartAt + offset + (place ? relativeToElement.videoOriginalElement?.duration || 0 : 0);
     }
     else if (element.videoExtractElement) {
-        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoExtractElement?.duration || 0 : 0);
+        return relativeStartAt + offset + (place ? relativeToElement.videoExtractElement?.duration || 0 : 0);
     }
-    else if (element.audioElement) {
-        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.audioElement?.duration || 0 : 0);
+    else if (element.audioOriginalElement) {
+        return relativeStartAt + offset + (place ? relativeToElement.audioOriginalElement?.duration || 0 : 0);
+    }
+    else if (element.audioExtractElement) {
+        return relativeStartAt + offset + (place ? relativeToElement.audioExtractElement?.duration || 0 : 0);
     }
     else {
         return 0;
     }
 }
+
 
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
@@ -57,19 +63,19 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
                 element.error = 'LOAD_VIDEO';
             }
         }
-        else if (element.audioElement) {
+        else if (element.audioOriginalElement) {
 
-            if (element.audioElement.duration) {
+            if (element.audioOriginalElement.duration) {
                 return element;
             }
 
-            if (!element['audioElement']['filePath']) {
+            if (!element['audioOriginalElement']['filePath']) {
                 element['error'] = 'NO_FILEPATH';
                 return element;
             }
 
             try {
-                element.audioElement.duration = await getCachedVideoDuration(element.audioElement.filePath);
+                element.audioOriginalElement.duration = await getCachedVideoDuration(element.audioOriginalElement.filePath);
             } catch (error) {
                 console.error('Error loading audio:', error);
                 element.error = 'LOAD_VIDEO';
@@ -94,8 +100,11 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         else if (element.videoExtractElement) {
             element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
         }
-        else if (element.audioElement) {
-            element.finishAt = (element.startAt || 0) + (element.audioElement.duration || 0);
+        else if (element.audioOriginalElement) {
+            element.finishAt = (element.startAt || 0) + (element.audioOriginalElement.duration || 0);
+        }
+        else if (element.audioExtractElement) {
+            element.finishAt = (element.startAt || 0) + (element.audioExtractElement.duration || 0);
         }
         return element;
     });

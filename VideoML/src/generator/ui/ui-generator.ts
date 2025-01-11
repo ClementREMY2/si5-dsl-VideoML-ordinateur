@@ -8,7 +8,8 @@ import {
     TimelineElement,
     isVideoOriginal,
     isVideoExtract,
-    isAudio
+    isAudioOriginal,
+    isAudioExtract,
 } from '../../language-server/generated/ast.js';
 import { helperTimeToSeconds } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
@@ -45,12 +46,24 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
             ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
         };
-    } else if (isAudio(te.element.ref)) {
+    } else if (isAudioOriginal(te.element.ref)) {
         info = {
             name: te.name,
-            audioElement: {
+            audioOriginalElement: {
                 name: te.element.ref.name,
                 filePath: te.element.ref.filePath,
+            },
+            layer: te.layer || 0,
+            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
+            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+        };
+    } else if (isAudioExtract(te.element.ref)) {
+        info = {
+            name: te.name,
+            audioExtractElement: {
+                name: te.element.ref.name,
+                duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
+                //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
             },
             layer: te.layer || 0,
             ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),

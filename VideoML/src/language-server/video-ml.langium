@@ -13,7 +13,13 @@ Element:
 	(VisualElement | Audio) 'as' name=ID;
 
 Audio:
+	(AudioOriginal | AudioExtract);
+
+AudioOriginal:
 	'load' 'audio' filePath=STRING;
+
+AudioExtract:
+	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
 
 VisualElement:
 	(Video);
@@ -25,7 +31,7 @@ VideoOriginal:
 	'load' 'video' filePath=STRING;
 
 VideoExtract:
-	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
 	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;

@@ -2,12 +2,12 @@ export interface TimelineElementInfo {
     name: string;
     startAt?: number;
     layer: number;
-    audioElement?: {
+    audioOriginalElement?: {
         name: string;
         filePath: string;
         duration?: number;
     }
-    videoExtractElement?: {
+    audioExtractElement?: {
         name: string;
         duration?: number;
         source?: string;
@@ -16,6 +16,11 @@ export interface TimelineElementInfo {
         name: string;
         filePath?: string;
         duration?: number;
+    }
+    videoExtractElement?: {
+        name: string;
+        duration?: number;
+        source?: string;
     }
     relativePlacement?: {
         offset: number;
