@@ -1,4 +1,4 @@
-import { ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
     VideoMLAstType,
@@ -7,6 +7,16 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
+    Subtitle,
+    isBackgroundColorSetting,
+    isFontColorSetting,
+    FontSetting,
+    isFontSetting,
+    isFontSizeSetting,
+    isAlignmentSetting,
+    isPositionSetting,
+    TextSetting,
+    isVideo,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -54,6 +64,9 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoProject: validator.checkVideoProject,
         Video: validator.checkVideo,
         TimelineElement: validator.checkTimelineElement,
+        Subtitle: validator.checkSubtitle,
+        FontSetting: validator.checkFontSetting,
+        TextSetting: validator.checkTextSetting,
     };
     registry.register(checks, validator);
 }
@@ -75,6 +88,7 @@ export class VideoMlValidator {
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
         this.checkTimelineElementLayer(element, accept);
+        this.checkDuration(element, accept);
     }
 
     // Check if all timeline elements have unique names
@@ -162,5 +176,66 @@ export class VideoMlValidator {
         if (element.layer === 0) {
             accept('error', 'Layer 0 is the default layer, use a number greater than 0 to specify another layer', { node: element, property: 'layer' });
         }
+    }
+
+    checkSubtitle(subtitle: Subtitle, accept: ValidationAcceptor): void {
+        this.checkSubtitleLength(subtitle, accept);
+        subtitle.settings.forEach((setting) => {
+            if(isBackgroundColorSetting(setting)) {
+                this.checkColor(setting.color, subtitle, 'settings', accept);
+            } else if (isFontColorSetting(setting)) {
+                this.checkColor(setting.color, subtitle, 'settings', accept);
+            }
+        });
+    }
+
+     checkTextSetting(textSetting: TextSetting, accept: ValidationAcceptor): void {
+        if (isFontSetting(textSetting)) {
+            this.checkFontSetting(textSetting, accept);
+        } else if (isFontSizeSetting(textSetting)) {
+            if (textSetting.size < 0 || textSetting.size > 128) {
+                accept('error', 'Font size must be between 0 and 128', { node: textSetting, property: 'size' });
+            }
+        } else if (isAlignmentSetting(textSetting)) {
+            const validAlignments = ['left', 'center', 'right'];
+            if (!validAlignments.includes(textSetting.value)) {
+                accept('error', 'Alignment must be "left", "center" or "right"', { node: textSetting, property: 'value' });
+            }
+        } else if (isPositionSetting(textSetting)) {
+            if (textSetting.x < 0 || textSetting.y < 0) {
+                accept('error', 'Position must be positive', { node: textSetting, property: 'x' });
+            }
+        } else if (isBackgroundColorSetting(textSetting)) {
+            this.checkColor(textSetting.color, textSetting, 'color', accept);
+        } else if (isFontColorSetting(textSetting)) {
+            this.checkColor(textSetting.color, textSetting, 'color', accept);
+        } 
+    }
+
+    checkFontSetting(fontSetting: FontSetting, accept: ValidationAcceptor): void {
+        const validFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino Linotype', 'Book Antiqua', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact'];
+        if (!validFonts.includes(fontSetting.name)) {
+            accept('error', 'Font must be a valid font name', { node: fontSetting, property: 'name' });
+        }
+    }
+
+    checkColor(color: string, node: AstNode, property: string, accept: ValidationAcceptor): void {
+        const validColors = ['red', 'green', 'blue', 'yellow', 'black', 'white', 'gray', 'purple', 'orange', 'pink', 'brown'];
+        if (!validColors.includes(color.toLowerCase())) {
+            accept('error', 'Color must be a valid color name', { node, property });
+        }
+    }
+
+    checkSubtitleLength(subtitle: Subtitle, accept: ValidationAcceptor): void {
+        if (subtitle.text.length > 100) {
+            accept('warning', 'Subtitle length is long, it is recommended to be less than 100 characters', { node: subtitle, property: 'text' });
+        }
+    }
+
+    checkDuration(element: TimelineElement, accept: ValidationAcceptor): void {
+        if (element.duration && isVideo(element.element.ref)) {
+            accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
+        }
+    
     }
 }
