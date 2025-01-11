@@ -2,6 +2,7 @@ import React, { useState, ReactNode, useMemo, useCallback } from 'react';
 import { TimelineContext, PopulatedTimelineElementInfo } from './Context';
 import { TimelineElementInfo } from '../../../../lib/generated/generator/types';
 import { getCachedVideoDuration } from '../../../lib/video-duration-getter';
+import { getCachedAudioDuration } from '../../../lib/audio-duration-getter';
 
 interface TimelineProviderProps {
     children: ReactNode;
@@ -75,7 +76,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                element.audioOriginalElement.duration = await getCachedVideoDuration(element.audioOriginalElement.filePath);
+                element.audioOriginalElement.duration = await getCachedAudioDuration(element.audioOriginalElement.filePath);
             } catch (error) {
                 console.error('Error loading audio:', error);
                 element.error = 'LOAD_VIDEO';

@@ -2,7 +2,6 @@ import { CompositeGeneratorNode, NL, toString } from 'langium/generate';
 import {
     VideoProject,
     Element,
-    isVisualElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
     isStartRelativeTimelineElement,
@@ -10,7 +9,8 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
-    VisualElement,
+    Video,
+    isVideo,
     VideoOriginal,
     isVideoOriginal,
     VideoExtract,
@@ -48,8 +48,8 @@ final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
 function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if (isVisualElement(element)) {
-        compileVisualElement(element, element, fileNode);
+    if (isVideo(element)) {
+        compileVideo(element, element, fileNode);
     }
     else if (isAudio(element)) {
         compileAudio(element, element, fileNode);
@@ -79,17 +79,17 @@ ${element.name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.sub
 `, NL);
 }
 
-// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVisualElement(visualElement: VisualElement, element: Element, fileNode: CompositeGeneratorNode) {
-    if (isVideoOriginal(visualElement)) {
-        compileVideoOriginal(visualElement, element, fileNode);
+// We have video and element as separate parameters because in the AST subtypes are weirdly not used
+function compileVideo(video: Video, element: Element, fileNode: CompositeGeneratorNode) {
+    if (isVideoOriginal(video)) {
+        compileVideoOriginal(video, element, fileNode);
     }
-    else if (isVideoExtract(visualElement)) {
-        compileVideoExtract(visualElement, element, fileNode);
+    else if (isVideoExtract(video)) {
+        compileVideoExtract(video, element, fileNode);
     }
 }
 
-// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
+// We have videoOriginal and element as separate parameters because in the AST subtypes are weirdly not used
 function compileVideoOriginal(videoOriginal: VideoOriginal, element: Element, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Load the video clip original

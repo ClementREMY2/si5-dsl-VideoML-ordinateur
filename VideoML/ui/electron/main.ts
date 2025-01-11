@@ -176,6 +176,13 @@ function createWindow() {
               itPerSecond
             });
         }
+      } else {
+        // Send error to renderer process if it's not a progress update
+        const ignoreRegex = /chunk|frame_index/;
+        const stringError = err.toString();
+        if (!ignoreRegex.test(stringError) && win) {
+          win.webContents.send('video-generation-error', stringError);
+        }
       }
     });
 
