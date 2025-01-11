@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
 import { validateFilePath } from '../lib/generated/validators/special-validators'
@@ -24,6 +25,8 @@ process.env.APP_ROOT = path.join(__dirname, '..')
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+
+const PYTHON_PATH = process.platform === "win32" ? "py" : "python3";
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
@@ -72,49 +75,28 @@ function createWindow() {
   });
 
   ipcMain.handle('get-pwd', async () => {
-    const pwd = spawn("pwd");
-
-    const result = await new Promise((resolve, reject) => {
-      pwd.stdout.on("data", (result) => {
-        resolve(result.toString());
-      });
-      pwd.stderr.on("data", (err) => {
-        console.log(err.toString());
-        reject(err.toString());
-      });
-    });
-
-    return result;
+    return process.cwd();
   });
 
-  ipcMain.handle('generate-python-file', async (_, code, path) => {
-    const fullPath = path.replace(/\n$/, '') + '/video.py';
-    const quotedCode = `'''${code}'''`;
-    const pythonFile = spawn("echo", [quotedCode, ">", fullPath], { shell: true });
+  ipcMain.handle('generate-python-file', async (_, code, dirPath) => {
+    const fullPath = path.join(dirPath.replace(/\n$/, ''), 'video.py');
 
-    const result = await new Promise((resolve, reject) => {
-      pythonFile.stdout.on("data", (result) => {
-        resolve(result.toString());
-      });
-      pythonFile.stderr.on("data", (err) => {
-        console.log(err.toString());
-        reject(err.toString());
-      });
-      pythonFile.on("close", (code) => {
-        if (code === 0) {
-            resolve(`File created at ${fullPath}`);
+    try {
+        await fs.promises.writeFile(fullPath, code);
+        return `File created at ${fullPath}`;
+    } catch (err) {
+        console.error(err);
+        if (err instanceof Error) {
+            throw new Error(`Failed to create file: ${err.message}`);
         } else {
-            reject(`Process exited with code ${code}`);
+            throw new Error('Failed to create file: Unknown error');
         }
-    });
-    });
-
-    return result;
-  });
+    }
+});
 
   ipcMain.handle('is-python-installed', async () => {
     try {
-      const pythonCheck = spawn("python3", ["--version"]);
+      const pythonCheck = spawn(PYTHON_PATH, ["--version"]);
   
       const result = await new Promise((resolve) => {
         pythonCheck.stdout.on("data", () => {
@@ -139,7 +121,7 @@ function createWindow() {
   });
 
   ipcMain.handle('install-requirements', async () => {
-    const requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
+    const requirements = spawn(PYTHON_PATH, ["-m", "pip", "install", "-r", "requirements.txt"]);
 
     const result = await new Promise((resolve, reject) => {
       requirements.stdout.on("data", (result) => {
@@ -163,10 +145,11 @@ function createWindow() {
   let pythonProcess: ChildProcessWithoutNullStreams | undefined;
   ipcMain.handle('generate-video', (_, path) => {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
-    pythonProcess = spawn("python3", [fullPath]);
+    pythonProcess = spawn(PYTHON_PATH, [fullPath]);
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
+      console.error('Python process error:', err.toString());
       // frame_index:  10%|▉         | 134/1354 [00:01<00:16, 73.30it/s, now=None]
       // Extract progess, processed frame, total frame, elapsed time, eta time, its
 
