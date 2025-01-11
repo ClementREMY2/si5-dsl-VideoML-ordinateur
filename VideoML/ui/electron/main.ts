@@ -71,19 +71,6 @@ function createWindow() {
   });
 
   ipcMain.handle('get-pwd', async () => {
-    // const pwd = spawn("pwd");
-
-    // const result = await new Promise((resolve, reject) => {
-    //   pwd.stdout.on("data", (result) => {
-    //     resolve(result.toString());
-    //   });
-    //   pwd.stderr.on("data", (err) => {
-    //     console.log(err.toString());
-    //     reject(err.toString());
-    //   });
-    // });
-
-    // return result;
     return process.cwd();
   });
 
@@ -133,8 +120,7 @@ function createWindow() {
     let requirements;
     if (process.platform === "win32") {
       requirements = spawn("py", ["-m", "pip", "install", "-r", "requirements.txt"]);
-    }
-    else {
+    } else {
        requirements = spawn("python3", ["-m", "pip", "install", "-r", "requirements.txt"]);
     }
 
@@ -162,8 +148,7 @@ function createWindow() {
     const fullPath = path.replace(/\n$/, '') + '/video.py';
     if (process.platform === "win32") {
       pythonProcess = spawn("py", [fullPath]);
-    }
-    else {
+    } else {
       pythonProcess = spawn("python3", [fullPath]);
     }
 
