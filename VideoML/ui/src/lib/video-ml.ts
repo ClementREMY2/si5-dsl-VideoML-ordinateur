@@ -61,7 +61,7 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'as','at','by','delayed','end','in','layer','load','of','project','start','video'
+        'as','at','by','delayed','end','extract','from','in','layer','load','of','project','start','to','video'
     ],
     operators: [
         ':'

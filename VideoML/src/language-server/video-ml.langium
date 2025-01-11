@@ -10,13 +10,19 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Media) 'as' name=ID;
+	(VisualElement) 'as' name=ID;
 
-Media:
+VisualElement:
 	(Video);
 
 Video:
+	(VideoOriginal | VideoExtract);
+
+VideoOriginal:
 	'load' filePath=STRING;
+
+VideoExtract:
+	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
 	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('in' 'layer' layer=INT)?;

@@ -16,6 +16,7 @@ export const Timeline: React.FC = () => {
   const { timelineElementInfos, isTimelineLoaded } = useTimeline();
 
   // Group elements by layers
+
   const layers = useMemo(
     () => timelineElementInfos
       .reduce((acc, element) => {
@@ -24,8 +25,8 @@ export const Timeline: React.FC = () => {
           startTime: element.startAt || 0,
           endTime: element.finishAt || 0,
           layer: element.layer,
-          title: element.videoElement?.name || 'unknown',
-          type: element.videoElement ? 'video' : 'unknown',
+          title: element.videoOriginalElement?.name  || element.videoExtractElement?.name || 'unknown',
+          type: element.videoExtractElement ? 'VideoExtract' : element.videoOriginalElement ? 'VideoOriginal' : 'unknown',
         }
 
         if (acc[element.layer]) {

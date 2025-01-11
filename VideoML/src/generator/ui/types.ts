@@ -2,7 +2,12 @@ export interface TimelineElementInfo {
     name: string;
     startAt?: number;
     layer: number;
-    videoElement?: {
+    videoExtractElement?: {
+        name: string;
+        duration?: number;
+        source?: string;
+    }
+    videoOriginalElement?: {
         name: string;
         filePath?: string;
         duration?: number;

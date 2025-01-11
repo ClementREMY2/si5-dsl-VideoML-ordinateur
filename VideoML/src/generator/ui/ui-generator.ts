@@ -1,19 +1,16 @@
 import {
     VideoProject,
-    isVideo,
     isRelativeTimelineElement,
     RelativeTimelineElement,
     isStartRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
+    isVideoOriginal,
+    isVideoExtract,
 } from '../../language-server/generated/ast.js';
+import { helperTimeToSeconds } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
-
-function helperTimeToSeconds(time: string): number {
-    const timeArray = time.split(':');
-    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
-}
 
 export function generateTimelineElementInfos(videoProject: VideoProject): TimelineElementInfo[] {
     return videoProject.timelineElements.map(compileTimelineElement);
@@ -22,17 +19,35 @@ export function generateTimelineElementInfos(videoProject: VideoProject): Timeli
 function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
     if (!te.element.ref) throw new Error('Element reference is missing');
 
-    const info: TimelineElementInfo = {
-        name: te.name,
-        videoElement: {
-            name: te.element.ref.name,
-            filePath: isVideo(te.element.ref) ? te.element.ref.filePath : undefined,
-            // duration: ??? // TODO : fill if it's an extract
-        },
-        layer: te.layer || 0,
-        ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-        ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
-    };
+    let info: TimelineElementInfo
+
+    if (isVideoOriginal(te.element.ref)) {
+        info = {
+            name: te.name,
+            videoOriginalElement: {
+                name: te.element.ref.name,
+                filePath: te.element.ref.filePath,
+            },
+            layer: te.layer || 0,
+            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
+            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+        };
+    } else if (isVideoExtract(te.element.ref)) {
+        info = {
+            name: te.name,
+            videoExtractElement: {
+                name: te.element.ref.name,
+                duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
+                source: "prout"
+            },
+            layer: te.layer || 0,
+            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
+            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+        };
+    } else {
+        throw new Error('Unknown element type');
+    }
+
 
     return info;
 }
