@@ -1,4 +1,4 @@
-import { ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
     VideoMLAstType,
@@ -6,6 +6,8 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
+    Subtitle,
+    isVideo,
     VideoOriginal,
     VideoExtract,
     isVideoExtract,
@@ -14,6 +16,17 @@ import {
     AudioExtract,
     isAudioOriginal,
     isAudioExtract,
+    Element,
+    isTextFontColor,
+    isTextualElement,
+    isVisualElementPosition,
+    isSubtitle,
+    isTextFont,
+    isTextAligment,
+    isTextFontSize,
+    TextFont,
+    isVisualElementSize,
+    isVisualElementBackground,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -73,6 +86,8 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
+        Element: validator.checkElement
+
     };
     registry.register(checks, validator);
 }
@@ -145,6 +160,7 @@ export class VideoMlValidator {
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
         this.checkTimelineElementLayer(element, accept);
+        this.checkDuration(element, accept);
     }
 
     // Check if all timeline elements have unique names
@@ -296,5 +312,69 @@ export class VideoMlValidator {
         if (element.layer === 0) {
             accept('error', 'Layer 0 is the default layer, use a number greater than 0 to specify another layer', { node: element, property: 'layer' });
         }
+    }
+
+
+    checkElement(element: Element, accept: ValidationAcceptor): void {
+        if(isTextualElement(element)) {
+            this.checkTextualElement(element, accept);
+        }
+    }
+
+    checkTextualElement(element: Element, accept: ValidationAcceptor): void {
+        if (isSubtitle(element)) {
+            this.checkSubtitleLength(element, accept);
+        }
+        if (!element.options) return;
+        element.options.forEach((option) => {
+            if (isTextFontColor(option)) {
+                this.checkColor(option.color, option, 'color', accept);
+            } else if(isVisualElementPosition(option) && isSubtitle(element)){
+                accept('error', 'Position is not allowed in subtitle elements', { node: option });
+            } else if (isTextFont(option)) {
+                this.checkFontSetting(option, accept);
+            } else if (isTextAligment(option)) {
+                const validAlignments = ['left', 'center', 'right'];
+                if (!validAlignments.includes(option.alignment)) {
+                    accept('error', 'Alignment must be "left", "center" or "right"', { node: option, property: 'alignment' });
+                }
+            } else if (isTextFont(option)) {
+                this.checkFontSetting(option, accept);
+            } else if (isTextFontSize(option)) {
+                if (option.size < 0 || option.size > 128) {
+                    accept('error', 'Font size must be between 0 and 128', { node: option, property: 'size' });
+                }
+            }
+            if(!(isVisualElementPosition(option) || isTextFont(option) || isTextAligment(option) || isTextFontColor(option) || isTextFontSize(option) || isVisualElementSize(option) || isVisualElementBackground(option))) {
+                accept('error', 'Invalid option for textual element', { node: option });
+            }
+        });
+    }
+
+    checkFontSetting(fontSetting: TextFont, accept: ValidationAcceptor): void {
+        const validFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino Linotype', 'Book Antiqua', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact'];
+        if (!validFonts.includes(fontSetting.name)) {
+            accept('error', 'Font must be a valid font name', { node: fontSetting, property: 'name' });
+        }
+    }
+
+    checkColor(color: string, node: AstNode, property: string, accept: ValidationAcceptor): void {
+        const validColors = ['red', 'green', 'blue', 'yellow', 'black', 'white', 'gray', 'purple', 'orange', 'pink', 'brown'];
+        if (!validColors.includes(color.toLowerCase())) {
+            accept('error', 'Color must be a valid color name', { node, property });
+        }
+    }
+
+    checkSubtitleLength(subtitle: Subtitle, accept: ValidationAcceptor): void {
+        if (subtitle.text.length > 100) {
+            accept('warning', 'Subtitle length is long, it is recommended to be less than 100 characters', { node: subtitle, property: 'text' });
+        }
+    }
+
+    checkDuration(element: TimelineElement, accept: ValidationAcceptor): void {
+        if (element.duration && isVideo(element.element.ref)) {
+            accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
+        }
+    
     }
 }

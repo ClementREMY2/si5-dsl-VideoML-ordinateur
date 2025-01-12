@@ -61,12 +61,12 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'add','as','at','audio','by','delayed','end','extract','from','in','layer','load','of','project','start','timeline','to','video'
+        'GroupOption','add','alignment','apply','as','at', 'audio','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','in','layer','load','of','position','project','shadow','size','start','subtitle','text','timeline','to','video'
     ],
     operators: [
-        '+'
+        '+',','
     ],
-    symbols: /\+/,
+    symbols: /\+|,/,
 
     tokenizer: {
         initial: [

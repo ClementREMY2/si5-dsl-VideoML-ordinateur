@@ -6,6 +6,8 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
+    isText,
+    isSubtitle,
     isVideoOriginal,
     isVideoExtract,
     isAudioOriginal,
@@ -20,7 +22,6 @@ export function generateTimelineElementInfos(videoProject: VideoProject): Timeli
 
 function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
     if (!te.element.ref) throw new Error('Element reference is missing');
-
     let info: TimelineElementInfo
 
     if (isVideoOriginal(te.element.ref)) {
@@ -69,10 +70,22 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
             ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
         };
-    } else {
+    } else if (isText(te.element.ref) || isSubtitle(te.element.ref)) { 
+        info = {
+            name: te.name,
+            textElement: {
+                name: te.element.ref.name,
+                text: te.element.ref.text,
+                duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
+                isSubtitle: isSubtitle(te.element.ref)
+            },
+            layer: te.layer || 0,
+            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
+            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+        };
+    }else {
         throw new Error('Unknown element type');
     }
-
 
     return info;
 }

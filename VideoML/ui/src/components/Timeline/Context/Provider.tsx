@@ -15,7 +15,8 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     if (!relativeToElement) return 0;
 
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
-    const offset = element.relativePlacement.offset;
+
+    const offset = element.relativePlacement.offset || 0;
     const place = element.relativePlacement.place === 'END';
 
     if (element.videoOriginalElement) { 
@@ -30,6 +31,8 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     else if (element.audioExtractElement) {
         return relativeStartAt + offset + (place ? relativeToElement.audioExtractElement?.duration || 0 : 0);
     }
+    else if (element.textElement) {
+        return relativeStartAt + offset + (place ? relativeToElement.textElement?.duration || 0 : 0);
     else {
         return 0;
     }
@@ -91,9 +94,11 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
     const populatedElements = populatedDurationElements.map((element) => {
         if (element.error) return element;
 
+        
         if (element.relativePlacement) {
             element.startAt = getStartAtRecursively(element, populatedDurationElements);
         }
+
 
         if (element.videoOriginalElement) {
             element.finishAt = (element.startAt || 0) + (element.videoOriginalElement.duration || 0);
@@ -107,6 +112,9 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         else if (element.audioExtractElement) {
             element.finishAt = (element.startAt || 0) + (element.audioExtractElement.duration || 0);
         }
+        else if (element.textElement) {
+          element.finishAt = (element.startAt || 0) + (element.textElement.duration || 0);
+          
         return element;
     });
 

@@ -21,6 +21,18 @@ export interface TimelineElementInfo {
         name: string;
         duration?: number;
         source?: string;
+    textElement?: { // TODO: remove useless properties
+        name: string;
+        text: string;
+        duration?: number;
+        font?: string;
+        fontSize?: number;
+        color?: string;
+        position?: {
+            x: number;
+            y: number;
+        }
+        isSubtitle: boolean;
     }
     relativePlacement?: {
         offset: number;

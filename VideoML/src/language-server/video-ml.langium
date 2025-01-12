@@ -6,11 +6,13 @@ entry VideoProject:
 	elements+=Element
 	(elements+=Element)*
 
+	(groupOptions+=GroupOption)*
+
 	timelineElements+=TimelineElement
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Video | Audio) 'as' name=ID;
+	(Video | TextualElement | Audio) options+=Option* 'in' name=ID;
 
 Audio:
 	(AudioOriginal | AudioExtract);
@@ -20,6 +22,51 @@ AudioOriginal:
 
 AudioExtract:
 	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
+
+GroupOption:
+	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+
+Option:
+	(VisualElementOption);
+
+VisualElementOption:
+	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+
+VisualElementBackground:
+	'background' color=STRING;
+
+VisualElementPosition:
+	'position' x=INT ',' y=INT;
+
+VisualElementSize:
+	'size' width=INT ',' height=INT;
+
+TextOption:
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+
+TextFontSize:
+	'fontsize' size=INT;
+
+TextFontColor:
+	'fontcolor' color=STRING;
+
+TextFont:
+	'font' name=STRING;
+
+TextShadow:
+	'shadow' color=STRING;
+
+TextAligment:
+	'alignment' alignment=STRING;
+
+TextualElement:
+	(Text | Subtitle);
+
+Text:
+	'text' text=STRING;
+
+Subtitle:
+	'subtitle' text=STRING;
 
 Video:
 	(VideoOriginal | VideoExtract);
@@ -31,7 +78,7 @@ VideoExtract:
 	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
-	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('in' 'layer' layer=INT)?;
+	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('for' duration=TIME)? ('in' 'layer' layer=INT)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
