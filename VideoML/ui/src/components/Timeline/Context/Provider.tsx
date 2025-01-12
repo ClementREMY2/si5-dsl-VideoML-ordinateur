@@ -14,16 +14,16 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     if (!relativeToElement) return 0;
 
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
+    const offset = element.relativePlacement.offset || 0;
+    const place = element.relativePlacement.place;
 
-    if (element.videoOriginalElement) { 
-        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoOriginalElement?.duration || 0 : 0);
-    }
-    else if (element.videoExtractElement) {
-        return relativeStartAt + element.relativePlacement.offset + (element.relativePlacement.place === 'END' ? relativeToElement.videoExtractElement?.duration || 0 : 0);
-    }
-    else {
-        return 0;
-    }
+    const relativeDuration = relativeToElement.videoOriginalElement?.duration ||
+                             relativeToElement.videoExtractElement?.duration ||
+                             relativeToElement.textElement?.duration || 0;
+
+    const additionalTime = place === 'END' ? relativeDuration : 0;
+
+    return relativeStartAt + offset + additionalTime;
 }
 
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
@@ -63,17 +63,13 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
     const populatedElements = populatedDurationElements.map((element) => {
         if (element.error) return element;
 
+        
         if (element.relativePlacement) {
             element.startAt = getStartAtRecursively(element, populatedDurationElements);
         }
-
-        if (element.videoOriginalElement) {
-            element.finishAt = (element.startAt || 0) + (element.videoOriginalElement.duration || 0);
-        }
-        else if (element.videoExtractElement) {
-            element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
-        }
-
+        
+        element.finishAt = (element.startAt || 0) + (element.videoOriginalElement?.duration || element.videoExtractElement?.duration || element.textElement?.duration || 0);
+        
         return element;
     });
 
