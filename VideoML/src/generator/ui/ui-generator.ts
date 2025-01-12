@@ -5,8 +5,12 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
+    isText,
+    isSubtitle,
     isVideoOriginal,
     isVideoExtract,
+    isAudioOriginal,
+    isAudioExtract,
 } from '../../language-server/generated/ast.js';
 import { helperTimeToSeconds, getLayer } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
@@ -17,7 +21,6 @@ export function generateTimelineElementInfos(videoProject: VideoProject): Timeli
 
 function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
     if (!te.element.ref) throw new Error('Element reference is missing');
-
     let info: TimelineElementInfo
 
     if (isVideoOriginal(te.element.ref)) {
@@ -36,12 +39,45 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             videoExtractElement: {
                 name: te.element.ref.name,
                 duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
-                source: "prout"
+                //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
             },
             layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),
         };
-    } else {
+    } else if (isAudioOriginal(te.element.ref)) {
+        info = {
+            name: te.name,
+            audioOriginalElement: {
+                name: te.element.ref.name,
+                filePath: te.element.ref.filePath,
+            },
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
+        };
+    } else if (isAudioExtract(te.element.ref)) {
+        info = {
+            name: te.name,
+            audioExtractElement: {
+                name: te.element.ref.name,
+                duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
+                //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
+            },
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
+        };
+    } else if (isText(te.element.ref) || isSubtitle(te.element.ref)) { 
+        info = {
+            name: te.name,
+            textElement: {
+                name: te.element.ref.name,
+                text: te.element.ref.text,
+                duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
+                isSubtitle: isSubtitle(te.element.ref)
+            },
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
+        };
+    }else {
         throw new Error('Unknown element type');
     }
 

@@ -2,17 +2,36 @@ import { CompositeGeneratorNode, NL, toString } from 'langium/generate';
 import {
     VideoProject,
     Element,
-    isVisualElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
-    VisualElement,
+    isText,
+    isSubtitle,
+    isVideo,
+    Video,
     VideoOriginal,
     isVideoOriginal,
     VideoExtract,
     isVideoExtract,
+    Audio,
+    isAudio,
+    AudioOriginal,
+    isAudioOriginal,
+    AudioExtract,
+    isAudioExtract,
+    isTextFontSize,
+    isTextFontColor,
+    isTextFont,
+    isTextAligment,
+    isVisualElementBackground,
+    isVisualElementSize,
+    isVisualElementPosition,
+    isTextualElement,
+    TextualElement,
+    GroupOption,
+    VisualElementOption,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -36,6 +55,10 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     // Compile explicitly declared elements (beofre timeline creation)
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
+    videoProject.groupOptions.forEach((groupOption) => {
+        compileGroupOption(groupOption, fileNode);
+    });
+
     // Compile timeline elements (placement, duration)
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
 
@@ -49,33 +72,146 @@ final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
 function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if (isVisualElement(element)) {
-        compileVisualElement(element, element, fileNode);
+    if(isVideo(element)){
+        compileVideo(element, element.name, fileNode);
+    } else if (isTextualElement(element)) {
+        compileTextualElement(element, element, fileNode);
+    }
+    else if (isAudio(element)) {
+        compileAudio(element, element.name, fileNode);
     }
 }
 
-// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVisualElement(visualElement: VisualElement, element: Element, fileNode: CompositeGeneratorNode) {
-    if (isVideoOriginal(visualElement)) {
-        compileVideoOriginal(visualElement, element, fileNode);
+function compileAudio(audio: Audio, name: string, fileNode: CompositeGeneratorNode) {
+    if (isAudioOriginal(audio)) {
+        compileAudioOriginal(audio, name, fileNode);
     }
-    else if (isVideoExtract(visualElement)) {
-        compileVideoExtract(visualElement, element, fileNode);
+    else if (isAudioExtract(audio)) {
+        compileAudioExtract(audio, name, fileNode);
     }
 }
 
-// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVideoOriginal(videoOriginal: VideoOriginal, element: Element, fileNode: CompositeGeneratorNode) {
+function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
     fileNode.append(
-`# Load the video clip original
-${element.name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
+`# Load the audio clip
+${name} = moviepy.AudioFileClip("${audioOriginal.filePath}")
 `, NL);
 }
 
-function compileVideoExtract(videoExtract: VideoExtract, element: Element, fileNode: CompositeGeneratorNode) {
+function compileAudioExtract(audioExtract: AudioExtract, name: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Extract a subclip from the audio
+${name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(audioExtract.start)}, ${helperTimeToSeconds(audioExtract.end)})
+`, NL);
+}
+
+function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGeneratorNode) {
+    groupOption.elements.forEach((elementRef) => {
+        const element = elementRef.ref; 
+        if (element) {
+            if (isVideo(element)) {
+                compileVideo(element, element.name, fileNode);
+            } else if (isTextualElement(element)) {
+                compileTextualElement(element, element, fileNode, groupOption);
+            }
+        }
+    });
+}
+
+function compileVideo(video: Video, name: String, fileNode: CompositeGeneratorNode) {
+    if (isVideoOriginal(video)) {
+        compileVideoOriginal(video, name, fileNode);
+    } else if (isVideoExtract(video)) {
+        compileVideoExtract(video, name, fileNode);
+    }
+}
+
+// We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
+function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Load the video clip original
+${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
+`, NL);
+    fileNode.append(
+    `# Resize the video clip
+if ${name}.size[0]/${name}.size[1] == 16/9:
+    ${name} = ${name}.resized((1920, 1080))
+else:
+    ${name} = ${name}.with_position("center", "center")
+    `
+, NL);
+}
+
+function compileVideoExtract(videoExtract: VideoExtract, name: String, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Extract a subclip from the video
-${element.name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
+${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
+`, NL);
+    fileNode.append(
+        `# Resize the video clip
+if ${name}.size[0]/${name}.size[1] == 16/9:
+    ${name} = ${name}.resized((1920, 1080))
+else:
+    ${name} = ${name}.with_position("center", "center")
+        `
+    , NL);
+}
+
+function compileOptionsToTextClip(text: TextualElement, element: Element, options?: VisualElementOption[]): string {
+    let bgColor = 'no';
+    let bgSizeX = 1920;
+    let bgSizeY = 1080;
+    let font = 'Arial';
+    let fontSize = 60;
+    let fontColor = 'white';
+    let align = 'left';
+    let posX: number | string = `"center"`;
+    let posY: number | string = `"center"`;
+
+    const applyOption = (option: VisualElementOption) => {
+        if (isTextFont(option)) {
+            font = option.name;
+        } else if (isTextFontSize(option)) {
+            fontSize = option.size;
+        } else if (isTextAligment(option)) {
+            align = option.alignment;
+        } else if (isTextFontColor(option)) {
+            fontColor = option.color;
+        } else if (isVisualElementBackground(option)) {
+            bgColor = option.color;
+        } else if (isVisualElementSize(option)) {
+            bgSizeX = option.width;
+            bgSizeY = option.height;
+        } else if (isVisualElementPosition(option) && !isSubtitle(text)) {
+            posX = option.x;
+            posY = option.y;
+        }
+    };
+
+    options?.forEach(applyOption);
+    element.options?.forEach(applyOption);
+
+    if (isSubtitle(text)) {
+        posY = 400;
+    }
+
+    const optionsString = `
+        text="${text.text}",
+        ${bgColor !== 'no' ? `bg_color="${bgColor}",` : ''}
+        font="${font}",
+        font_size=${fontSize},
+        color="${fontColor}",
+        text_align="${align}",
+        size=(${bgSizeX}, ${bgSizeY}))
+    `.trim().replace(/\s+/g, ' ');
+
+    return `${optionsString}.with_position((${posX}, ${posY})`;
+}
+
+function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOption) {
+    fileNode.append(
+`# Load the text clip
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element, groupOption?.options)})
 `, NL);
 }
 
@@ -112,12 +248,28 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: 
         fileNode.append(` ${operator} ${timeSeconds}`);
     }
 
-    fileNode.append(`)
-`, NL);
+    fileNode.append(`)`);
+    if (rte.duration && (isText(rte.element.ref || isSubtitle(rte.element.ref))) ) {
+        compileWithDurationElement(rte.duration, fileNode);
+    } else if (isText(rte.element.ref) || isSubtitle(rte.element.ref)){
+        compileWithDurationElement('00:05', fileNode);
+    }
+
+    fileNode.append(NL);
 }
 
 function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`, NL);
+    fileNode.append(`${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`);
+    if (fte.duration && (isText(fte.element.ref) || isSubtitle(fte.element.ref))) {
+        compileWithDurationElement(fte.duration, fileNode);
+    } else if (isText(fte.element.ref || isSubtitle(fte.element.ref))){
+        compileWithDurationElement('00:05', fileNode);
+    }
+    fileNode.append(NL);
+}
+
+function compileWithDurationElement(duration: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(`.with_duration(${helperTimeToSeconds(duration)})`);
 }
 
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
@@ -126,10 +278,34 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
 
     // Sort by layer
     const orderedTimelineElements = layeredTimelineElements.sort((a, b) => a.layer - b.layer);
+    
+    const timelineElementsVideoJoined = orderedTimelineElements
+        .filter(({ te }) => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isText(te.element.ref) || isSubtitle(te.element.ref))
+        .map(({ te }) => formatTimelineElementName(te.name))
+        .join(', ');
+    
+    const timelineElementsAudioJoined = orderedTimelineElements
+        .filter(({ te }) => isAudio(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+        .map(({ te }) => isAudio(te.element.ref) ? formatTimelineElementName(te.name) : `${formatTimelineElementName(te.name)}.audio`)
+        .join(', ');
+    
 
-    const timelineElementsJoined = orderedTimelineElements.map((te) => formatTimelineElementName(te.te.name)).join(', ');
     fileNode.append(
 `# Concatenate all clips
-final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
+final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `, NL);
+
+    if (videoProject.timelineElements.some(te => isAudio(te.element.ref))) {
+        fileNode.append(
+`# Concatenate all audios
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
+`, NL);
+    
+        fileNode.append(
+`# Assign audio's concatenation to the final video
+final_video.audio = final_audio
+`, NL);  
+    } 
+
 }
+

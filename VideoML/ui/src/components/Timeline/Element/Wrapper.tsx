@@ -16,6 +16,12 @@ export const TimelineElementWrapper: React.FC<TimelineElementWrapperProps> = ({ 
             lineHeight: '50px',
         }}
         >
-        {children}
+        {
+            // TODO: to delete if Alexis is upset
+            (element.endTime - element.startTime) < (children?.toString().length ?? 50) ? 
+                (element.endTime - element.startTime) < String(children).split('(')[0].length ?
+                    String(children).split(' ')[0].slice(0, element.endTime - element.startTime - 3) + '...' : String(children).split('(')[0]
+                : children
+        }
     </div>
 )

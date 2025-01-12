@@ -15,7 +15,7 @@ s1 = TextClip(font="Arial.ttf", font_size=30, text="Subtitle 1", color='white').
 s2 = TextClip(font="Arial.ttf", font_size=30, text="Subtitle 2", color='white').with_duration(8)
 
 # Create a thanks text clip
-thanks_clip = TextClip(font="Arial.ttf", font_size=70, text="Thanks for watching!", color='white', bg_color='black', size=(1280, 720)).with_duration(15)
+thanks_clip = TextClip(font="Arial.ttf", font_size=70, text="Thanks for watching!", color='white', bg_color='black', size=(1920, 1080)).with_duration(15)
 
 clip1a = clip1a.with_start(title_clip.duration)
 clip1b = clip1b.with_start(clip1a.end)

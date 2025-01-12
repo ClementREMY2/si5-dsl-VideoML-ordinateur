@@ -6,26 +6,79 @@ entry VideoProject:
 	elements+=Element
 	(elements+=Element)*
 
+	(groupOptions+=GroupOption)*
+
 	timelineElements+=TimelineElement
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(VisualElement) 'as' name=ID;
+	(Video | TextualElement | Audio) 'as' name=ID options+=Option*;
 
-VisualElement:
-	(Video);
+Audio:
+	(AudioOriginal | AudioExtract);
+
+AudioOriginal:
+	'load' 'audio' filePath=STRING;
+
+AudioExtract:
+	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
+
+GroupOption:
+	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+
+Option:
+	(VisualElementOption);
+
+VisualElementOption:
+	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+
+VisualElementBackground:
+	'background' color=STRING;
+
+VisualElementPosition:
+	'position' x=INT ',' y=INT;
+
+VisualElementSize:
+	'size' width=INT ',' height=INT;
+
+TextOption:
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+
+TextFontSize:
+	'fontsize' size=INT;
+
+TextFontColor:
+	'fontcolor' color=STRING;
+
+TextFont:
+	'font' name=STRING;
+
+TextShadow:
+	'shadow' color=STRING;
+
+TextAligment:
+	'alignment' alignment=STRING;
+
+TextualElement:
+	(Text | Subtitle);
+
+Text:
+	'text' text=STRING;
+
+Subtitle:
+	'subtitle' text=STRING;
 
 Video:
 	(VideoOriginal | VideoExtract);
 
 VideoOriginal:
-	'load' filePath=STRING;
+	'load' 'video' filePath=STRING;
 
 VideoExtract:
-	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
-	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? (layerPosition=LayerPosition)?;
+	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('for' duration=TIME)? (layerPosition=LayerPosition)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;

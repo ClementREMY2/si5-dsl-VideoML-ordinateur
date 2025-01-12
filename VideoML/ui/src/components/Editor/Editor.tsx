@@ -12,7 +12,7 @@ type EditorProps = {
     style?: React.CSSProperties;
     mc: string;
     vml: string;
-    videosToInsert: string[];
+    filesToInsert: string[];
     onInsertCode: () => void;
 };
 
@@ -21,7 +21,7 @@ export const Editor = ({
     style,
     mc,
     vml,
-    videosToInsert,
+    filesToInsert,
     onInsertCode,
 }: EditorProps) => {
     const editorRef = useRef(null);
@@ -144,14 +144,32 @@ export const Editor = ({
         if (!wrapperRef.current) return;
 
         const model = wrapperRef.current.getModel();
-        if (model && videosToInsert.length > 0) {
+        if (model && filesToInsert.length > 0) {
             const value = model.getValue();
-            const newVideosToInsert = videosToInsert.join('\n');
+            const newFilesToInsert = filesToInsert.join('\n');
 
-            // Find the last occurrence of 'load video ... \n'
-            const loadVideoMatches = [...value.matchAll(/load.*\n/g)];
-            const lastLoadVideoMatch = loadVideoMatches[loadVideoMatches.length - 1];
-            const loadVideoIndex = lastLoadVideoMatch ? lastLoadVideoMatch.index + lastLoadVideoMatch[0].length : -1;
+            const isVideo = filesToInsert.some(file => file.includes('.mp4'));
+            const isAudio = filesToInsert.some(file => file.includes('.mp3'));
+
+            let lastLoadMatch;
+            let loadIndex = -1;
+
+            const loadVideoMatches = [...value.matchAll(/load video.*\n/g)];
+            const loadAudioMatches = [...value.matchAll(/load audio.*\n/g)];
+
+            if (isVideo) {
+                // Find the last occurrence of 'load video ... \n'
+                lastLoadMatch = loadVideoMatches[loadVideoMatches.length - 1];
+                loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
+                console.log('loadIndex video', loadIndex);
+            } else if (isAudio) {
+                // Find the last occurrence of 'load audio ... \n'
+                lastLoadMatch = loadAudioMatches[loadAudioMatches.length - 1];
+                loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
+                console.log('loadIndex audio', loadIndex);
+            } else {
+                console.log("prout");
+            }
 
             // Find the index of 'video project ... \n'
             const videoProjectMatches = [...value.matchAll(/video project.*\n/g)];
@@ -159,17 +177,17 @@ export const Editor = ({
             const videoProjectIndex = videoProjectMatch ? videoProjectMatch.index + videoProjectMatch[0].length : -1;
 
             // Determine the insert index
-            const insertIndex = loadVideoIndex > -1 ? loadVideoIndex : videoProjectIndex > -1 ? videoProjectIndex : 0;
+            const insertIndex = loadIndex > -1 ? loadIndex : videoProjectIndex > -1 ? videoProjectIndex : 0;
 
             // Insert new videos after the determined index
             const newValue = insertIndex > 0
-                ? value.slice(0, insertIndex) + (!lastLoadVideoMatch ? '\n' : '') + newVideosToInsert + '\n' + value.slice(insertIndex)
-                : 'video project "name_your_project"\n\n' + newVideosToInsert + '\n';
+                ? value.slice(0, insertIndex) + (!lastLoadMatch ? '\n' : '') + newFilesToInsert + '\n' + value.slice(insertIndex)
+                : 'video project "name_your_project"\n\n' + newFilesToInsert + '\n';
 
             model.setValue(newValue);
             onInsertCode();
         }
-    }, [videosToInsert, onInsertCode]);
+    }, [filesToInsert, onInsertCode]);
 
   return (
     <div className={className} ref={editorRef} style={style} />
