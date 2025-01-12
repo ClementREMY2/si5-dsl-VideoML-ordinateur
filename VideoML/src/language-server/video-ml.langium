@@ -31,15 +31,7 @@ FixedTimelineElement:
 	'at' startAt=TIME;
 
 RelativeTimelineElement:
-	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
-
-StartRelativeTimelineElement:
-	{infer StartRelativeTimelineElement}
-	'start';
-
-EndRelativeTimelineElement:
-	{infer EndRelativeTimelineElement}
-	'end';
+	'at' place=('start' | 'end') 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
 
 hidden terminal WS: /\s+/;
 // Hashtag ID forma

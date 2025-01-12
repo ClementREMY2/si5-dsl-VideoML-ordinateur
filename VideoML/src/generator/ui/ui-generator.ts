@@ -2,7 +2,6 @@ import {
     VideoProject,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    isStartRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
@@ -69,7 +68,7 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<T
     return {
         relativePlacement: {
             offset,
-            place: isStartRelativeTimelineElement(rte) ? 'START' : 'END',
+            place: rte.place === 'start' ? 'START' : 'END',
             relativeTo: rte.relativeTo.ref?.name,
         }
     }

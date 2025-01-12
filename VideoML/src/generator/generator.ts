@@ -5,8 +5,6 @@ import {
     isVisualElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    isStartRelativeTimelineElement,
-    isEndRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
@@ -90,9 +88,9 @@ function compileTimelineElement(te: TimelineElement, fileNode: CompositeGenerato
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
     fileNode.append(`${rte.element.ref?.name}.with_start(${formatTimelineElementName(rte.relativeTo.ref?.name)}`);
-    if (isStartRelativeTimelineElement(rte)) {
+    if (rte.place === 'start') {
         fileNode.append(`.start`);
-    } else if (isEndRelativeTimelineElement(rte)) {
+    } else if (rte.place === 'end') {
         fileNode.append(`.end`);
     }
 
