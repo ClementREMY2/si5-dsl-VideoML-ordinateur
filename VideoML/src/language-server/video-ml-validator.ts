@@ -66,7 +66,6 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoProject: validator.checkVideoProject,
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
-        TimelineElement: validator.checkTimelineElement,
     };
     registry.register(checks, validator);
 }
@@ -79,6 +78,7 @@ export class VideoMlValidator {
         this.checkOutputFileName(videoProject, accept);
         this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
+        this.checkLayerTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkNameForTimelineElements(videoProject, accept);
         this.checkNameForElements(videoProject, accept);
     }
@@ -141,10 +141,6 @@ export class VideoMlValidator {
         if (helperTimeToSeconds(videoExtract.end) > duration) {
             accept('error', 'End time is greater than source video duration', { node: videoExtract, property: 'end' });
         }
-    }
-
-    checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
-        this.checkTimelineElementLayer(element, accept);
     }
 
     // Check timeline elemnts names (unique and ordered, first must be 1)
@@ -249,10 +245,39 @@ export class VideoMlValidator {
         }
     }
 
-    // Check if layer is not default layer
-    checkTimelineElementLayer(element: TimelineElement, accept: ValidationAcceptor): void {
-        if (element.layer === 0) {
-            accept('error', 'Layer 0 is the default layer, use a number greater than 0 to specify another layer', { node: element, property: 'layer' });
+    checkLayerTimelineElementsInfiniteRecursion(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // For each timeline elements, check if we have infinite recursion
+        let currentAnalyzingElement: TimelineElement | null = null;
+        let recursivePath: string[] = [];
+        const isLayerInfiniteRecursion = (element: TimelineElement): boolean => {
+            // If there is no relative element yet, return false
+            if (!element.layerPosition || !element.layerPosition.relativeTo) {
+                return false;
+            }
+
+            if (element.layerPosition.relativeTo.ref === currentAnalyzingElement) {
+                recursivePath.push(element.layerPosition.relativeTo.ref.name);
+                return true;
+            }
+
+            if (isRelativeTimelineElement(element.layerPosition.relativeTo.ref)) {
+                recursivePath.push(element.layerPosition.relativeTo.ref.name);
+                return isLayerInfiniteRecursion(element.layerPosition.relativeTo.ref);
+            }
+            return false;
         }
+
+        for (let i = 0; i < videoProject.timelineElements.length; i++) {
+            const element = videoProject.timelineElements[i];
+            if (element.layerPosition) {
+                currentAnalyzingElement = element;
+                recursivePath = [];
+                if (isLayerInfiniteRecursion(element)) {
+                    accept('error', `Infinite recursion detected. Path: ${element.name} -> ${recursivePath.join(' -> ')}`, { node: element, property: 'layerPosition' });
+                    // Only show one error per project to avoid max call stack error
+                    break;
+                }
+            }
+        };
     }
 }

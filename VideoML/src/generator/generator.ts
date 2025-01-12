@@ -14,7 +14,7 @@ import {
     VideoExtract,
     isVideoExtract,
 } from '../language-server/generated/ast.js';
-import { helperTimeToSeconds } from '../lib/helper.js';
+import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
 function formatTimelineElementName(name: string | undefined): string {
     if (!name) throw new Error('Timeline element name is missing');
@@ -121,10 +121,13 @@ function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: Compos
 }
 
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
-    // Sort by layer (0 if undefined)
-    const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
-    
-    const timelineElementsJoined = orderedTimelineElements.map((te) => formatTimelineElementName(te.name)).join(', ');
+    // Calculate layer for each timeline element
+    const layeredTimelineElements = videoProject.timelineElements.map((te) => ({ te, layer: getLayer(te) }));
+
+    // Sort by layer
+    const orderedTimelineElements = layeredTimelineElements.sort((a, b) => a.layer - b.layer);
+
+    const timelineElementsJoined = orderedTimelineElements.map((te) => formatTimelineElementName(te.te.name)).join(', ');
     fileNode.append(
 `# Concatenate all clips
 final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])

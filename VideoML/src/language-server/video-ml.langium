@@ -25,13 +25,16 @@ VideoExtract:
 	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
-	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('in' 'layer' layer=INT)?;
+	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? (layerPosition=LayerPosition)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
 
 RelativeTimelineElement:
 	'at' place=('start' | 'end') 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+
+LayerPosition:
+	position=('above' | 'under') relativeTo=[TimelineElement:HASHTAG_ID];
 
 hidden terminal WS: /\s+/;
 // Hashtag ID forma

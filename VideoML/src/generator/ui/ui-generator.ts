@@ -8,7 +8,7 @@ import {
     isVideoOriginal,
     isVideoExtract,
 } from '../../language-server/generated/ast.js';
-import { helperTimeToSeconds } from '../../lib/helper.js';
+import { helperTimeToSeconds, getLayer } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
 
 export function generateTimelineElementInfos(videoProject: VideoProject): TimelineElementInfo[] {
@@ -27,7 +27,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 name: te.element.ref.name,
                 filePath: te.element.ref.filePath,
             },
-            layer: te.layer || 0,
+            layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),
         };
     } else if (isVideoExtract(te.element.ref)) {
@@ -38,7 +38,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
                 source: "prout"
             },
-            layer: te.layer || 0,
+            layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),
         };
     } else {

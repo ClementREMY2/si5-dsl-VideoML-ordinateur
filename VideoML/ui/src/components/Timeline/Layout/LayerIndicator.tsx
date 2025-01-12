@@ -14,11 +14,11 @@ export const TimelineLayoutLayerIndicator: React.FC<TimelineLayerIndicatorProps>
         key={i}
         className="position-absolute text-secondary-transparent"
         style={{
-            left: `${i * 10 * TIMELINE_SCALE_FACTOR + 45}px`,
+            left: `${i * 10 * TIMELINE_SCALE_FACTOR + 25}px`,
             top: '15px',
         }}
         >
-        {layer}
+        Layer {layer}
         </div>
     ))
 );

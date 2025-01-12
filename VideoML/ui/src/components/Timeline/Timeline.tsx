@@ -55,12 +55,14 @@ export const Timeline: React.FC = () => {
         {!isTimelineLoaded && (
           <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
         )}
-        {Object.entries(layers).map(([layer, elements]) => (
-          <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
-            <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
-            {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
-          </TimelineLayoutLayer>
-        ))}
+        {Object.entries(layers)
+          .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
+          .map(([layer, elements]) => (
+            <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
+              <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+              {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
+            </TimelineLayoutLayer>
+          ))}
         <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
       </div>
     </div>
