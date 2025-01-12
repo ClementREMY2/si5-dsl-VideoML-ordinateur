@@ -24,7 +24,6 @@ export const VideoGeneratorModal: React.FC<VideoGeneratorModalProps> = ({
     return (
         <Modal
             isOpen
-            toggle={() => console.log('clic clic pan pan pan')}
             backdrop="static"
         >
             <ModalHeader>Video generation in progress...</ModalHeader>

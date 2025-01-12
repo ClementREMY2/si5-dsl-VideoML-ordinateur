@@ -8,24 +8,35 @@ import { FileInput } from '../FileInput/FileInput';
 import { VideoPlayer } from '../Video/Player';
 import { VideoGeneratorButton } from '../Video/Generator/Button';
 
+const platform = await window.ipcRenderer.invoke('get-process-platform');
+
 export const Home: React.FC = () => {
   const [monacoWorkerPath, setMonacoWorkerPath] = useState<string | null>(null);
   const [videomlWorkerPath, setVideomlWorkerPath] = useState<string | null>(null);
 
   const [openedTab, setOpenedTab] = useState<'timeline' | 'python'| 'video'>('timeline');
 
-  const [videosToInsert, setVideosToInsert] = useState<string[]>([]);
+  const [filesToInsert, setFilesToInsert] = useState<string[]>([]);
   
-  const onVideosDrop = useCallback((acceptedFiles: File[]) => {
-    setVideosToInsert(acceptedFiles.map((file) => {
+  const onFilesDrop = useCallback((acceptedFiles: File[]) => {
+    setFilesToInsert(acceptedFiles.map((file) => {
       // Get varname from file name e.g. video.mp4 -> video (whitespace removed)
       const varName = file.name.replace(/\s/g, '').replace(/\.[^/.]+$/, '');
-      return `load "${file.path}" as ${varName}`;
+      // If machine under windows, replace backslashes with forward slashes and keep only the path with and after the first slash.
+      
+      const path = platform === 'win32' ? file.path.replace(/^.*?\\/, '/').replace(/\\/g, '/') : file.path;
+      if (file.path.endsWith('.mp4')) {
+        return `load video "${path}" as ${varName}`;
+      }
+      else if (file.path.endsWith('.mp3')) {
+        return `load audio "${path}" as ${varName}`;
+      }
+      return "";
     }));
   }, []);
 
   const onInsertCode = useCallback(() => {
-    setVideosToInsert([]);
+    setFilesToInsert([]);
   }, []);
 
   useEffect(() => {
@@ -90,14 +101,14 @@ export const Home: React.FC = () => {
         <h3>Video ML Editor</h3>
         <FileInput
             className="mx-3 flex-grow-1"
-            onDrop={onVideosDrop}
+            onDrop={onFilesDrop}
             style={{
                 minWidth: '320px',
             }}
         />
         <VideoGeneratorButton onGenerated={handleVideoGenerated} />
         </div>
-        <Editor className="flex-grow-1" mc={monacoWorkerPath} vml={videomlWorkerPath} videosToInsert={videosToInsert} onInsertCode={onInsertCode} />
+        <Editor className="flex-grow-1" mc={monacoWorkerPath} vml={videomlWorkerPath} filesToInsert={filesToInsert} onInsertCode={onInsertCode} />
     </div>
     </div>
   )
