@@ -18,10 +18,10 @@ GroupOption:
 	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
 
 Option:
-	(VisualElementOption);
+	(VisualElementOption | AudioOption);
 
 VisualElementOption:
-	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize | VideoOption | TransitionOption);
 
 VisualElementBackground:
 	'background' color=STRING;
@@ -52,6 +52,87 @@ TextAligment:
 
 TextualElement:
 	(Text | Subtitle);
+
+VideoOption: 
+	VideoResolution | VideoMotion | VideoFilterType | VideoBlendMode | VideoScale | VideoBrightness | VideoOpacity | VideoContrast | VideoSaturation;
+
+VideoResolution:
+	'resolution' width=INT ',' height=INT;
+
+VideoMotion:
+	'motion' motion=BOOLEAN;
+
+VideoFilterType:
+	'filter' filterType=STRING;
+
+VideoBlendMode:
+	'blend' blendMode=STRING;
+
+VideoScale:
+	'scale' scale=FLOAT;
+
+VideoBrightness:
+	'brightness' brightness=FLOAT;
+
+VideoOpacity:
+	'opacity' opacity=FLOAT;
+
+VideoContrast:
+	'contrast' contrast=FLOAT;
+
+VideoSaturation:
+	'saturation' saturation=FLOAT;
+
+TransitionOption: 
+	TransitionType | TransitionOverlap | TransitionStartPoint | TransitionDuration | TransitionBorderWidth | TransitionBorderColor | TransitionEasing;
+
+TransitionType:
+	'type' type=STRING;
+
+TransitionOverlap:
+	'overlap' overlap=BOOLEAN;
+
+TransitionStartPoint:
+	'startpoint' startPoint=STRING;
+
+TransitionBorderColor: 
+	'bordercolor' color=STRING;
+
+TransitionBorderWidth:
+	'borderwidth' width=INT;
+
+TransitionDuration:
+	'duration' duration=INT;
+
+TransitionEasing:
+	'easing' easing=STRING;
+
+AudioOption: 
+	AudioVolume | AudioNoiseReduction | AudioPitch | AudioFadeOut | AudioFadeIn | AudioReverb | AudioPan | AudioEqualizerSettings;
+
+AudioVolume:
+	'volume' volume=FLOAT;
+
+AudioNoiseReduction:
+	'noisereduction' noiseReduction=BOOLEAN;
+
+AudioPitch:
+	'pitch' pitch=FLOAT;
+
+AudioFadeOut:
+	'fadeout' fadeOut=INT;
+
+AudioFadeIn:
+	'fadein' fadeIn=INT;
+
+AudioReverb:
+	'reverb' reverb=FLOAT;
+
+AudioPan:
+	'pan' pan=FLOAT;
+
+AudioEqualizerSettings:
+	'equalizer' settings+=FLOAT (',' settings+=FLOAT)*;
 
 Text:
 	'text' text=STRING;
@@ -92,8 +173,12 @@ terminal ID: /[_a-zA-Z][\w_]*/;
 terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
 // TIME format: MM:SS
 terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
+// FLOAT format: 
+terminal FLOAT returns number: /[0-9]*\.[0-9]*/;
 // INT format: 0 or non-zero digit followed by zero or more digits
 terminal INT returns number: /[0-9]+/;
+// BOOLEAN format : true or false
+terminal BOOLEAN returns boolean: 'true' | 'false';
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 
