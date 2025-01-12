@@ -33,12 +33,16 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `import moviepy
 `, NL);
 
+    // Compile explicitly declared elements (beofre timeline creation)
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
+    // Compile timeline elements (placement, duration)
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
 
+    // Compile the final video (concatenation)
     compileTimelineElementsOrdered(videoProject, fileNode);
 
+    // Export the final video
     fileNode.append(
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);

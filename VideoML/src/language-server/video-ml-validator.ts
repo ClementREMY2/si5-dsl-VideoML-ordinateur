@@ -80,7 +80,23 @@ export class VideoMlValidator {
         this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkNameForTimelineElements(videoProject, accept);
+        this.checkNameForElements(videoProject, accept);
     }
+
+    checkNameForElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        const elements = videoProject.elements;
+
+        // Check name duplicate
+        const names = new Set<string>();
+        elements.forEach((element) => {
+            if (!!element) {
+                if (names.has(element.name)) {
+                    accept('error', 'Element names must be unique', { node: element, property: 'name' });
+                }
+                names.add(element.name);
+            } 
+        });
+    } 
 
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
@@ -136,7 +152,7 @@ export class VideoMlValidator {
         // Check if first is 1
         const firstElement = videoProject.timelineElements[0];
         if (firstElement && firstElement.name !== '#1') {
-            accept('error', 'First timeline element must have identifier 1', { node: firstElement, property: 'name' });
+            accept('error', 'First timeline element must have identifier #1', { node: firstElement, property: 'name' });
             return;
         }
 
@@ -148,8 +164,8 @@ export class VideoMlValidator {
                 accept('error', 'Timeline elements must have unique identifiers', { node: element, property: 'name' });
             }
             ids.add(element.name);
-            if (parseInt(element.name.slice(1)) !== lastId + 1) {
-                accept('error', `Timeline elements must have ordered identifiers (this one should be #${lastId + 1})`, { node: element, property: 'name' });
+            if (parseInt(element.name.slice(1)) <= lastId) {
+                accept('error', `Timeline elements must have ordered identifiers (this one should be at least #${lastId + 1})`, { node: element, property: 'name' });
             }
             lastId = parseInt(element.name.slice(1));
         }
@@ -160,6 +176,11 @@ export class VideoMlValidator {
         let currentAnalyzingElement: RelativeTimelineElement | null = null;
         let recursivePath: string[] = [];
         const isInfiniteRecursion = (element: RelativeTimelineElement): boolean => {
+            // If there is no relative element yet, return false
+            if (!element.relativeTo) {
+                return false;
+            }
+
             if (element.relativeTo.ref === currentAnalyzingElement) {
                 recursivePath.push(element.relativeTo.ref.name);
                 return true;
@@ -174,7 +195,7 @@ export class VideoMlValidator {
 
         for (let i = 0; i < videoProject.timelineElements.length; i++) {
             const element = videoProject.timelineElements[i];
-            if (isRelativeTimelineElement(element) && element.relativeTo.ref) {
+            if (isRelativeTimelineElement(element) && element.relativeTo) {
                 currentAnalyzingElement = element;
                 recursivePath = [];
                 if (isInfiniteRecursion(element)) {
