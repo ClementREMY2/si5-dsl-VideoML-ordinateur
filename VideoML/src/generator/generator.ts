@@ -11,12 +11,18 @@ import {
     TimelineElement,
     isText,
     isSubtitle,
+    isVideo,
+    Video,
     VideoOriginal,
     isVideoOriginal,
     VideoExtract,
     isVideoExtract,
-    isVideo,
-    Video,
+    Audio,
+    isAudio,
+    AudioOriginal,
+    isAudioOriginal,
+    AudioExtract,
+    isAudioExtract,
     isTextFontSize,
     isTextFontColor,
     isTextFont,
@@ -64,6 +70,32 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     } else if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
     }
+    else if (isAudio(element)) {
+        compileAudio(element, element.name, fileNode);
+    }
+}
+
+function compileAudio(audio: Audio, name: string, fileNode: CompositeGeneratorNode) {
+    if (isAudioOriginal(audio)) {
+        compileAudioOriginal(audio, name, fileNode);
+    }
+    else if (isAudioExtract(audio)) {
+        compileAudioExtract(audio, name, fileNode);
+    }
+}
+
+function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Load the audio clip
+${name} = moviepy.AudioFileClip("${audioOriginal.filePath}")
+`, NL);
+}
+
+function compileAudioExtract(audioExtract: AudioExtract, name: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Extract a subclip from the audio
+${name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(audioExtract.start)}, ${helperTimeToSeconds(audioExtract.end)})
+`, NL);
 }
 
 function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGeneratorNode) {
@@ -98,7 +130,7 @@ ${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
     `
 , NL);
 }
@@ -113,7 +145,7 @@ ${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
         `
     , NL);
 }
@@ -227,10 +259,33 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
-    const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
+    const timelineElementsVideoJoined = orderedTimelineElements
+        .filter(te => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isText(te.element.ref) || isSubtitle(te.element.ref))
+        .map(te => te.name)
+        .join(', ');
+    
+        const timelineElementsAudioJoined = orderedTimelineElements
+            .filter(te => isAudio(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+            .map(te => isAudio(te.element.ref) ? te.name : `${te.name}.audio`)
+            .join(', ');
+    
+
     fileNode.append(
 `# Concatenate all clips
-final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
+final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `, NL);
+
+    if (videoProject.timelineElements.some(te => isAudio(te.element.ref))) {
+        fileNode.append(
+`# Concatenate all audios
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
+`, NL);
+    
+        fileNode.append(
+`# Assign audio's concatenation to the final video
+final_video.audio = final_audio
+`, NL);  
+    } 
+
 }
 

@@ -86,14 +86,14 @@ export const FileInput: React.FC<FileInputProps> = ({ className, style, onDrop }
       >
         <input
             type="file"
-            accept="video/*"
+            accept="video/*,audio/*"
             ref={inputRef}
             onChange={handleFileChange}
             className="d-none"
         />
         {showReleaseFiles
           ? <div>Release files to add</div>
-          : <div>Drop your videos here or click to select</div>}
+          : <div>Drop your videos and audios here or click to select</div>}
       </div>
     </section>
   );

@@ -12,6 +12,10 @@ import {
     VideoExtract,
     isVideoExtract,
     isVideoOriginal,
+    AudioOriginal,
+    AudioExtract,
+    isAudioOriginal,
+    isAudioExtract,
     Element,
     isTextFontColor,
     isTextualElement,
@@ -77,6 +81,8 @@ export function registerValidationChecks(services: VideoMlServices) {
     const validator = services.validation.VideoMlValidator;
     const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
+        AudioOriginal: validator.checkAudioOriginal,
+        AudioExtract: validator.checkAudioExtract,
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
@@ -96,6 +102,16 @@ export class VideoMlValidator {
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkUniqueNameForTimelineElements(videoProject, accept);
     }
+
+    async checkAudioOriginal(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
+        await this.checkAudioOriginalPath(audioOriginal, accept);
+    }
+
+    async checkAudioExtract(audioExtract: AudioExtract, accept: ValidationAcceptor): Promise<void> {
+        await this.checkAudioExtractValidTimeCodes(audioExtract, accept);
+    }
+
+    //TODO : checkAudioOriginalValidTimeCodes? how to proceed?
 
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
@@ -220,6 +236,65 @@ export class VideoMlValidator {
         (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
             accept(error.type, error.message, { node: videoOriginal, property: 'filePath' });
         });
+    }
+
+    async checkAudioOriginalPath(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
+        if (!audioOriginal.filePath) return;
+
+        let errors = [];
+        if (!IS_ELECTRON) {
+            errors = await validateFilePath(audioOriginal.filePath);
+        } else {
+            // Filepath verification will be handled by Electron (main process)
+            const indexName = `validate-file-${audioOriginal.filePath}-${audioOriginal.$containerProperty}-${audioOriginal.$containerIndex}`;
+            errors = await invokeSpecialCommand(
+                'validate-file',
+                { path: audioOriginal.filePath },
+                indexName,
+                { needNodeJs: true },
+            );
+        }
+
+        (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+            accept(error.type, error.message, { node: audioOriginal, property: 'filePath' });
+        });
+    }
+
+    async checkAudioExtractValidTimeCodes(audioExtract: AudioExtract, accept: ValidationAcceptor): Promise<void> {
+        if (!audioExtract.start || !audioExtract.end) return;
+
+        // Check if Start time is less than End time
+        if (helperTimeToSeconds(audioExtract.start) >= helperTimeToSeconds(audioExtract.end)) {
+            accept('error', 'Start time must be before end time', { node: audioExtract, property: 'start' });
+        }
+
+        // Check if End time is less or equal to the video duration
+        const source = audioExtract.source?.ref;
+        if (!source) {
+            accept('error', 'Source audio not found', { node: audioExtract, property: 'source' });
+            return;
+        }
+
+        let duration;
+        if (isAudioExtract(source)) {
+            duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
+        } else if (isAudioOriginal(source)) {
+            const indexName = `get-audio-original-duration-${source.filePath}-${source.$containerProperty}-'${source.$containerIndex}'`;
+            duration = await invokeSpecialCommand(
+                'get-audio-original-duration',
+                { path: source.filePath },
+                indexName,
+                { needNodeJs: false },
+            );
+        }
+        if (!duration || duration === -1) {
+            accept('error', 'Failed to get source audio duration', { node: audioExtract, property: 'source' });
+            return;
+        }
+
+        if (helperTimeToSeconds(audioExtract.end) > duration) {
+            accept('error', 'End time is greater than source audio duration', { node: audioExtract, property: 'end' });
+        }
     }
 
     // Check if at least one timeline element is present at start

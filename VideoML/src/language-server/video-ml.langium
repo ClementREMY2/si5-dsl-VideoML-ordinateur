@@ -12,7 +12,16 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Video | TextualElement) options+=Option* 'in' name=ID;
+	(Video | TextualElement | Audio) options+=Option* 'in' name=ID;
+
+Audio:
+	(AudioOriginal | AudioExtract);
+
+AudioOriginal:
+	'load' 'audio' filePath=STRING;
+
+AudioExtract:
+	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
 	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
@@ -63,10 +72,10 @@ Video:
 	(VideoOriginal | VideoExtract);
 
 VideoOriginal:
-	'load' filePath=STRING;
+	'load' 'video' filePath=STRING;
 
 VideoExtract:
-	'extract' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
 	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('for' duration=TIME)? ('in' 'layer' layer=INT)?;
