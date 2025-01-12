@@ -12,7 +12,7 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Video | TextualElement | Audio) options+=Option* 'in' name=ID;
+	(Video | TextualElement | Audio) 'as' name=ID options+=Option*;
 
 Audio:
 	(AudioOriginal | AudioExtract);
@@ -78,23 +78,20 @@ VideoExtract:
 	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
-	('add' | '+') element=[Element:ID] 'as' name=ID 'to' 'timeline' (FixedTimelineElement | RelativeTimelineElement) ('for' duration=TIME)? ('in' 'layer' layer=INT)?;
+	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('for' duration=TIME)? (layerPosition=LayerPosition)?;
 
 FixedTimelineElement:
 	'at' startAt=TIME;
 
 RelativeTimelineElement:
-	'at' (StartRelativeTimelineElement | EndRelativeTimelineElement) 'of' relativeTo=[TimelineElement:ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+	'at' place=('start' | 'end') 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
 
-StartRelativeTimelineElement:
-	{infer StartRelativeTimelineElement}
-	'start';
-
-EndRelativeTimelineElement:
-	{infer EndRelativeTimelineElement}
-	'end';
+LayerPosition:
+	position=('above' | 'under') relativeTo=[TimelineElement:HASHTAG_ID];
 
 hidden terminal WS: /\s+/;
+// Hashtag ID forma
+terminal HASHTAG_ID returns string: /#[0-9]+/;
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME

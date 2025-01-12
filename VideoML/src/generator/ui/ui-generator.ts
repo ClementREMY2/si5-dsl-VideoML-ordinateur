@@ -2,7 +2,6 @@ import {
     VideoProject,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    isStartRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
@@ -13,7 +12,7 @@ import {
     isAudioOriginal,
     isAudioExtract,
 } from '../../language-server/generated/ast.js';
-import { helperTimeToSeconds } from '../../lib/helper.js';
+import { helperTimeToSeconds, getLayer } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
 
 export function generateTimelineElementInfos(videoProject: VideoProject): TimelineElementInfo[] {
@@ -31,9 +30,8 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 name: te.element.ref.name,
                 filePath: te.element.ref.filePath,
             },
-            layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else if (isVideoExtract(te.element.ref)) {
         info = {
@@ -43,9 +41,8 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
                 //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
             },
-            layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else if (isAudioOriginal(te.element.ref)) {
         info = {
@@ -54,9 +51,8 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 name: te.element.ref.name,
                 filePath: te.element.ref.filePath,
             },
-            layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else if (isAudioExtract(te.element.ref)) {
         info = {
@@ -66,9 +62,8 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 duration: helperTimeToSeconds(te.element.ref.end) - helperTimeToSeconds(te.element.ref.start),
                 //source: te.element.ref.source (TODO: add source correctly, or delete it, as we are not using it atm.)
             },
-            layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else if (isText(te.element.ref) || isSubtitle(te.element.ref)) { 
         info = {
@@ -79,15 +74,22 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
                 isSubtitle: isSubtitle(te.element.ref)
             },
-            layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            layer: getLayer(te),
+            ...(compileTimelineElementPlacement(te)),
         };
     }else {
         throw new Error('Unknown element type');
     }
 
     return info;
+}
+
+function compileTimelineElementPlacement(te: TimelineElement): Partial<TimelineElementInfo> {
+    return isRelativeTimelineElement(te)
+        ? compileRelativeTimelineElement(te)
+        : isFixedTimelineElement(te)
+            ? compileFixedTimelineElement(te)
+            : compileImpliciteTimelineElement(te);
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<TimelineElementInfo> {
@@ -107,7 +109,7 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<T
     return {
         relativePlacement: {
             offset,
-            place: isStartRelativeTimelineElement(rte) ? 'START' : 'END',
+            place: rte.place === 'start' ? 'START' : 'END',
             relativeTo: rte.relativeTo.ref?.name,
         }
     }
@@ -116,5 +118,17 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<T
 function compileFixedTimelineElement(fte: FixedTimelineElement): Partial<TimelineElementInfo> {
     return {
         startAt: helperTimeToSeconds(fte.startAt)
+    }
+}
+
+function compileImpliciteTimelineElement(te: TimelineElement): Partial<TimelineElementInfo> {
+    if (te.$containerIndex === 0) {
+        return {
+            startAt: 0
+        }
+    } else {
+        return {
+            startAfterPrevious: true
+        }
     }
 }

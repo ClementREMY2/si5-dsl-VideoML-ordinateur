@@ -48,7 +48,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
     setIsTimelineLoaded(true);
 
     // Populate video element with their duration
-   const populatedDurationElements = await Promise.all(newTimelineElementInfos.map(async (element: PopulatedTimelineElementInfo) => {
+    const populatedDurationElements = await Promise.all(newTimelineElementInfos.map(async (element: PopulatedTimelineElementInfo) => {
         // Get duration for each element
         if (element.videoOriginalElement) {
 
@@ -92,33 +92,38 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
     }));
 
     // Resolve startAt and finishAt time for each relative element
-    const populatedElements = populatedDurationElements.map((element) => {
-        if (element.error) return element;
+    const populatedElements = populatedDurationElements.reduce((acc, element, i) => {
+        if (!element.error) {
 
-        
-        if (element.relativePlacement) {
-            element.startAt = getStartAtRecursively(element, populatedDurationElements);
+            // Calculate startAt
+            if (element.relativePlacement) {
+                element.startAt = getStartAtRecursively(element, populatedDurationElements);
+            } else if (element.startAfterPrevious) {
+                const previousElement = acc[i - 1];
+                element.startAt = (previousElement?.finishAt || 0);
+            }
+
+            // Calculate finishAt
+            if (element.videoOriginalElement) {
+                element.finishAt = (element.startAt || 0) + (element.videoOriginalElement.duration || 0);
+            }
+            else if (element.videoExtractElement) {
+                element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
+            }
+            else if (element.audioOriginalElement) {
+                element.finishAt = (element.startAt || 0) + (element.audioOriginalElement.duration || 0);
+            }
+            else if (element.audioExtractElement) {
+                element.finishAt = (element.startAt || 0) + (element.audioExtractElement.duration || 0);
+            }
+            else if (element.textElement) {
+                element.finishAt = (element.startAt || 0) + (element.textElement.duration || 0);
+            } 
         }
 
-
-        if (element.videoOriginalElement) {
-            element.finishAt = (element.startAt || 0) + (element.videoOriginalElement.duration || 0);
-        }
-        else if (element.videoExtractElement) {
-            element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
-        }
-        else if (element.audioOriginalElement) {
-            element.finishAt = (element.startAt || 0) + (element.audioOriginalElement.duration || 0);
-        }
-        else if (element.audioExtractElement) {
-            element.finishAt = (element.startAt || 0) + (element.audioExtractElement.duration || 0);
-        }
-        else if (element.textElement) {
-          element.finishAt = (element.startAt || 0) + (element.textElement.duration || 0);
-        } 
-        return element;
-        
-    });
+        acc.push(element);
+        return acc;
+    }, [] as PopulatedTimelineElementInfo[]);
 
     setTimelineElementInfos(populatedElements);
 }, []);

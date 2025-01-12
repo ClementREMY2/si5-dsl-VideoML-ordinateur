@@ -61,15 +61,16 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'GroupOption','add','alignment','apply','as','at','audio','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','in','layer','load','of','position','project','shadow','size','start','subtitle','text','timeline','to','video'
+        'GroupOption','above','alignment','apply','as','at','audio','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','load','of','position','project','shadow','size','start','subtitle','text','to','under','video'
     ],
     operators: [
-        '+',','
+        ',',':'
     ],
-    symbols: /\+|,/,
+    symbols: /,|:/,
 
     tokenizer: {
         initial: [
+            { regex: /#[0-9]+/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
