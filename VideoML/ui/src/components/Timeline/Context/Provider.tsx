@@ -33,6 +33,7 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     }
     else if (element.textElement) {
         return relativeStartAt + offset + (place ? relativeToElement.textElement?.duration || 0 : 0);
+    }
     else {
         return 0;
     }
@@ -114,8 +115,9 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         }
         else if (element.textElement) {
           element.finishAt = (element.startAt || 0) + (element.textElement.duration || 0);
-          
+        } 
         return element;
+        
     });
 
     setTimelineElementInfos(populatedElements);

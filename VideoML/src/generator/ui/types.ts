@@ -21,6 +21,7 @@ export interface TimelineElementInfo {
         name: string;
         duration?: number;
         source?: string;
+    }
     textElement?: { // TODO: remove useless properties
         name: string;
         text: string;

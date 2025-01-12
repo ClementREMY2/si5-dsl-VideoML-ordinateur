@@ -26,7 +26,7 @@ export const Timeline: React.FC = () => {
           endTime: element.finishAt || 0,
           layer: element.layer,
           title: element.videoOriginalElement?.name  || element.videoExtractElement?.name || element.audioOriginalElement?.name || element.audioExtractElement?.name ||  element.textElement?.name || 'unknown',
-          type: element.videoExtractElement ? 'VideoExtract' : element.videoOriginalElement ? 'VideoOriginal' : element.audioOriginalElement ? 'AudioOriginal' : element.audioExtractElement ? 'AudioExtract' : element.textElement.isSubtitle ? 'Subtitle' : 'Text' : 'unknown',
+          type: element.videoExtractElement ? 'VideoExtract' : element.videoOriginalElement ? 'VideoOriginal' : element.audioOriginalElement ? 'AudioOriginal' : element.audioExtractElement ? 'AudioExtract' : element.textElement ? (element.textElement.isSubtitle ? 'Subtitle' : 'Text') : 'unknown',
         }
 
         if (acc[element.layer]) {

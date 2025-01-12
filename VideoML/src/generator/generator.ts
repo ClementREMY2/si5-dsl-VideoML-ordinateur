@@ -71,30 +71,30 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
         compileTextualElement(element, element, fileNode);
     }
     else if (isAudio(element)) {
-        compileAudio(element, element, fileNode);
+        compileAudio(element, element.name, fileNode);
     }
 }
 
-function compileAudio(audio: Audio, element: Element, fileNode: CompositeGeneratorNode) {
+function compileAudio(audio: Audio, name: string, fileNode: CompositeGeneratorNode) {
     if (isAudioOriginal(audio)) {
-        compileAudioOriginal(audio, element, fileNode);
+        compileAudioOriginal(audio, name, fileNode);
     }
     else if (isAudioExtract(audio)) {
-        compileAudioExtract(audio, element, fileNode);
+        compileAudioExtract(audio, name, fileNode);
     }
 }
 
-function compileAudioOriginal(audioOriginal: AudioOriginal, element: Element, fileNode: CompositeGeneratorNode) {
+function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Load the audio clip
-${element.name} = moviepy.AudioFileClip("${audioOriginal.filePath}")
+${name} = moviepy.AudioFileClip("${audioOriginal.filePath}")
 `, NL);
 }
 
-function compileAudioExtract(audioExtract: AudioExtract, element: Element, fileNode: CompositeGeneratorNode) {
+function compileAudioExtract(audioExtract: AudioExtract, name: string, fileNode: CompositeGeneratorNode) {
     fileNode.append(
 `# Extract a subclip from the audio
-${element.name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(audioExtract.start)}, ${helperTimeToSeconds(audioExtract.end)})
+${name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(audioExtract.start)}, ${helperTimeToSeconds(audioExtract.end)})
 `, NL);
 }
 
@@ -130,7 +130,7 @@ ${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
     `
 , NL);
 }
@@ -145,7 +145,7 @@ ${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
         `
     , NL);
 }
@@ -260,7 +260,7 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
     
     const timelineElementsVideoJoined = orderedTimelineElements
-        .filter(te => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+        .filter(te => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isText(te.element.ref) || isSubtitle(te.element.ref))
         .map(te => te.name)
         .join(', ');
     
