@@ -35,7 +35,7 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
-    videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode));
+    videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
 
     compileTimelineElementsOrdered(videoProject, fileNode);
 
@@ -75,14 +75,22 @@ ${element.name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.sub
 `, NL);
 }
 
-function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode) {
+function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {
     fileNode.append(`${formatTimelineElementName(te.name)} = `);
     if (isRelativeTimelineElement(te)) {
         compileRelativeTimelineElement(te, fileNode);
     } else if (isFixedTimelineElement(te)) {
         compileFixedTimelineElement(te, fileNode);
     } else {
-        fileNode.append(`${te.element.ref?.name}`, NL);
+        // Timeline element that is implicitly placed
+        // If first in list, it's the starting point of the program
+        // Else it will be placed at the end of the previous element
+        if (te.$containerIndex === 0) {
+            fileNode.append(`${te.element.ref?.name}`, NL);
+        } else {
+            const previousElement = videoProject.timelineElements[(te.$containerIndex || 1) - 1];
+            fileNode.append(`${te.element.ref?.name}.with_start(${formatTimelineElementName(previousElement.name)}.end)`, NL);
+        }
     }
 }
 

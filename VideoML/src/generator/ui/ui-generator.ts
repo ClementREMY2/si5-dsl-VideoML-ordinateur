@@ -28,8 +28,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 filePath: te.element.ref.filePath,
             },
             layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else if (isVideoExtract(te.element.ref)) {
         info = {
@@ -40,15 +39,21 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
                 source: "prout"
             },
             layer: te.layer || 0,
-            ...(isRelativeTimelineElement(te) ? compileRelativeTimelineElement(te) : {}),
-            ...(isFixedTimelineElement(te) ? compileFixedTimelineElement(te) : {}),
+            ...(compileTimelineElementPlacement(te)),
         };
     } else {
         throw new Error('Unknown element type');
     }
 
-
     return info;
+}
+
+function compileTimelineElementPlacement(te: TimelineElement): Partial<TimelineElementInfo> {
+    return isRelativeTimelineElement(te)
+        ? compileRelativeTimelineElement(te)
+        : isFixedTimelineElement(te)
+            ? compileFixedTimelineElement(te)
+            : compileImpliciteTimelineElement(te);
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<TimelineElementInfo> {
@@ -77,5 +82,17 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<T
 function compileFixedTimelineElement(fte: FixedTimelineElement): Partial<TimelineElementInfo> {
     return {
         startAt: helperTimeToSeconds(fte.startAt)
+    }
+}
+
+function compileImpliciteTimelineElement(te: TimelineElement): Partial<TimelineElementInfo> {
+    if (te.$containerIndex === 0) {
+        return {
+            startAt: 0
+        }
+    } else {
+        return {
+            startAfterPrevious: true
+        }
     }
 }

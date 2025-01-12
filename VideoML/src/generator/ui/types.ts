@@ -1,6 +1,7 @@
 export interface TimelineElementInfo {
     name: string;
     startAt?: number;
+    startAfterPrevious?: boolean;
     layer: number;
     videoExtractElement?: {
         name: string;
