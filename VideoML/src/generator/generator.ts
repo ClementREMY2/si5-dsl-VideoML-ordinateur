@@ -26,6 +26,8 @@ import {
     isVisualElementPosition,
     isTextualElement,
     TextualElement,
+    GroupOption,
+    VisualElementOption,
 } from '../language-server/generated/ast.js';
 import { helperTimeToSeconds } from '../lib/helper.js';
 
@@ -43,6 +45,10 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
+    videoProject.groupOptions.forEach((groupOption) => {
+        compileGroupOption(groupOption, fileNode);
+    });
+
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode));
 
     compileTimelineElementsOrdered(videoProject, fileNode);
@@ -58,6 +64,19 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     } else if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
     }
+}
+
+function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGeneratorNode) {
+    groupOption.elements.forEach((elementRef) => {
+        const element = elementRef.ref; 
+        if (element) {
+            if (isVideo(element)) {
+                compileVideo(element, element.name, fileNode);
+            } else if (isTextualElement(element)) {
+                compileTextualElement(element, element, fileNode, groupOption);
+            }
+        }
+    });
 }
 
 function compileVideo(video: Video, name: String, fileNode: CompositeGeneratorNode) {
@@ -99,43 +118,61 @@ else:
     , NL);
 }
 
-function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode) {
-    //TODO : adapt default values according to the type of the text
+function compileOptionsToTextClip(text: TextualElement, element: Element, options?: VisualElementOption[]): string {
     let bgColor = 'no';
-    let bgSizeX = -1;
-    let bgSizeY = -1;
+    let bgSizeX = 1920;
+    let bgSizeY = 1080;
     let font = 'Arial';
     let fontSize = 60;
     let fontColor = 'white';
     let align = 'left';
-    let posX = -1;
-    let posY = -1;
+    let posX: number | string = `"center"`;
+    let posY: number | string = `"center"`;
 
-    if (element.options) {
-        for (const option of element.options) {
-            if (isTextFont(option)) {
-                font = option.name;
-            } else if (isTextFontSize(option)) {
-                fontSize = option.size;
-            } else if (isTextAligment(option)) {
-                align = option.alignment;
-            } else if (isTextFontColor(option)) {
-                fontColor = option.color;
-            } else if (isVisualElementBackground(option)) {
-                bgColor = option.color;
-            } else if (isVisualElementSize(option)) {
-                bgSizeX = option.width;
-                bgSizeY = option.height;
-            } else if (isVisualElementPosition(option) && !isSubtitle(text)) {
-                posX = option.x;
-                posY = option.y;
-            }
+    const applyOption = (option: VisualElementOption) => {
+        if (isTextFont(option)) {
+            font = option.name;
+        } else if (isTextFontSize(option)) {
+            fontSize = option.size;
+        } else if (isTextAligment(option)) {
+            align = option.alignment;
+        } else if (isTextFontColor(option)) {
+            fontColor = option.color;
+        } else if (isVisualElementBackground(option)) {
+            bgColor = option.color;
+        } else if (isVisualElementSize(option)) {
+            bgSizeX = option.width;
+            bgSizeY = option.height;
+        } else if (isVisualElementPosition(option) && !isSubtitle(text)) {
+            posX = option.x;
+            posY = option.y;
         }
+    };
+
+    options?.forEach(applyOption);
+    element.options?.forEach(applyOption);
+
+    if (isSubtitle(text)) {
+        posY = 400;
     }
 
+    const optionsString = `
+        text="${text.text}",
+        ${bgColor !== 'no' ? `bg_color="${bgColor}",` : ''}
+        font="${font}",
+        font_size=${fontSize},
+        color="${fontColor}",
+        text_align="${align}",
+        size=(${bgSizeX}, ${bgSizeY}))
+    `.trim().replace(/\s+/g, ' ');
+
+    return `${optionsString}.with_position((${posX}, ${posY})`;
+}
+
+function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOption) {
     fileNode.append(
 `# Load the text clip
-${element.name} = moviepy.TextClip(text="${text.text}", ${bgColor === 'no' ? '' : `bg_color="${bgColor}", `}font="${font}", font_size=${fontSize}, color="${fontColor}", text_align="${align}", size=(${bgSizeX === -1 ? 1920 : bgSizeX}, ${bgSizeY === -1 ? 1080 : bgSizeY})).with_position((${posX === -1 ? `"center"` : posX}, ${posY === -1 ? isSubtitle(text) ? 400 : `"center"` : posY}))
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element, groupOption?.options)})
 `, NL);
 }
 

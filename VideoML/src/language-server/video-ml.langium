@@ -6,11 +6,16 @@ entry VideoProject:
 	elements+=Element
 	(elements+=Element)*
 
+	(groupOptions+=GroupOption)*
+
 	timelineElements+=TimelineElement
 	(timelineElements+=TimelineElement)*;
 
 Element:
 	(Video | TextualElement) options+=Option* 'in' name=ID;
+
+GroupOption:
+	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
 
 Option:
 	(VisualElementOption);
