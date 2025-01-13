@@ -86,6 +86,7 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
+        RelativeTimelineElement: validator.checkRelativeTimelineElement,
         Element: validator.checkElement
 
     };
@@ -119,6 +120,11 @@ export class VideoMlValidator {
             } 
         });
     } 
+
+    checkRelativeTimelineElement(element: RelativeTimelineElement, accept: ValidationAcceptor): void {
+        this.checkTimelineElementRelativePlacementOrder(element, accept);
+    }
+
     async checkAudioOriginal(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkAudioOriginalPath(audioOriginal, accept);
     }
@@ -438,5 +444,14 @@ export class VideoMlValidator {
             accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
         }
     
+    }
+
+    checkTimelineElementRelativePlacementOrder(element: RelativeTimelineElement, accept: ValidationAcceptor): void {
+        if (element.relativeTo && element.relativeTo.ref) {
+            const relativeTo = element.relativeTo.ref;
+            if (parseInt(relativeTo.name.slice(1)) > parseInt(element.name.slice(1))) {
+                accept('error', 'You cannot place relatively this element to a future element', { node: element, property: 'relativeTo' });
+            }
+        }
     }
 }
