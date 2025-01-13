@@ -61,7 +61,7 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'GroupOption','add','alignment','apply','as','at','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','in','layer','load','of','position','project','shadow','size','start','subtitle','text','timeline','to','video'
+        'GroupOption','add','alignment','apply','as','at','background','blend','bordercolor','borderwidth','brightness','by','contrast','delayed','duration','easing','end','equalizer','extract','fadein','fadeout','filter','font','fontcolor','fontsize','for','from','in','layer','load','motion','noisereduction','of','opacity','overlap','pan','pitch','position','project','resolution','reverb','saturation','scale','shadow','size','start','startpoint','subtitle','text','timeline','to','transition','type','video','volume'
     ],
     operators: [
         '+',','
@@ -73,7 +73,9 @@ export function getMonarchGrammar() {
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
+            { regex: /[0-9]*\.[0-9]*/, action: {"token":"number"} },
             { regex: /[0-9]+/, action: {"token":"number"} },
+            { regex: /(true|false)/, action: {"token":"boolean"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },
             { include: '@whitespace' },
             { regex: /@symbols/, action: { cases: { '@operators': {"token":"operator"}, '@default': {"token":""} }} },
