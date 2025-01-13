@@ -42,6 +42,7 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
+const [isVideoMLProgramValid, setIsVideoMLProgramValid] = useState(false);
 const [isTimelineLoaded, setIsTimelineLoaded] = useState(false);
 
 const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos: TimelineElementInfo[]) => {
@@ -129,10 +130,13 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
 }, []);
 
 const value = useMemo(() => ({
+    isVideoMLProgramValid,
+    setIsVideoMLProgramValid,
     timelineElementInfos,
     handleNewTimelineElementInfos,
     isTimelineLoaded,
 }), [
+    isVideoMLProgramValid,
     timelineElementInfos,
     handleNewTimelineElementInfos,
     isTimelineLoaded,

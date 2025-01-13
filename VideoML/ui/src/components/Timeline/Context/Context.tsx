@@ -8,6 +8,8 @@ export type PopulatedTimelineElementInfo = TimelineElementInfo & {
 };
 
 interface TimelineContextProps {
+    isVideoMLProgramValid: boolean;
+    setIsVideoMLProgramValid: (value: boolean) => void;
     timelineElementInfos: PopulatedTimelineElementInfo[];
     handleNewTimelineElementInfos: (timelineElementInfos: TimelineElementInfo[]) => void;
     isTimelineLoaded: boolean;
