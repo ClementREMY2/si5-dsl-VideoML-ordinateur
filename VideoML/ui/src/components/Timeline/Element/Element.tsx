@@ -1,30 +1,40 @@
-import { TimelineElementInfoFormatted } from "../helper";
-import { TimelineElementText } from "./Text";
-import { TimelineElementVideoOriginal } from "./VideoOriginal";
-import { TimelineElementVideoExtract } from "./VideoExtract";
-import { TimelineElementAudioOriginal } from "./AudioOriginal";
-import { TimelineElementAudioExtract } from "./AudioExtract";
+import { formatTime, TimelineElementInfoFormatted } from "../helper";
+import { TimelineElementWrapper } from "./Wrapper";
+
 
 
 type TimelineElementProps = {
     element: TimelineElementInfoFormatted;
+    color: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
 };
 
-export const TimelineElement: React.FC<TimelineElementProps> = ({ element }) => {
+export const TimelineElement: React.FC<TimelineElementProps> = ({ element, color }) => {
     switch (element.type) {
         case 'VideoOriginal':
-            return <TimelineElementVideoOriginal element={element} />;
+            color = 'primary';
+            break;
         case 'VideoExtract':
-            return <TimelineElementVideoExtract element={element} />;
+            color = 'info';
+            break;
         case 'AudioOriginal':
-            return <TimelineElementAudioOriginal element={element} />;
+            color = 'success';
+            break;
         case 'AudioExtract':
-            return <TimelineElementAudioExtract element={element} />;
+            color = 'danger';
+            break;
         case 'Text':
-            return <TimelineElementText element={element} color='secondary' />;
+            color = 'warning';
+            break;
         case 'Subtitle':
-            return <TimelineElementText element={element} color='success' />;
+            color = 'secondary';
+            break;
         default:
             return null;
     }
+    return (
+        <TimelineElementWrapper element={element} color={color}>
+        {`${element.id} - ${element.title} (${formatTime(element.endTime - element.startTime)})`}
+        </TimelineElementWrapper>
+    );
 }
+

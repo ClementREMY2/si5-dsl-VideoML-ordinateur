@@ -26,10 +26,10 @@ export const Home: React.FC = () => {
       
       const path = platform === 'win32' ? file.path.replace(/^.*?\\/, '/').replace(/\\/g, '/') : file.path;
       if (file.path.endsWith('.mp4')) {
-        return `load video "${path}" in ${varName}`;
+        return `load video "${path}" as ${varName}`;
       }
       else if (file.path.endsWith('.mp3')) {
-        return `load audio "${path}" in ${varName}`;
+        return `load audio "${path}" as ${varName}`;
       }
       return "";
     }));
