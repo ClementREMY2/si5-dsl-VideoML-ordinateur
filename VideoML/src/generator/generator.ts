@@ -28,6 +28,25 @@ import {
     TextualElement,
     GroupOption,
     VisualElementOption,
+    isVisualElementOption,
+    isTransitionOption,
+    isTextOption,
+    isVideoBrightness,
+    Option,
+    isVideoScale,
+    isVideoOpacity,
+    isVideoResolution,
+    isVideoContrast,
+    isVideoBlendMode,
+    isVideoMotion,
+    TransitionOption,
+    isTransitionDuration,
+    isVideoOption,
+    isTransitionType,
+    isTransitionOverlap,
+    isTransitionBorderColor,
+    isTransitionBorderWidth,
+    isTransitionEasing,
 } from '../language-server/generated/ast.js';
 import { helperTimeToSeconds } from '../lib/helper.js';
 
@@ -71,7 +90,7 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
         const element = elementRef.ref; 
         if (element) {
             if (isVideo(element)) {
-                compileVideo(element, element.name, fileNode);
+                compileVideo(element, element.name, fileNode, groupOption.options);
             } else if (isTextualElement(element)) {
                 compileTextualElement(element, element, fileNode, groupOption);
             }
@@ -79,11 +98,94 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
     });
 }
 
-function compileVideo(video: Video, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideo(video: Video, name: String, fileNode: CompositeGeneratorNode, options?: Option[]) {
     if (isVideoOriginal(video)) {
         compileVideoOriginal(video, name, fileNode);
     } else if (isVideoExtract(video)) {
         compileVideoExtract(video, name, fileNode);
+    }
+
+    if (options !== undefined) {
+        // check that the option is a VisualElementOption then for each option apply
+        options.forEach((option) => {
+            if (isVideoOption(option)) {
+                compileVideoEffect(option, name, fileNode)
+            }
+            if (isTransitionOption(option)) {
+                compileTransition(option, name, fileNode);
+            }
+    });
+    }    
+}
+
+function compileVideoEffect(option: VisualElementOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isTransitionOption(option) || isTextOption(option)) return;
+
+    if (isVideoBrightness(option)) {
+        fileNode.append(
+`# Apply brightness effect
+def adjust_brightness(frame, factor):
+    frame = np.clip(frame * factor, 0, 255)
+    return frame.astype("uint8")
+from moviepy.editor import VideoFileClip
+import numpy as np
+${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brightness}))`, NL);
+    }
+
+    if (isVideoScale(option)) {
+        // TODO
+    }
+
+    if (isVideoResolution(option)) {
+        // TODO
+    }
+
+    if (isVideoOpacity(option)) {
+        // TODO
+    }    
+    
+    if (isVideoContrast(option)) {
+        // TODO
+    }
+    
+    if (isVideoBlendMode(option)) {
+        // TODO
+    }
+
+    if (isVideoMotion(option)) {
+        // TODO        
+    }
+
+}
+
+function compileTransition(option: TransitionOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (!isTransitionOption(option)) return;
+
+    if (isTransitionDuration(option)) {
+        fileNode.append(
+`# Apply transition effect
+${name} = moviepy.CompositeVideoClip([${name}.fx(moviepy.vfx.fadein, 1).fx(moviepy.vfx.fadeout, 1),
+    ${option}.fx(moviepy.vfx.fadein, 1).fx(moviepy.vfx.fadeout, 1)]).set_duration(${option.duration})`, NL);
+    }
+
+    if (isTransitionType(option)) {
+        // TODO
+    }
+
+    if (isTransitionOverlap(option)) {
+        // TODO 
+    }
+
+    if (isTransitionBorderColor(option)) {
+        // TODO
+    }
+
+    if (isTransitionBorderWidth(option)) {
+        // TODO
+    }
+
+    if (isTransitionEasing(option)) {
+        // TODO
     }
 }
 
@@ -122,7 +224,14 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
-    let font = 'Arial';
+    let font;
+    const platform = navigator.userAgent || "unknown";
+
+    if (platform.toLowerCase().includes('win')) {
+        font = 'C:/Windows/Fonts/Arial.ttf';
+    } else {
+        font = 'Arial';
+    }
     let fontSize = 60;
     let fontColor = 'white';
     let align = 'left';
@@ -131,7 +240,11 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
 
     const applyOption = (option: VisualElementOption) => {
         if (isTextFont(option)) {
-            font = option.name;
+            if (platform.toLowerCase().includes('win')) {
+                font = 'C:/Windows/Fonts/' + option.name + '.ttf';
+            } else {
+                font = option.name;
+            }
         } else if (isTextFontSize(option)) {
             fontSize = option.size;
         } else if (isTextAligment(option)) {
@@ -150,7 +263,7 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
     };
 
     options?.forEach(applyOption);
-    element.options?.forEach(applyOption);
+    element.options?.filter((option): option is VisualElementOption => isVisualElementOption(option)).forEach(applyOption);
 
     if (isSubtitle(text)) {
         posY = 400;
@@ -172,7 +285,9 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOption) {
     fileNode.append(
 `# Load the text clip
-${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element, groupOption?.options)})
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element, 
+    groupOption?.options?.filter((option): option is VisualElementOption => isVisualElementOption(option) 
+    && (isTextFont(option) || isTextFontSize(option) || isTextAligment(option) || isTextFontColor(option))))})
 `, NL);
 }
 
@@ -183,6 +298,10 @@ function compileTimelineElement(te: TimelineElement, fileNode: CompositeGenerato
     } else if (isFixedTimelineElement(te)) {
         compileFixedTimelineElement(te, fileNode);
     } 
+
+    // todo
+
+
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
@@ -226,8 +345,8 @@ function compileWithDurationElement(duration: string, fileNode: CompositeGenerat
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
     // Sort by layer (0 if undefined)
     const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
-    
     const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
+
     fileNode.append(
 `# Concatenate all clips
 final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
