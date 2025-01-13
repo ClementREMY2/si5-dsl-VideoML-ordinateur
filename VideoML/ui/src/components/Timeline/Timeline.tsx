@@ -57,10 +57,10 @@ export const Timeline: React.FC = () => {
         )}
         {Object.entries(layers)
           .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
-          .map(([layer, elements]) => (
+          .map(([layer, elements,]) => (
             <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
               <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
-              {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
+              {elements.map((element) => <TimelineElement key={element.id} element={element} color={'secondary'} />)}
             </TimelineLayoutLayer>
           ))}
         <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
