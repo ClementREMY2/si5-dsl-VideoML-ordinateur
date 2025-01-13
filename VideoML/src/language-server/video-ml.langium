@@ -54,85 +54,88 @@ TextualElement:
 	(Text | Subtitle);
 
 VideoOption: 
-	VideoResolution | VideoMotion | VideoFilterType | VideoBlendMode | VideoScale | VideoBrightness | VideoOpacity | VideoContrast | VideoSaturation;
+       VideoResolution | VideoMotion | VideoFilterType | VideoBlendMode | VideoScale | VideoBrightness | VideoOpacity | VideoContrast | VideoSaturation;
 
 VideoResolution:
-	'resolution' width=INT ',' height=INT;
+       'resolution' width=INT ',' height=INT;
 
 VideoMotion:
-	'motion' motion=BOOLEAN;
+       'motion' motion=BOOLEAN;
 
 VideoFilterType:
-	'filter' filterType=STRING;
+       'filter' filterType=STRING;
 
 VideoBlendMode:
-	'blend' blendMode=STRING;
+       'blend' blendMode=STRING;
 
 VideoScale:
-	'scale' scale=FLOAT;
+       'scale' scale=FLOAT;
 
 VideoBrightness:
-	'brightness' brightness=FLOAT;
+       'brightness' brightness=FLOAT;
 
 VideoOpacity:
-	'opacity' opacity=FLOAT;
+       'opacity' opacity=FLOAT;
 
 VideoContrast:
-	'contrast' contrast=FLOAT;
+       'contrast' contrast=FLOAT;
 
 VideoSaturation:
-	'saturation' saturation=FLOAT;
+       'saturation' saturation=FLOAT;
 
+// need to define the targets of the transition, a tuple of two videos
 TransitionOption: 
-	TransitionType | TransitionOverlap | TransitionStartPoint | TransitionDuration | TransitionBorderWidth | TransitionBorderColor | TransitionEasing;
+       'transition' 'from' fromVideo=[Video:ID] 'to' toVideo=[Video:ID]
+       TransitionType | TransitionOverlap | TransitionStartPoint | TransitionDuration | TransitionBorderWidth | TransitionBorderColor | TransitionEasing;
 
 TransitionType:
-	'type' type=STRING;
+       'type' type=STRING;
 
 TransitionOverlap:
-	'overlap' overlap=BOOLEAN;
+       'overlap' overlap=BOOLEAN;
 
 TransitionStartPoint:
-	'startpoint' startPoint=STRING;
+       'startpoint' startPoint=STRING;
 
 TransitionBorderColor: 
-	'bordercolor' color=STRING;
+       'bordercolor' color=STRING;
 
 TransitionBorderWidth:
-	'borderwidth' width=INT;
+       'borderwidth' width=INT;
 
 TransitionDuration:
-	'duration' duration=INT;
+       'duration' duration=INT;
 
 TransitionEasing:
-	'easing' easing=STRING;
+       'easing' easing=STRING;
 
 AudioOption: 
-	AudioVolume | AudioNoiseReduction | AudioPitch | AudioFadeOut | AudioFadeIn | AudioReverb | AudioPan | AudioEqualizerSettings;
+       AudioVolume | AudioNoiseReduction | AudioPitch | AudioFadeOut | AudioFadeIn | AudioReverb | AudioPan | AudioEqualizerSettings;
 
 AudioVolume:
-	'volume' volume=FLOAT;
+       'volume' volume=FLOAT;
 
 AudioNoiseReduction:
-	'noisereduction' noiseReduction=BOOLEAN;
+       'noisereduction' noiseReduction=BOOLEAN;
 
 AudioPitch:
-	'pitch' pitch=FLOAT;
+       'pitch' pitch=FLOAT;
 
 AudioFadeOut:
-	'fadeout' fadeOut=INT;
+       'fadeout' fadeOut=INT;
 
 AudioFadeIn:
-	'fadein' fadeIn=INT;
+       'fadein' fadeIn=INT;
 
 AudioReverb:
-	'reverb' reverb=FLOAT;
+       'reverb' reverb=FLOAT;
 
 AudioPan:
-	'pan' pan=FLOAT;
+       'pan' pan=FLOAT;
 
 AudioEqualizerSettings:
-	'equalizer' settings+=FLOAT (',' settings+=FLOAT)*;
+       'equalizer' settings+=FLOAT (',' settings+=FLOAT)*;
+
 
 Text:
 	'text' text=STRING;
