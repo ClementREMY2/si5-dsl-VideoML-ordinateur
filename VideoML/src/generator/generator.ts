@@ -171,8 +171,10 @@ ${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brigh
     }
 
     if (isVideoScale(option)) {
-        // TODO
-    }
+        fileNode.append(
+`# Apply resolution effect
+${name} = ${name}.resize((${option.scale}))`, NL);    
+}
 
     if (isVideoResolution(option)) {
         fileNode.append(
