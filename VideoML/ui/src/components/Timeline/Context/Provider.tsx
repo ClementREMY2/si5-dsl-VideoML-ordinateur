@@ -4,6 +4,8 @@ import { TimelineElementInfo } from '../../../../lib/generated/generator/types';
 import { getCachedVideoDuration } from '../../../lib/video-duration-getter';
 import { getCachedAudioDuration } from '../../../lib/audio-duration-getter';
 
+const TIMELINE_SCALE_FACTOR = 1;
+
 interface TimelineProviderProps {
     children: ReactNode;
 }
@@ -43,6 +45,7 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
 export const TimelineProvider: React.FC<TimelineProviderProps> = ({ children }) => {
 const [timelineElementInfos, setTimelineElementInfos] = useState<PopulatedTimelineElementInfo[]>([]);
 const [isTimelineLoaded, setIsTimelineLoaded] = useState(false);
+const [timelineZoom, setTimelineZoom] = useState(10);
 
 const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos: TimelineElementInfo[]) => {
     setIsTimelineLoaded(true);
@@ -132,10 +135,14 @@ const value = useMemo(() => ({
     timelineElementInfos,
     handleNewTimelineElementInfos,
     isTimelineLoaded,
+    timelineZoom,
+    setTimelineZoom,
+    timelineScaleFactor: timelineZoom * TIMELINE_SCALE_FACTOR,
 }), [
     timelineElementInfos,
     handleNewTimelineElementInfos,
     isTimelineLoaded,
+    timelineZoom,
 ]);
 
 return (

@@ -7,6 +7,7 @@ import { PythonVisualizer } from '../PythonVisualizer/Visualizer';
 import { FileInput } from '../FileInput/FileInput';
 import { VideoPlayer } from '../Video/Player';
 import { VideoGeneratorButton } from '../Video/Generator/Button';
+import { TimelineZoom } from '../Timeline/Zoom';
 
 const platform = await window.ipcRenderer.invoke('get-process-platform');
 
@@ -85,7 +86,7 @@ export const Home: React.FC = () => {
             </NavItem>
         </Nav>
         <TabContent activeTab={openedTab} className="flex-grow-1 overflow-hidden">
-            <TabPane tabId="timeline" className="h-100 overflow-auto">
+            <TabPane tabId="timeline" className="h-100 overflow-auto" id="TimelineParent">
                 <Timeline />
             </TabPane>
             <TabPane tabId="python" className="h-100 overflow-auto">
@@ -93,6 +94,11 @@ export const Home: React.FC = () => {
             </TabPane>
             <TabPane tabId="video" className="h-100">
                 <VideoPlayer className="h-100 w-100" />
+            </TabPane>
+        </TabContent>
+        <TabContent activeTab={openedTab} className="overflow-hidden">
+            <TabPane tabId="timeline" className="h-100">
+                <TimelineZoom />
             </TabPane>
         </TabContent>
     </div>

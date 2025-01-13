@@ -11,6 +11,9 @@ interface TimelineContextProps {
     timelineElementInfos: PopulatedTimelineElementInfo[];
     handleNewTimelineElementInfos: (timelineElementInfos: TimelineElementInfo[]) => void;
     isTimelineLoaded: boolean;
+    timelineZoom: number;
+    setTimelineZoom: (zoom: number) => void;
+    timelineScaleFactor: number;
 }
 
 export const TimelineContext = createContext<TimelineContextProps | undefined>(undefined);

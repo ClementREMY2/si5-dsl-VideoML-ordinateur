@@ -1,5 +1,3 @@
-export const TIMELINE_SCALE_FACTOR = 10;
-
 // From seconds to MM:SS format
 export const formatTime = (time: number): string => {
   const minutes = Math.floor(time / 60);
