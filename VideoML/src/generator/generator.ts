@@ -166,7 +166,6 @@ function compileVideoEffect(option: VisualElementOption, name: String, fileNode:
 def adjust_brightness(frame, factor):
     frame = np.clip(frame * factor, 0, 255)
     return frame.astype("uint8")
-from moviepy.editor import VideoFileClip
 import numpy as np
 ${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brightness}))`, NL);
     }
@@ -176,15 +175,31 @@ ${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brigh
     }
 
     if (isVideoResolution(option)) {
-        // TODO
+        fileNode.append(
+`# Apply resolution effect
+${name} = ${name}.resize((${option.width}, ${option.height}))`, NL);
     }
 
     if (isVideoOpacity(option)) {
-        // TODO
+        fileNode.append(
+            `# Apply opacity effect
+def adjust_opacity(clip, opacity):
+    def apply_opacity(image):
+        alpha_channel = np.full(image.shape[:2] + (1,), 255, dtype=np.uint8)
+        image_with_alpha = np.concatenate([image, alpha_channel], axis=-1)
+        image_with_alpha[..., -1] = (image_with_alpha[..., -1] * opacity).astype('uint8')
+        return image_with_alpha
+
+    return clip.fl_image(apply_opacity)
+${name} = adjust_opacity(${name}, 0.5)`, NL);
     }    
     
     if (isVideoContrast(option)) {
-        // TODO
+        fileNode.append(
+// Use the colorx effect to adjust the contrast
+`# Apply contrast effect
+from moviepy.video.fx.all import colorx
+${name} = ${name}.fx(colorx, ${option.contrast})`, NL);
     }
     
     if (isVideoBlendMode(option)) {
@@ -224,7 +239,24 @@ ${name} = moviepy.CompositeVideoClip([${name}.fx(moviepy.vfx.fadein, 1).fx(movie
     }
 
     if (isTransitionEasing(option)) {
-        // TODO
+        fileNode.append(
+`# Apply easing effect
+def easing_transition(clip1, clip2, duration=2):
+    def ease_in_out(t):
+        return 0.5 - 0.5 * np.cos(np.pi * t)
+
+    transition_clip = VideoFileClip(clip1.size).set_duration(duration)
+
+    def make_frame(t):
+        alpha = ease_in_out(t / duration)  # Calculer l'opacité via easing
+        frame1 = clip1.get_frame(clip1.duration - duration + t)
+        frame2 = clip2.get_frame(t)
+        return (frame1 * (1 - alpha) + frame2 * alpha).astype('uint8')
+
+    return transition_clip.set_make_frame(make_frame)
+    // TODO Fix the transition effect
+    // Need to find a way to apply the easing effect to the transition correctly
+${name} = ${name}.fx(moviepy.vfx.fadein, 1).fx(moviepy.vfx.fadeout, 1).crossfadein(${option.easing})`, NL);
     }
 }
 
