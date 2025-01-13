@@ -1,5 +1,0 @@
-#!/usr/bin/env node
-
-import cli from "../out/cli/index.js";
-
-cli();
