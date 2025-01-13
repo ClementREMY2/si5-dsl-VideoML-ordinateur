@@ -31,6 +31,7 @@ import {
     VideoContrast,
     VideoOpacity,
     VideoResolution,
+    VideoScale,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -469,13 +470,20 @@ export class VideoMlValidator {
     }
 
     // Check that the resolution is between standard values (FullHD at maximum resolution)
+    // TODO : Discuss about the range of the resolution
     checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
         if (option.width > 1920 || option.height > 1080) {
             accept('error', 'Resolution must be less than FullHD (1920x1080)', { node: option });
         }
     }
 
-
+    // Check that the scale is between valid values (100% for now, you can only reduce it)
+    // TODO : Discuss about the range of the scale
+    checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
+        if (option.scale > 1 || option.scale < 0) {
+            accept('error', 'Scale must be less than or equal to 1. For example, 0.5 is 50% smaller', { node: option });
+        }
+    }
 
 
 }
