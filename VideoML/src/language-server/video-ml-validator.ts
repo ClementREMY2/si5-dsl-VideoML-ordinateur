@@ -133,8 +133,6 @@ export class VideoMlValidator {
         await this.checkAudioExtractValidTimeCodes(audioExtract, accept);
     }
 
-    //TODO : checkAudioOriginalValidTimeCodes? how to proceed?
-
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
     }
