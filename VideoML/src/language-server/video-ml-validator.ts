@@ -12,6 +12,10 @@ import {
     VideoExtract,
     isVideoExtract,
     isVideoOriginal,
+    AudioOriginal,
+    AudioExtract,
+    isAudioOriginal,
+    isAudioExtract,
     Element,
     isTextFontColor,
     isTextualElement,
@@ -77,6 +81,8 @@ export function registerValidationChecks(services: VideoMlServices) {
     const validator = services.validation.VideoMlValidator;
     const checks: ValidationChecks<VideoMLAstType> = {
         VideoProject: validator.checkVideoProject,
+        AudioOriginal: validator.checkAudioOriginal,
+        AudioExtract: validator.checkAudioExtract,
         VideoOriginal: validator.checkVideoOriginal,
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
@@ -92,10 +98,36 @@ export function registerValidationChecks(services: VideoMlServices) {
 export class VideoMlValidator {
     checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
         this.checkOutputFileName(videoProject, accept);
-        this.checkOneTimelineElementAtStart(videoProject, accept);
+        this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
-        this.checkUniqueNameForTimelineElements(videoProject, accept);
+        this.checkLayerTimelineElementsInfiniteRecursion(videoProject, accept);
+        this.checkNameForTimelineElements(videoProject, accept);
+        this.checkNameForElements(videoProject, accept);
     }
+
+    checkNameForElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        const elements = videoProject.elements;
+
+        // Check name duplicate
+        const names = new Set<string>();
+        elements.forEach((element) => {
+            if (!!element) {
+                if (names.has(element.name)) {
+                    accept('error', 'Element names must be unique', { node: element, property: 'name' });
+                }
+                names.add(element.name);
+            } 
+        });
+    } 
+    async checkAudioOriginal(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
+        await this.checkAudioOriginalPath(audioOriginal, accept);
+    }
+
+    async checkAudioExtract(audioExtract: AudioExtract, accept: ValidationAcceptor): Promise<void> {
+        await this.checkAudioExtractValidTimeCodes(audioExtract, accept);
+    }
+
+    //TODO : checkAudioOriginalValidTimeCodes? how to proceed?
 
     async checkVideoOriginal(videoOriginal: VideoOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkVideoOriginalPath(videoOriginal, accept);
@@ -142,20 +174,32 @@ export class VideoMlValidator {
         }
     }
 
+
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
-        this.checkTimelineElementLayer(element, accept);
         this.checkDuration(element, accept);
     }
 
-    // Check if all timeline elements have unique names
-    checkUniqueNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
-        const names = new Set<string>();
+    // Check timeline elemnts names (unique and ordered, first must be 1)
+    checkNameForTimelineElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // Check if first is 1
+        const firstElement = videoProject.timelineElements[0];
+        if (firstElement && firstElement.name !== '#1') {
+            accept('error', 'First timeline element must have identifier #1', { node: firstElement, property: 'name' });
+            return;
+        }
+
+        // Check if ordered and unique
+        const ids = new Set<string>();
+        let lastId = 0;   
         for (const element of videoProject.timelineElements) {
-            if (names.has(element.name)) {
-                accept('error', `Name "${element.name}" is already used.`, { node: element, property: 'name' });
-            } else {
-                names.add(element.name);
+            if (ids.has(element.name)) {
+                accept('error', 'Timeline elements must have unique identifiers', { node: element, property: 'name' });
             }
+            ids.add(element.name);
+            if (parseInt(element.name.slice(1)) <= lastId) {
+                accept('error', `Timeline elements must have ordered identifiers (this one should be at least #${lastId + 1})`, { node: element, property: 'name' });
+            }
+            lastId = parseInt(element.name.slice(1));
         }
     }
 
@@ -164,6 +208,11 @@ export class VideoMlValidator {
         let currentAnalyzingElement: RelativeTimelineElement | null = null;
         let recursivePath: string[] = [];
         const isInfiniteRecursion = (element: RelativeTimelineElement): boolean => {
+            // If there is no relative element yet, return false
+            if (!element.relativeTo) {
+                return false;
+            }
+
             if (element.relativeTo.ref === currentAnalyzingElement) {
                 recursivePath.push(element.relativeTo.ref.name);
                 return true;
@@ -178,7 +227,7 @@ export class VideoMlValidator {
 
         for (let i = 0; i < videoProject.timelineElements.length; i++) {
             const element = videoProject.timelineElements[i];
-            if (isRelativeTimelineElement(element)) {
+            if (isRelativeTimelineElement(element) && element.relativeTo) {
                 currentAnalyzingElement = element;
                 recursivePath = [];
                 if (isInfiniteRecursion(element)) {
@@ -222,21 +271,109 @@ export class VideoMlValidator {
         });
     }
 
-    // Check if at least one timeline element is present at start
-    checkOneTimelineElementAtStart(videoProject: VideoProject, accept: ValidationAcceptor): void {
+    async checkAudioOriginalPath(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
+        if (!audioOriginal.filePath) return;
+
+        let errors = [];
+        if (!IS_ELECTRON) {
+            errors = await validateFilePath(audioOriginal.filePath);
+        } else {
+            // Filepath verification will be handled by Electron (main process)
+            const indexName = `validate-file-${audioOriginal.filePath}-${audioOriginal.$containerProperty}-${audioOriginal.$containerIndex}`;
+            errors = await invokeSpecialCommand(
+                'validate-file',
+                { path: audioOriginal.filePath },
+                indexName,
+                { needNodeJs: true },
+            );
+        }
+
+        (errors || []).forEach((error: { type: 'error' | 'warning' | 'info' | 'hint', message: string }) => {
+            accept(error.type, error.message, { node: audioOriginal, property: 'filePath' });
+        });
+    }
+
+    async checkAudioExtractValidTimeCodes(audioExtract: AudioExtract, accept: ValidationAcceptor): Promise<void> {
+        if (!audioExtract.start || !audioExtract.end) return;
+
+        // Check if Start time is less than End time
+        if (helperTimeToSeconds(audioExtract.start) >= helperTimeToSeconds(audioExtract.end)) {
+            accept('error', 'Start time must be before end time', { node: audioExtract, property: 'start' });
+        }
+
+        // Check if End time is less or equal to the video duration
+        const source = audioExtract.source?.ref;
+        if (!source) {
+            accept('error', 'Source audio not found', { node: audioExtract, property: 'source' });
+            return;
+        }
+
+        let duration;
+        if (isAudioExtract(source)) {
+            duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
+        } else if (isAudioOriginal(source)) {
+            const indexName = `get-audio-original-duration-${source.filePath}-${source.$containerProperty}-'${source.$containerIndex}'`;
+            duration = await invokeSpecialCommand(
+                'get-audio-original-duration',
+                { path: source.filePath },
+                indexName,
+                { needNodeJs: false },
+            );
+        }
+        if (!duration || duration === -1) {
+            accept('error', 'Failed to get source audio duration', { node: audioExtract, property: 'source' });
+            return;
+        }
+
+        if (helperTimeToSeconds(audioExtract.end) > duration) {
+            accept('error', 'End time is greater than source audio duration', { node: audioExtract, property: 'end' });
+        }
+    }
+
+    // Check paramaters of the first element in the timeline
+    checkTimelineElementAtStart(videoProject: VideoProject, accept: ValidationAcceptor): void {
         if (videoProject.timelineElements.length > 0) {
-            const elementAtStart = videoProject.timelineElements.find((element) => isFixedTimelineElement(element) && element.startAt === '00:00');
-            if (!elementAtStart) {
-                accept('error', 'At least one timeline element must be present at start (00:00)', { node: videoProject, property: 'timelineElements' });
+            const firstElement = videoProject.timelineElements[0];
+            if (isRelativeTimelineElement(firstElement) || isFixedTimelineElement(firstElement)) {
+                accept('error', 'First element in timeline must not have time parameters, it will be the starting point of the video (00:00)', { node: firstElement });
             }
         }
     }
 
-    // Check if layer is not default layer
-    checkTimelineElementLayer(element: TimelineElement, accept: ValidationAcceptor): void {
-        if (element.layer === 0) {
-            accept('error', 'Layer 0 is the default layer, use a number greater than 0 to specify another layer', { node: element, property: 'layer' });
+    checkLayerTimelineElementsInfiniteRecursion(videoProject: VideoProject, accept: ValidationAcceptor): void {
+        // For each timeline elements, check if we have infinite recursion
+        let currentAnalyzingElement: TimelineElement | null = null;
+        let recursivePath: string[] = [];
+        const isLayerInfiniteRecursion = (element: TimelineElement): boolean => {
+            // If there is no relative element yet, return false
+            if (!element.layerPosition || !element.layerPosition.relativeTo) {
+                return false;
+            }
+
+            if (element.layerPosition.relativeTo.ref === currentAnalyzingElement) {
+                recursivePath.push(element.layerPosition.relativeTo.ref.name);
+                return true;
+            }
+
+            if (isRelativeTimelineElement(element.layerPosition.relativeTo.ref)) {
+                recursivePath.push(element.layerPosition.relativeTo.ref.name);
+                return isLayerInfiniteRecursion(element.layerPosition.relativeTo.ref);
+            }
+            return false;
         }
+
+        for (let i = 0; i < videoProject.timelineElements.length; i++) {
+            const element = videoProject.timelineElements[i];
+            if (element.layerPosition) {
+                currentAnalyzingElement = element;
+                recursivePath = [];
+                if (isLayerInfiniteRecursion(element)) {
+                    accept('error', `Infinite recursion detected. Path: ${element.name} -> ${recursivePath.join(' -> ')}`, { node: element, property: 'layerPosition' });
+                    // Only show one error per project to avoid max call stack error
+                    break;
+                }
+            }
+        };
     }
 
 

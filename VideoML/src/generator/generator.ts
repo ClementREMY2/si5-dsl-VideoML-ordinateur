@@ -4,19 +4,23 @@ import {
     Element,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    isStartRelativeTimelineElement,
-    isEndRelativeTimelineElement,
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
     isText,
     isSubtitle,
+    isVideo,
+    Video,
     VideoOriginal,
     isVideoOriginal,
     VideoExtract,
     isVideoExtract,
-    isVideo,
-    Video,
+    Audio,
+    isAudio,
+    AudioOriginal,
+    isAudioOriginal,
+    AudioExtract,
+    isAudioExtract,
     isTextFontSize,
     isTextFontColor,
     isTextFont,
@@ -48,7 +52,12 @@ import {
     isTransitionBorderWidth,
     isTransitionEasing,
 } from '../language-server/generated/ast.js';
-import { helperTimeToSeconds } from '../lib/helper.js';
+import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
+
+function formatTimelineElementName(name: string | undefined): string {
+    if (!name) throw new Error('Timeline element name is missing');
+    return `timeline_element_${name.slice(1)}`;
+}
 
 export function generatePythonProgram(videoProject: VideoProject): string {
     const fileNode = new CompositeGeneratorNode();
@@ -62,16 +71,20 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `import moviepy
 `, NL);
 
+    // Compile explicitly declared elements (beofre timeline creation)
     videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
     videoProject.groupOptions.forEach((groupOption) => {
         compileGroupOption(groupOption, fileNode);
     });
 
-    videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode));
+    // Compile timeline elements (placement, duration)
+    videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
 
+    // Compile the final video (concatenation)
     compileTimelineElementsOrdered(videoProject, fileNode);
 
+    // Export the final video
     fileNode.append(
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
@@ -83,6 +96,32 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     } else if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
     }
+    else if (isAudio(element)) {
+        compileAudio(element, element.name, fileNode);
+    }
+}
+
+function compileAudio(audio: Audio, name: string, fileNode: CompositeGeneratorNode) {
+    if (isAudioOriginal(audio)) {
+        compileAudioOriginal(audio, name, fileNode);
+    }
+    else if (isAudioExtract(audio)) {
+        compileAudioExtract(audio, name, fileNode);
+    }
+}
+
+function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Load the audio clip
+${name} = moviepy.AudioFileClip("${audioOriginal.filePath}")
+`, NL);
+}
+
+function compileAudioExtract(audioExtract: AudioExtract, name: string, fileNode: CompositeGeneratorNode) {
+    fileNode.append(
+`# Extract a subclip from the audio
+${name} = ${(audioExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(audioExtract.start)}, ${helperTimeToSeconds(audioExtract.end)})
+`, NL);
 }
 
 function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGeneratorNode) {
@@ -200,7 +239,7 @@ ${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
     `
 , NL);
 }
@@ -215,7 +254,7 @@ ${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(
 if ${name}.size[0]/${name}.size[1] == 16/9:
     ${name} = ${name}.resized((1920, 1080))
 else:
-    ${name} = ${name}.with_postition("center", "center")
+    ${name} = ${name}.with_position("center", "center")
         `
     , NL);
 }
@@ -291,24 +330,30 @@ ${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element,
 `, NL);
 }
 
-function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${te.name} = `);
+function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {
+    fileNode.append(`${formatTimelineElementName(te.name)} = `);
     if (isRelativeTimelineElement(te)) {
         compileRelativeTimelineElement(te, fileNode);
     } else if (isFixedTimelineElement(te)) {
         compileFixedTimelineElement(te, fileNode);
-    } 
-
-    // todo
-
-
+    } else {
+        // Timeline element that is implicitly placed
+        // If first in list, it's the starting point of the program
+        // Else it will be placed at the end of the previous element
+        if (te.$containerIndex === 0) {
+            fileNode.append(`${te.element.ref?.name}`, NL);
+        } else {
+            const previousElement = videoProject.timelineElements[(te.$containerIndex || 1) - 1];
+            fileNode.append(`${te.element.ref?.name}.with_start(${formatTimelineElementName(previousElement.name)}.end)`, NL);
+        }
+    }
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`${rte.element.ref?.name}.with_start(${rte.relativeTo.ref?.name}`);
-    if (isStartRelativeTimelineElement(rte)) {
+    fileNode.append(`${rte.element.ref?.name}.with_start(${formatTimelineElementName(rte.relativeTo.ref?.name)}`);
+    if (rte.place === 'start') {
         fileNode.append(`.start`);
-    } else if (isEndRelativeTimelineElement(rte)) {
+    } else if (rte.place === 'end') {
         fileNode.append(`.end`);
     }
 
@@ -343,13 +388,39 @@ function compileWithDurationElement(duration: string, fileNode: CompositeGenerat
 }
 
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
-    // Sort by layer (0 if undefined)
-    const orderedTimelineElements = videoProject.timelineElements.sort((a, b) => (a.layer || 0) - (b.layer || 0));
-    const timelineElementsJoined = orderedTimelineElements.map((te) => te.name).join(', ');
+    // Calculate layer for each timeline element
+    const layeredTimelineElements = videoProject.timelineElements.map((te) => ({ te, layer: getLayer(te) }));
+
+    // Sort by layer
+    const orderedTimelineElements = layeredTimelineElements.sort((a, b) => a.layer - b.layer);
+    
+    const timelineElementsVideoJoined = orderedTimelineElements
+        .filter(({ te }) => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isText(te.element.ref) || isSubtitle(te.element.ref))
+        .map(({ te }) => formatTimelineElementName(te.name))
+        .join(', ');
+    
+    const timelineElementsAudioJoined = orderedTimelineElements
+        .filter(({ te }) => isAudio(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+        .map(({ te }) => isAudio(te.element.ref) ? formatTimelineElementName(te.name) : `${formatTimelineElementName(te.name)}.audio`)
+        .join(', ');
+    
 
     fileNode.append(
 `# Concatenate all clips
-final_video = moviepy.CompositeVideoClip([${timelineElementsJoined}])
+final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `, NL);
+
+    if (videoProject.timelineElements.some(te => isAudio(te.element.ref))) {
+        fileNode.append(
+`# Concatenate all audios
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
+`, NL);
+    
+        fileNode.append(
+`# Assign audio's concatenation to the final video
+final_video.audio = final_audio
+`, NL);  
+    } 
+
 }
 

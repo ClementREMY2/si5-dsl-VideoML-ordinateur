@@ -1,8 +1,14 @@
 export interface TimelineElementInfo {
     name: string;
     startAt?: number;
+    startAfterPrevious?: boolean;
     layer: number;
-    videoExtractElement?: {
+    audioOriginalElement?: {
+        name: string;
+        filePath: string;
+        duration?: number;
+    }
+    audioExtractElement?: {
         name: string;
         duration?: number;
         source?: string;
@@ -11,6 +17,11 @@ export interface TimelineElementInfo {
         name: string;
         filePath?: string;
         duration?: number;
+    }
+    videoExtractElement?: {
+        name: string;
+        duration?: number;
+        source?: string;
     }
     textElement?: { // TODO: remove useless properties
         name: string;

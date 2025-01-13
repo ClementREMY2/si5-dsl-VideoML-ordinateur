@@ -25,8 +25,8 @@ export const Timeline: React.FC = () => {
           startTime: element.startAt || 0,
           endTime: element.finishAt || 0,
           layer: element.layer,
-          title: element.videoOriginalElement?.name  || element.videoExtractElement?.name || element.textElement?.name || 'Unknown',
-          type: element.videoExtractElement ? 'VideoExtract' : element.videoOriginalElement ? 'VideoOriginal' : element.textElement ? element.textElement.isSubtitle ? 'Subtitle' : 'Text' : 'unknown',
+          title: element.videoOriginalElement?.name  || element.videoExtractElement?.name || element.audioOriginalElement?.name || element.audioExtractElement?.name ||  element.textElement?.name || 'unknown',
+          type: element.videoExtractElement ? 'VideoExtract' : element.videoOriginalElement ? 'VideoOriginal' : element.audioOriginalElement ? 'AudioOriginal' : element.audioExtractElement ? 'AudioExtract' : element.textElement ? (element.textElement.isSubtitle ? 'Subtitle' : 'Text') : 'unknown',
         }
 
         if (acc[element.layer]) {
@@ -55,12 +55,14 @@ export const Timeline: React.FC = () => {
         {!isTimelineLoaded && (
           <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
         )}
-        {Object.entries(layers).map(([layer, elements]) => (
-          <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
-            <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
-            {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
-          </TimelineLayoutLayer>
-        ))}
+        {Object.entries(layers)
+          .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
+          .map(([layer, elements]) => (
+            <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
+              <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+              {elements.map((element) => <TimelineElement key={element.id} element={element} />)}
+            </TimelineLayoutLayer>
+          ))}
         <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
       </div>
     </div>

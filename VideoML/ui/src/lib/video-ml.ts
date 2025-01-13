@@ -61,15 +61,16 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'GroupOption','add','alignment','apply','as','at','background','blend','bordercolor','borderwidth','brightness','by','contrast','delayed','duration','easing','end','equalizer','extract','fadein','fadeout','filter','font','fontcolor','fontsize','for','from','in','layer','load','motion','noisereduction','of','opacity','overlap','pan','pitch','position','project','resolution','reverb','saturation','scale','shadow','size','start','startpoint','subtitle','text','timeline','to','transition','type','video','volume'
+        'GroupOption','above','alignment','apply','as','at','audio','background','blend','bordercolor','borderwidth','brightness','by','contrast','delayed','duration','easing','end','equalizer','extract','fadein','fadeout','filter','font','fontcolor','fontsize','for','from','load','motion','noisereduction','of','opacity','overlap','pan','pitch','position','project','resolution','reverb','saturation','scale','shadow','size','start','startpoint','subtitle','text','to','transition','type','under','video','volume'
     ],
     operators: [
-        '+',','
+        ',',':'
     ],
-    symbols: /\+|,/,
+    symbols: /,|:/,
 
     tokenizer: {
         initial: [
+            { regex: /#[0-9]+/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
