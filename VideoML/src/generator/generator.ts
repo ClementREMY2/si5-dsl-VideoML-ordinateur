@@ -150,12 +150,8 @@ function compileVideoEffect(option: VideoOption, name: String, fileNode: Composi
 
     if (isVideoBrightness(option)) {
         fileNode.append(
-`# Apply brightness effect
-def adjust_brightness(frame, factor):
-    frame = np.clip(frame * factor, 0, 255)
-    return frame.astype("uint8")
-import numpy as np
-${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brightness}))`, NL);
+            `# Apply opacity effect
+${name} = ${name}.with_brightness(${option.brightness})`, NL);
     }
 
     if (isVideoScale(option)) {
