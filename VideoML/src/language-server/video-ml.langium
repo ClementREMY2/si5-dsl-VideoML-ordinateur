@@ -26,14 +26,16 @@ AudioExtract:
 	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
-	'options' (GroupOptionText | GroupOptionVideo | GroupAudioOption);
+	'options' (GroupOptionText | GroupOptionVideo | GroupOptionAudio);
 
 GroupOptionText:
 	options+=(TextOption) (',' options+=TextOption)* 'apply' 'to' (elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*)?;
 
 GroupOptionVideo:
-	(VisualElementOption) 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?;	
-	// TODO: Add VideoSpecificOptionn when sam finished the work he add to finish for a while...
+	options+=(VisualElementOption | VideoSpecificOption) (',' options+=(VisualElementOption | VideoSpecificOption))* 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?;
+
+GroupOptionAudio:
+	options+=(AudioOption) (',' options+=AudioOption)* 'apply' 'to' (elements+=[AudioElement:ID] (',' elements+=[AudioElement:ID])*)?;	
 
 VisualElementOption:
 	(VisualElementBackground | VisualElementPosition | VisualElementSize);
@@ -47,10 +49,8 @@ VisualElementPosition:
 VisualElementSize:
 	'size' width=INT ',' height=INT;
 
-
 TextSpecificOption:
 	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
-
 
 TextFontSize:
 	'fontsize' size=INT;
@@ -95,16 +95,10 @@ RelativeTimelineElement:
 LayerPosition:
 	position=('above' | 'under') relativeTo=[TimelineElement:HASHTAG_ID];
 
-
-
 // Video options
 
-GroupVideoOption:
-	options+=VideoOption
-	(options+=VideoOption)*;
-
 VideoOption:
-	VideoSpecificOption | VisualElementOption;
+	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
 	VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale;
@@ -134,11 +128,7 @@ VideoScale:
 
 
 
-// Audio options
-GroupAudioOption:
-	options+=AudioOption
-	(options+=AudioOption)*
-	'GroupAudioOption' audioOption+=AudioOption* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+// Audio options 
 
 AudioOption:
 	(AudioFadeIn | AudioFadeOut | AudioNoiseReduction | AudioVolume | AudioPitch | AudioReverb | AudioSpeed);
