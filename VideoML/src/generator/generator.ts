@@ -150,8 +150,10 @@ function compileVideoEffect(option: VideoOption, name: String, fileNode: Composi
 
     if (isVideoBrightness(option)) {
         fileNode.append(
-            `# Apply opacity effect
-${name} = ${name}.with_brightness(${option.brightness})`, NL);
+            `# Apply brightness effect
+from moviepy.video.fx.MultiplyColor import MultiplyColor
+multiply_effect = MultiplyColor(factor=${option.brightness})
+${name} = multiply_effect.apply(${name})`, NL);
     }
 
     if (isVideoScale(option)) {

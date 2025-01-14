@@ -109,7 +109,7 @@ VideoContrast:
 	'contrast' contrast=FLOAT;
 
 VideoBrightness:
-	'brightness' brightness=FLOAT;
+	'brightness' brightness=INT;
 
 VideoSaturation:
 	'saturation' saturation=FLOAT;
