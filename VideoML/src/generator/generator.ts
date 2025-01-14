@@ -7,8 +7,6 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
-    isText,
-    isSubtitle,
     isVideo,
     Video,
     VideoOriginal,
@@ -31,7 +29,8 @@ import {
     isTextualElement,
     TextualElement,
     GroupOption,
-    VisualElementOption,
+    TextOption,
+    GroupOptionText,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -110,9 +109,9 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
         const element = elementRef.ref; 
         if (element) {
             if (isVideo(element)) {
-                compileVideo(element, element.name, fileNode);
+                compileVideo(element,  (element as unknown as Element).name, fileNode);
             } else if (isTextualElement(element)) {
-                compileTextualElement(element, element, fileNode, groupOption);
+                compileTextualElement(element, element, fileNode, groupOption as GroupOptionText);
             }
         }
     });
@@ -157,7 +156,7 @@ else:
     , NL);
 }
 
-function compileOptionsToTextClip(text: TextualElement, element: Element, options?: VisualElementOption[]): string {
+function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]): string {
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
@@ -168,7 +167,7 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
     let posX: number | string = `"center"`;
     let posY: number | string = `"center"`;
 
-    const applyOption = (option: VisualElementOption) => {
+    const applyOption = (option: TextOption) => {
         if (isTextFont(option)) {
             font = option.name;
         } else if (isTextFontSize(option)) {
@@ -182,16 +181,16 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
         } else if (isVisualElementSize(option)) {
             bgSizeX = option.width;
             bgSizeY = option.height;
-        } else if (isVisualElementPosition(option) && !isSubtitle(text)) {
+        } else if (isVisualElementPosition(option) && text.type === 'subtitle') {
             posX = option.x;
             posY = option.y;
         }
     };
 
     options?.forEach(applyOption);
-    element.options?.forEach(applyOption);
+    text.options?.forEach(applyOption);
 
-    if (isSubtitle(text)) {
+    if (text.type === 'subtitle') {
         posY = 400;
     }
 
@@ -208,10 +207,10 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
     return `${optionsString}.with_position((${posX}, ${posY})`;
 }
 
-function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOption) {
+function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
     fileNode.append(
 `# Load the text clip
-${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element, groupOption?.options)})
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, groupOption?.options)})
 `, NL);
 }
 
@@ -226,11 +225,20 @@ function compileTimelineElement(te: TimelineElement, fileNode: CompositeGenerato
         // If first in list, it's the starting point of the program
         // Else it will be placed at the end of the previous element
         if (te.$containerIndex === 0) {
-            fileNode.append(`${te.element.ref?.name}`, NL);
+            fileNode.append(`${te.element.ref?.name}`);
         } else {
             const previousElement = videoProject.timelineElements[(te.$containerIndex || 1) - 1];
-            fileNode.append(`${te.element.ref?.name}.with_start(${formatTimelineElementName(previousElement.name)}.end)`, NL);
+            fileNode.append(`${te.element.ref?.name}.with_start(${formatTimelineElementName(previousElement.name)}.end)`);
         }
+        if (isTextualElement(te.element.ref)) {
+            if(te.duration){
+                compileWithDurationElement(te.duration, fileNode);
+            }
+            else {
+                compileWithDurationElement('00:05', fileNode);
+            }
+        }
+        fileNode.append(NL);
     }
 }
 
@@ -249,9 +257,9 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: 
     }
 
     fileNode.append(`)`);
-    if (rte.duration && (isText(rte.element.ref || isSubtitle(rte.element.ref))) ) {
+    if (rte.duration && (isTextualElement(rte.element.ref)) ) {
         compileWithDurationElement(rte.duration, fileNode);
-    } else if (isText(rte.element.ref) || isSubtitle(rte.element.ref)){
+    } else if (isTextualElement(rte.element.ref)){
         compileWithDurationElement('00:05', fileNode);
     }
 
@@ -260,9 +268,9 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: 
 
 function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: CompositeGeneratorNode) {
     fileNode.append(`${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`);
-    if (fte.duration && (isText(fte.element.ref) || isSubtitle(fte.element.ref))) {
+    if (fte.duration && isTextualElement(fte.element.ref)) {
         compileWithDurationElement(fte.duration, fileNode);
-    } else if (isText(fte.element.ref || isSubtitle(fte.element.ref))){
+    } else if (isTextualElement(fte.element.ref)){
         compileWithDurationElement('00:05', fileNode);
     }
     fileNode.append(NL);
@@ -280,7 +288,7 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
     const orderedTimelineElements = layeredTimelineElements.sort((a, b) => a.layer - b.layer);
     
     const timelineElementsVideoJoined = orderedTimelineElements
-        .filter(({ te }) => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isText(te.element.ref) || isSubtitle(te.element.ref))
+        .filter(({ te }) => isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref) || isTextualElement(te.element.ref))
         .map(({ te }) => formatTimelineElementName(te.name))
         .join(', ');
     

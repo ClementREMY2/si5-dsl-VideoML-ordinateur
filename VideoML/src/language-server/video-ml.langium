@@ -12,7 +12,7 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Video | TextualElement | Audio) 'as' name=ID options+=Option*;
+	(Video | TextualElement | Audio) 'as' name=ID;
 
 Audio:
 	(AudioOriginal | AudioExtract);
@@ -24,13 +24,17 @@ AudioExtract:
 	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
-	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+	'options' (GroupOptionText | GroupOptionVideo) ;
 
-Option:
-	(VisualElementOption);
+
+GroupOptionText:
+	options+=(TextOption) (',' options+=TextOption)* 'apply' 'to' (elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*)?;
+
+GroupOptionVideo:
+	(VisualElementOption) 'apply' 'to' (elements+=[Video:ID] (',' elements+=[Video:ID])*)?; // TODO: Add VideoSpecificOptionn when sam finished the work he add to finish for a while...
 
 VisualElementOption:
-	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+	(VisualElementBackground | VisualElementPosition | VisualElementSize);
 
 VisualElementBackground:
 	'background' color=STRING;
@@ -41,8 +45,10 @@ VisualElementPosition:
 VisualElementSize:
 	'size' width=INT ',' height=INT;
 
-TextOption:
+
+TextSpecificOption:
 	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+
 
 TextFontSize:
 	'fontsize' size=INT;
@@ -60,13 +66,10 @@ TextAligment:
 	'alignment' alignment=STRING;
 
 TextualElement:
-	(Text | Subtitle);
+	type=('text' | 'subtitle') text=STRING options+=TextOption*;
 
-Text:
-	'text' text=STRING;
-
-Subtitle:
-	'subtitle' text=STRING;
+TextOption:
+	(TextSpecificOption | VisualElementOption);
 
 Video:
 	(VideoOriginal | VideoExtract);
