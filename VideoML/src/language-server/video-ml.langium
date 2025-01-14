@@ -101,7 +101,7 @@ VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
-	VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting;
+	VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting | VideoRotation;
 
 VideoContrast:
 	'contrast' contrast=FLOAT;
@@ -122,7 +122,10 @@ VideoScale:
 	'scale' scale=FLOAT;
 
 VideoPainting:
-	'painting' painting=FLOAT;
+	'painting' painting=INT;
+
+VideoRotation:
+	'rotation' rotation=INT;
 
 
 // Video transition

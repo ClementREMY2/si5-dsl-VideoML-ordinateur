@@ -36,6 +36,7 @@ import {
     isVideoResolution,
     isVideoScale,
     VideoSaturation,
+    VideoPainting,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -524,6 +525,13 @@ export class VideoMlValidator {
     checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
         if (option.scale > 1.0 || option.scale < 0.0) {
             accept('error', 'Scale must be less than or equal to 1. For example, 0.5 is 50% smaller', { node: option });
+        }
+    }
+
+    checkVideoPainting(option: VideoPainting, accept: ValidationAcceptor): void {
+        if (option.painting > 5 || option.painting < 1) {
+            accept('error', 'Painting must be between 1 and 5',
+                 { node: option, property: 'painting' });
         }
     }
 }

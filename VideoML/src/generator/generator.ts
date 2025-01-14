@@ -44,6 +44,7 @@ import {
     isTextOption,
     isVisualElementOption,
     isVideoSaturation,
+    isVideoRotation,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -198,11 +199,20 @@ ${name} = painting_effect.apply(${name})`, NL);
     }
 
     if (isVideoPainting(option)) {
+        const calculatedOption = option.painting / 1000;
         fileNode.append(
 `# Apply saturation effect
 from moviepy.video.fx.Painting import Painting
-painting_effect = Painting(saturation=0, black=${option.painting})
+painting_effect = Painting(saturation=0, black=${calculatedOption})
 ${name} = painting_effect.apply(${name})`, NL);  
+    }
+
+    if (isVideoRotation(option)) {
+        fileNode.append(
+`# Apply rotation effect
+from moviepy.video.fx.Rotate import Rotate
+rotate_effect = Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
+${name} = rotate_effect.apply(${name})`, NL);  
     }
 }
 
