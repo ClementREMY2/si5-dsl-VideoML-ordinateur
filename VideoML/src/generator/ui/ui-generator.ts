@@ -5,12 +5,11 @@ import {
     FixedTimelineElement,
     isFixedTimelineElement,
     TimelineElement,
-    isText,
-    isSubtitle,
     isVideoOriginal,
     isVideoExtract,
     isAudioOriginal,
     isAudioExtract,
+    isTextualElement,
 } from '../../language-server/generated/ast.js';
 import { helperTimeToSeconds, getLayer } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
@@ -65,14 +64,14 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),
         };
-    } else if (isText(te.element.ref) || isSubtitle(te.element.ref)) { 
+    } else if (isTextualElement(te.element.ref)) { 
         info = {
             name: te.name,
             textElement: {
                 name: te.element.ref.name,
                 text: te.element.ref.text,
                 duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
-                isSubtitle: isSubtitle(te.element.ref)
+                isSubtitle: te.element.ref.type==='subtitle',
             },
             layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),

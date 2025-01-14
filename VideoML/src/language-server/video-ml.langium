@@ -12,7 +12,7 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(VideoElement | TextualElement | AudioElement) 'as' name=ID options+=Option*;
+	(VideoElement | TextualElement | AudioElement) 'as' name=ID;
 
 
 AudioElement:
@@ -26,10 +26,17 @@ AudioExtract:
 	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
-	GroupAudioOption | GroupVideoOption;
+	'options' (GroupOptionText | GroupOptionVideo | GroupAudioOption);
+
+GroupOptionText:
+	options+=(TextOption) (',' options+=TextOption)* 'apply' 'to' (elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*)?;
+
+GroupOptionVideo:
+	(VisualElementOption) 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?;	
+	// TODO: Add VideoSpecificOptionn when sam finished the work he add to finish for a while...
 
 VisualElementOption:
-	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
+	(VisualElementBackground | VisualElementPosition | VisualElementSize);
 
 VisualElementBackground:
 	'background' color=STRING;
@@ -40,8 +47,10 @@ VisualElementPosition:
 VisualElementSize:
 	'size' width=INT ',' height=INT;
 
-TextOption:
+
+TextSpecificOption:
 	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+
 
 TextFontSize:
 	'fontsize' size=INT;
@@ -59,13 +68,10 @@ TextAligment:
 	'alignment' alignment=STRING;
 
 TextualElement:
-	(Text | Subtitle);
+	type=('text' | 'subtitle') text=STRING options+=TextOption*;
 
-Text:
-	'text' text=STRING;
-
-Subtitle:
-	'subtitle' text=STRING;
+TextOption:
+	(TextSpecificOption | VisualElementOption);
 
 VideoElement:
 	(VideoOriginal | VideoExtract)
@@ -132,7 +138,7 @@ VideoScale:
 GroupAudioOption:
 	options+=AudioOption
 	(options+=AudioOption)*
-	'GroupAudioOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+	'GroupAudioOption' audioOption+=AudioOption* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
 
 AudioOption:
 	(AudioFadeIn | AudioFadeOut | AudioNoiseReduction | AudioVolume | AudioPitch | AudioReverb | AudioSpeed);

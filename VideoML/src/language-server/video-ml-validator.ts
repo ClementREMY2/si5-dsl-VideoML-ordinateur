@@ -6,7 +6,6 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    Subtitle,
     isVideoElement,
     VideoOriginal,
     VideoExtract,
@@ -20,13 +19,11 @@ import {
     isTextFontColor,
     isTextualElement,
     isVisualElementPosition,
-    isSubtitle,
     isTextFont,
     isTextAligment,
     isTextFontSize,
     TextFont,
-    isVisualElementSize,
-    isVisualElementBackground,
+    TextualElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -387,15 +384,15 @@ export class VideoMlValidator {
         }
     }
 
-    checkTextualElement(element: Element, accept: ValidationAcceptor): void {
-        if (isSubtitle(element)) {
+    checkTextualElement(element: TextualElement, accept: ValidationAcceptor): void {
+        if (element.type === 'subtitle') {
             this.checkSubtitleLength(element, accept);
         }
         if (!element.options) return;
         element.options.forEach((option) => {
             if (isTextFontColor(option)) {
                 this.checkColor(option.color, option, 'color', accept);
-            } else if(isVisualElementPosition(option) && isSubtitle(element)){
+            } else if(isVisualElementPosition(option) && element.type === 'subtitle') {
                 accept('error', 'Position is not allowed in subtitle elements', { node: option });
             } else if (isTextFont(option)) {
                 this.checkFontSetting(option, accept);
@@ -410,9 +407,6 @@ export class VideoMlValidator {
                 if (option.size < 0 || option.size > 128) {
                     accept('error', 'Font size must be between 0 and 128', { node: option, property: 'size' });
                 }
-            }
-            if(!(isVisualElementPosition(option) || isTextFont(option) || isTextAligment(option) || isTextFontColor(option) || isTextFontSize(option) || isVisualElementSize(option) || isVisualElementBackground(option))) {
-                accept('error', 'Invalid option for textual element', { node: option });
             }
         });
     }
@@ -431,7 +425,7 @@ export class VideoMlValidator {
         }
     }
 
-    checkSubtitleLength(subtitle: Subtitle, accept: ValidationAcceptor): void {
+    checkSubtitleLength(subtitle: TextualElement, accept: ValidationAcceptor): void {
         if (subtitle.text.length > 100) {
             accept('warning', 'Subtitle length is long, it is recommended to be less than 100 characters', { node: subtitle, property: 'text' });
         }
