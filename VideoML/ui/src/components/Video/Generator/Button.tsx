@@ -26,7 +26,7 @@ export const VideoGeneratorButton: React.FC<VideoGeneratorButtonProps> = ({ clas
 
     return (
         <Button
-            color={isError ? 'danger' : 'primary'}
+            color={(isError && !isLoading) ? 'danger' : 'primary'}
             onClick={handleClick}
             className={clsx(className, 'text-white')}
             disabled={isLoading || isError}

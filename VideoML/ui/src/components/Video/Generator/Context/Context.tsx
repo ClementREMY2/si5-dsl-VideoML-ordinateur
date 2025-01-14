@@ -15,6 +15,7 @@ interface VideoGeneratorContextProps {
     videoGeneratedPath: string | undefined,
     isGenerating: boolean,
     errorTraceback: string | undefined,
+    manualInstallationInstructions: string | undefined,
 }
 
 export const VideoGeneratorContext = createContext<VideoGeneratorContextProps | undefined>(undefined);

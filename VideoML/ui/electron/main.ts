@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -76,6 +76,10 @@ function createWindow() {
 
   ipcMain.handle('get-pwd', async () => {
     return process.cwd();
+  });
+
+  ipcMain.handle('show-file-in-folder', async (_, fullPath) => {
+    shell.showItemInFolder(fullPath);
   });
 
   ipcMain.handle('generate-python-file', async (_, code, dirPath) => {

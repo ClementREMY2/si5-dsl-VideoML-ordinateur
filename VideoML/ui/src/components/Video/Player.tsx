@@ -10,7 +10,7 @@ type VideoPlayerProps = {
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
-    const { videoGeneratedPath, isGenerating, errorTraceback } = useVideoGenerator();
+    const { videoGeneratedPath, isGenerating, errorTraceback, manualInstallationInstructions } = useVideoGenerator();
     const videoContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -53,6 +53,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
                     <div className="text-danger mb-2">An error occured during generation:</div>
                     <pre>{errorTraceback}</pre>
                 </>
+            )}
+            {manualInstallationInstructions && (
+                <div dangerouslySetInnerHTML={{ __html: manualInstallationInstructions }} />
             )}
         </div>
     )
