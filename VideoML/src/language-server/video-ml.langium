@@ -3,15 +3,13 @@ grammar VideoMl
 entry VideoProject:
 	'video' 'project' outputName=STRING
 
-	elements+=Element
-	(elements+=Element)*
+        (elements+=Element)+
 
 	(groupOptions+=GroupOption)*
 
 	(videoTransitions+=VideoTransition)*
 
-	timelineElements+=TimelineElement
-	(timelineElements+=TimelineElement)*;
+	(timelineElements+=TimelineElement)+;
 
 Element:
 	(VideoElement | TextualElement | AudioElement) 'as' name=ID;

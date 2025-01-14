@@ -463,10 +463,7 @@ export class VideoMlValidator {
 
     checkVideoOption(element: VideoElement, accept: ValidationAcceptor): void {
         if (element.videoOption) {
-            console.log('Checking video option', element.videoOption);
             element.videoOption.forEach((option) => {
-                console.log('Checking video option', option);
-                console.log('IsVideoOpacity', isVideoOpacity(option));
                 if (isVideoBrightness(option)) {
                     this.checkVideoBrightness(option, accept);
                 } else if (isVideoContrast(option)) {
@@ -508,7 +505,6 @@ export class VideoMlValidator {
 
     // Check that the contrast is between valid values
     checkVideoOpacity(option: VideoOpacity, accept: ValidationAcceptor): void {
-        console.log(option.opacity);
         if (option.opacity < 0.0 || option.opacity > 1.0) {
             accept('error', 'Contrast must be between 0 and 1. 0 being completely transparent, while 1 is maximum opacity',
                  { node: option, property: 'opacity' });
@@ -526,7 +522,6 @@ export class VideoMlValidator {
     // Check that the scale is between valid values (100% for now, you can only reduce it)
     // TODO : Discuss about the range of the scale
     checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
-        console.log(option.scale);
         if (option.scale > 1.0 || option.scale < 0.0) {
             accept('error', 'Scale must be less than or equal to 1. For example, 0.5 is 50% smaller', { node: option });
         }
