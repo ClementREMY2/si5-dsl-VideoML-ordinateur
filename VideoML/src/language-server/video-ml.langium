@@ -130,9 +130,9 @@ VideoRotation:
 
 // Video transition
 
-VideoTransition: 
-	'transitionType' transitionType=TRANSITION
-	'videos' (videos+=[VideoElement:ID] (',' videos+=[VideoElement:ID])*)?;
+VideoTransition:
+    'transitionType' transitionType=TRANSITION
+    'videos' videos+=[VideoElement:ID] ',' videos+=[VideoElement:ID] (',' videos+=[VideoElement:ID])*;
 
 // Audio options 
 
