@@ -12,8 +12,10 @@ type TimelineLayers = {
   [layer: string]: TimelineElementInfoFormatted[];
 }
 
+const PADDING_LEFT = 30;
+
 export const Timeline: React.FC = () => {
-  const { timelineElementInfos, isTimelineLoaded } = useTimeline();
+  const { timelineElementInfos, isTimelineLoaded, timelineScaleFactor } = useTimeline();
 
   // Group elements by layers
 
@@ -36,21 +38,33 @@ export const Timeline: React.FC = () => {
         }
 
         return acc;
-      }, ({} as TimelineLayers)),
+      }, ({
+        '-1': [],
+        '0': [],
+        '1': [],
+      } as TimelineLayers)),
       [timelineElementInfos],
     );
 
   const timelineBounds = useMemo(() => {
-    const maxEndTime = Math.max(...timelineElementInfos.map((element) => element.finishAt || 0));
+    const maxEndTime = Math.max(...timelineElementInfos.map((element) => element.finishAt || 0), 0);
+
+    const roundedTo10 = (num: number) => num + (10 - (num % 10));
+
      // Round to the nearest 10 seconds
-    const timelineEndTime = maxEndTime + (10 - (maxEndTime % 10));
+    const timelineDurationRounded = roundedTo10(maxEndTime);
+
+    const parentContainer = document.querySelector('#TimelineParent');
+    const parentWidth = (parentContainer?.clientWidth || PADDING_LEFT) - PADDING_LEFT;
+
+    const timelineEndTime = Math.max(timelineDurationRounded, roundedTo10(parentWidth / timelineScaleFactor) - 10);
 
 
     return { timelineStartTime: 0, timelineEndTime };
-  }, [timelineElementInfos]);
+  }, [timelineElementInfos, timelineScaleFactor]);
 
   return (
-    <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: '30px' }}>
+    <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: PADDING_LEFT }}>
       <div className="d-flex flex-column w-100 position-relative mb-3">
         {!isTimelineLoaded && (
           <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
