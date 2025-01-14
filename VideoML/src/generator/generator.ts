@@ -33,6 +33,15 @@ import {
     GroupOptionText,
     GroupOptionVideo,
     VideoOption,
+    isVideoOption,
+    isVideoBrightness,
+    isVideoScale,
+    isVideoResolution,
+    isVideoOpacity,
+    isVideoContrast,
+    // VisualElementOption,
+    isTextOption,
+    isVisualElementOption,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -121,11 +130,71 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
 
 function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionVideo) {
     if (isVideoOriginal(video)) {
-        compileVideoOriginal(video, name, fileNode, groupOption?.options);
+        compileVideoOriginal(video, name, fileNode);
     } else if (isVideoExtract(video)) {
-        compileVideoExtract(video, name, fileNode, groupOption?.options);
+        compileVideoExtract(video, name, fileNode);
+    }
+
+    const options = groupOption?.options;
+    if (options !== undefined) {
+        options.forEach((option) => {
+            if (isVideoOption(option)) {
+                compileVideoEffect(option, name, fileNode)
+            }
+    });
+    }    
+}
+
+function compileVideoEffect(option: VideoOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isTextOption(option) || isVisualElementOption(option)) return;
+
+    if (isVideoBrightness(option)) {
+        fileNode.append(
+`# Apply brightness effect
+def adjust_brightness(frame, factor):
+    frame = np.clip(frame * factor, 0, 255)
+    return frame.astype("uint8")
+import numpy as np
+${name} = ${name}.fl_image(lambda frame: adjust_brightness(frame, ${option.brightness}))`, NL);
+    }
+
+    if (isVideoScale(option)) {
+        fileNode.append(
+`# Apply resolution effect
+${name} = ${name}.resize((${option.scale}))`, NL);    
+}
+
+    if (isVideoResolution(option)) {
+        fileNode.append(
+`# Apply resolution effect
+${name} = ${name}.resize((${option.width}, ${option.height}))`, NL);
+    }
+
+    if (isVideoOpacity(option)) {
+        fileNode.append(
+            `# Apply opacity effect
+def adjust_opacity(clip, opacity):
+    def apply_opacity(image):
+        alpha_channel = np.full(image.shape[:2] + (1,), 255, dtype=np.uint8)
+        image_with_alpha = np.concatenate([image, alpha_channel], axis=-1)
+        image_with_alpha[..., -1] = (image_with_alpha[..., -1] * opacity).astype('uint8')
+        return image_with_alpha
+    return clip.fl_image(apply_opacity)
+${name} = adjust_opacity(${name}, 0.5)`, NL);
+    }    
+
+    if (isVideoContrast(option)) {
+        fileNode.append(
+// Use the colorx effect to adjust the contrast
+`# Apply contrast effect
+from moviepy.video.fx.all import colorx
+${name} = ${name}.fx(colorx, ${option.contrast})`, NL);
     }
 }
+
+// function compileTransition(option: VisualElementOption, name: String, fileNode: CompositeGeneratorNode) {
+//     if (isTextOption(option) || isVideoOption(option)) return;}
+
 
 // We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
 function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {

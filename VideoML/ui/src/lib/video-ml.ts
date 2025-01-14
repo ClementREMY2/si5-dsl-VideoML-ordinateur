@@ -61,7 +61,7 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','font','fontcolor','fontsize','for','from','load','noiseReduction','of','opacity','options','pitch','position','project','resolution','reverb','saturation','scale','shadow','size','speed','start','subtitle','text','to','under','video','volume'
+        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','font','fontcolor','fontsize','for','from','load','noiseReduction','of','opacity','options','pitch','position','project','resolution','reverb','saturation','scale','shadow','size','speed','start','subtitle','text','to','transitionType','under','video','videos','volume'
     ],
     operators: [
         ',',':'
@@ -77,6 +77,7 @@ export function getMonarchGrammar() {
             { regex: /[0-9]*\.[0-9]+/, action: {"token":"number"} },
             { regex: /[0-9]+/, action: {"token":"number"} },
             { regex: /(true|false)/, action: {"token":"boolean"} },
+            { regex: /(((ease_in|ease_out)|fade_in)|fade_out)/, action: {"token":"string"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },
             { include: '@whitespace' },
             { regex: /@symbols/, action: { cases: { '@operators': {"token":"operator"}, '@default': {"token":""} }} },
