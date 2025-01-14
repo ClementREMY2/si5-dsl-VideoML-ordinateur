@@ -37,6 +37,16 @@ import {
     isVideoScale,
     VideoSaturation,
     VideoPainting,
+    AudioVolume,
+    AudioStereoVolume,
+    AudioFadeIn,
+    AudioFadeOut,
+    AudioElement,
+    isAudioVolume,
+    isAudioStereoVolume,
+    isAudioFadeIn,
+    isAudioFadeOut,
+    isAudioElement,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -394,8 +404,11 @@ export class VideoMlValidator {
         if(isTextualElement(element)) {
             this.checkTextualElement(element, accept);
         }
-        if(isVideoElement(element)) {
+        else if (isVideoElement(element)) {
             this.checkVideoOption(element, accept);
+        }
+        else if (isAudioElement(element)) {
+            this.checkAudioOption(element, accept);
         }
     }
 
@@ -542,4 +555,53 @@ export class VideoMlValidator {
                  { node: option, property: 'painting' });
         }
     }
+
+    // Audio effects ************************************************************************************************
+    checkAudioOption(element: AudioElement, accept: ValidationAcceptor): void {
+        if (element.audioOptions) {
+            element.audioOptions.forEach((option) => {
+                if (isAudioVolume(option)) {
+                    this.checkAudioVolume(option, accept);
+                } else if (isAudioStereoVolume(option)) {
+                    this.checkAudioStereoVolume(option, accept);
+                }
+                else if (isAudioFadeIn(option)) {
+                    this.checkAudioFadeIn(option, accept);
+                }
+                else if (isAudioFadeOut(option)) {
+                    this.checkAudioFadeOut(option, accept);
+                }
+            });
+        }
+    }
+
+    checkAudioVolume(option: AudioVolume, accept: ValidationAcceptor): void {
+        if (option.volume < 0 || option.volume > 1) {
+            accept('error', 'Volume must be between 0 and 1',
+                 { node: option, property: 'volume' });
+        }
+    }
+
+    checkAudioStereoVolume(option: AudioStereoVolume, accept: ValidationAcceptor): void {
+        if (option.left < 0 || option.left > 1 || option.right < 0 || option.right > 1) {
+            accept('error', 'Stereo volume must be between 0 and 1',
+                 { node: option});
+        }
+    }
+
+    checkAudioFadeIn(option: AudioFadeIn, accept: ValidationAcceptor): void {
+        if (option.duration < 0) {
+            accept('error', 'Fade in time must be positive',
+                 { node: option, property: 'duration' });
+        }
+    }
+
+    checkAudioFadeOut(option: AudioFadeOut, accept: ValidationAcceptor): void {
+        if (option.duration < 0) {
+            accept('error', 'Fade out time must be positive',
+                 { node: option, property: 'duration' });
+        }
+    }
+   
+    
 }
