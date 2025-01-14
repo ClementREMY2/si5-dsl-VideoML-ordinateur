@@ -49,6 +49,9 @@ import {
     isAudioOption,
     AudioOption,
     isAudioVolume,
+    isAudioFadeIn,
+    isAudioFadeOut,
+    isAudioStereoVolume,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -233,6 +236,34 @@ function compileAudioEffect(option: AudioOption, name: String, fileNode: Composi
             `# Apply brightness effect
 new_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.volume}, right=${option.volume})
 ${name} = new_volume.apply(${name})`, NL);
+    }
+
+    if (isAudioFadeIn(option)) {
+        fileNode.append(
+            `# Apply fade in effect
+fade_in = moviepy.audio.fx.AudioFadeIn(${option.duration})
+${name} = fade_in.apply(${name})`, NL);
+    }
+
+    if (isAudioFadeOut(option)) {
+        fileNode.append(
+            `# Apply fade out effect
+fade_out = moviepy.audio.fx.AudioFadeOut(${option.duration})
+${name} = fade_out.apply(${name})`, NL);
+    }
+
+    if (typeof option === 'string' && option === 'normalize') {
+        fileNode.append(
+            `# Apply normalize effect
+normalize_effect = moviepy.audio.fx.moviepy.audio.fx.AudioNormalize()
+${name} = normalize_effect.apply(${name})`, NL);
+    }
+
+    if (isAudioStereoVolume(option)) { 
+        fileNode.append(
+            `# Apply stereo volume effect
+stereo_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.left}, right=${option.right})
+${name} = stereo_volume.apply(${name})`, NL);
     }
 }
 

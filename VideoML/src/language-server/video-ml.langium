@@ -137,7 +137,7 @@ VideoTransition:
 // Audio options 
 
 AudioOption:
-	(AudioFadeIn | AudioFadeOut | AudioNoiseReduction | AudioVolume | AudioPitch | AudioReverb | AudioSpeed);
+	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | 'normalize');
 
 AudioFadeIn:
 	'fadeIn' duration=INT;
@@ -145,22 +145,13 @@ AudioFadeIn:
 AudioFadeOut:
 	'fadeOut' duration=INT;
 
-AudioNoiseReduction: 
-	'noiseReduction' noiseReduction=BOOLEAN;
-
 AudioVolume:
 	'volume' volume=FLOAT;
 
-AudioPitch:
-	'pitch' pitch=FLOAT;
+AudioStereoVolume:
+	'stereo' 'left' left=FLOAT 'right' right=FLOAT;
 
-AudioReverb:
-	'reverb' reverb=FLOAT;
-
-AudioSpeed:
-	'speed' speed=FLOAT;
-
-
+//************* TERMINALS **************** 
 
 hidden terminal WS: /\s+/;
 // Hashtag ID forma
