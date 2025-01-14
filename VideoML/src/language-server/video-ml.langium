@@ -26,11 +26,7 @@ AudioExtract:
 	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
-	GroupAudioOption | GroupVideoOption
-	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
-
-Option:
-	(VisualElementOption);
+	GroupAudioOption | GroupVideoOption;
 
 VisualElementOption:
 	(TextOption | VisualElementBackground | VisualElementPosition | VisualElementSize);
@@ -126,11 +122,17 @@ VideoScale:
 	'scale' scale=FLOAT;
 
 
+// Video transition
+
+
+
+
+
 // Audio options
 GroupAudioOption:
 	options+=AudioOption
 	(options+=AudioOption)*
-	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+	'GroupAudioOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
 
 AudioOption:
 	(AudioFadeIn | AudioFadeOut | AudioNoiseReduction | AudioVolume | AudioPitch | AudioReverb | AudioSpeed);
