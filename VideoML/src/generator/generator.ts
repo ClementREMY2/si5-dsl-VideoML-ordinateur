@@ -183,10 +183,6 @@ ${name} = ${name}.fx(colorx, ${option.contrast})`, NL);
     }
 }
 
-// function compileTransition(option: VisualElementOption, name: String, fileNode: CompositeGeneratorNode) {
-//     if (isTextOption(option) || isVideoOption(option)) return;}
-
-
 // We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
 function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {
     fileNode.append(
