@@ -161,7 +161,15 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
-    let font = 'Arial';
+
+    let font;
+    const platform = navigator.userAgent || "unknown";
+    if (platform.toLowerCase().includes('win')) {
+        font = 'C:/Windows/Fonts/Arial.ttf';
+    } else {
+        font = 'Arial';
+    }
+    
     let fontSize = 60;
     let fontColor = 'white';
     let align = 'left';
@@ -170,8 +178,13 @@ function compileOptionsToTextClip(text: TextualElement, element: Element, option
 
     const applyOption = (option: VisualElementOption) => {
         if (isTextFont(option)) {
-            font = option.name;
-        } else if (isTextFontSize(option)) {
+            if (platform.toLowerCase().includes('win')) {
+                font = 'C:/Windows/Fonts/' + option.name + '.ttf';
+            } else {
+                font = option.name;
+            }        
+        } 
+        else if (isTextFontSize(option)) {
             fontSize = option.size;
         } else if (isTextAligment(option)) {
             align = option.alignment;
