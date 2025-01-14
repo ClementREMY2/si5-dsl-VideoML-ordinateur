@@ -35,6 +35,7 @@ import {
     isVideoOpacity,
     isVideoResolution,
     isVideoScale,
+    VideoSaturation,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -494,6 +495,14 @@ export class VideoMlValidator {
         if (option.contrast < 0 || option.contrast > 2) {
             accept('error', 'Contrast must be between 0 and 2. For example, 1.5 increase the contrast by 50%',                 
                 { node: option, property: 'contrast' });
+        }
+    }
+
+    // Check that the saturation is between valid values
+    checkVideoSaturation(option: VideoSaturation, accept: ValidationAcceptor): void {
+        if (option.saturation < -1.0 || option.saturation > 1.0) {
+            accept('error', 'Saturation must be between -1 and 1. For example, 0.5 is no change',
+                 { node: option, property:'saturation' });
         }
     }
 
