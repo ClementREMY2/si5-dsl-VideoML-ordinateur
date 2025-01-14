@@ -173,14 +173,7 @@ ${name} = ${name}.resize((${option.width}, ${option.height}))`, NL);
     if (isVideoOpacity(option)) {
         fileNode.append(
             `# Apply opacity effect
-def adjust_opacity(clip, opacity):
-    def apply_opacity(image):
-        alpha_channel = np.full(image.shape[:2] + (1,), 255, dtype=np.uint8)
-        image_with_alpha = np.concatenate([image, alpha_channel], axis=-1)
-        image_with_alpha[..., -1] = (image_with_alpha[..., -1] * opacity).astype('uint8')
-        return image_with_alpha
-    return clip.fl_image(apply_opacity)
-${name} = adjust_opacity(${name}, 0.5)`, NL);
+${name} = ${name}.with_opacity(${option.opacity})`, NL);
     }    
 
     if (isVideoContrast(option)) {
