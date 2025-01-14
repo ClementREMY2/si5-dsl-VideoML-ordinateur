@@ -39,9 +39,11 @@ import {
     isVideoResolution,
     isVideoOpacity,
     isVideoContrast,
+    isVideoPainting,
     // VisualElementOption,
     isTextOption,
     isVisualElementOption,
+    isVideoSaturation,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -159,13 +161,17 @@ ${name} = multiply_effect.apply(${name})`, NL);
     if (isVideoScale(option)) {
         fileNode.append(
 `# Apply resolution effect
-${name} = ${name}.resize((${option.scale}))`, NL);    
+from moviepy.video.fx.Resize import Resize
+resize_effect = Resize(new_size=${option.scale})
+${name} = resize_effect.apply(${name})`, NL); 
 }
 
     if (isVideoResolution(option)) {
         fileNode.append(
 `# Apply resolution effect
-${name} = ${name}.resize((${option.width}, ${option.height}))`, NL);
+from moviepy.video.fx.Resize import Resize
+resize_effect = Resize(new_size=(${option.width}, ${option.height}))
+${name} = resize_effect.apply(${name})`, NL);
     }
 
     if (isVideoOpacity(option)) {
@@ -178,8 +184,25 @@ ${name} = ${name}.with_opacity(${option.opacity})`, NL);
         fileNode.append(
 // Use the colorx effect to adjust the contrast
 `# Apply contrast effect
-from moviepy.video.fx.all import colorx
-${name} = ${name}.fx(colorx, ${option.contrast})`, NL);
+from moviepy.video.fx.LumContrast import LumContrast
+lum_contrast_effect = LumContrast(lum=20, contrast=${option.contrast}, contrast_threshold=127)
+${name} = lum_contrast_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoSaturation(option)) {
+        fileNode.append(
+`# Apply saturation effect
+from moviepy.video.fx.Painting import Painting
+painting_effect = Painting(saturation=${option.saturation}, black=0.0)
+${name} = painting_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoPainting(option)) {
+        fileNode.append(
+`# Apply saturation effect
+from moviepy.video.fx.Painting import Painting
+painting_effect = Painting(saturation=0, black=${option.painting})
+${name} = painting_effect.apply(${name})`, NL);  
     }
 }
 

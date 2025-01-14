@@ -489,8 +489,8 @@ export class VideoMlValidator {
 
     // Check that the contrast is between valid values
     checkVideoContrast(option: VideoContrast, accept: ValidationAcceptor): void {
-        if (option.contrast < 0 || option.contrast > 2) {
-            accept('error', 'Contrast must be between 0 and 2. For example, 1.5 increase the contrast by 50%',                 
+        if (option.contrast < 0 || option.contrast > 5) {
+            accept('error', 'Contrast must be between 0 and 5',                 
                 { node: option, property: 'contrast' });
         }
     }
@@ -505,8 +505,8 @@ export class VideoMlValidator {
 
     // Check that the contrast is between valid values
     checkVideoOpacity(option: VideoOpacity, accept: ValidationAcceptor): void {
-        if (option.opacity < 0.0 || option.opacity > 1.0) {
-            accept('error', 'Contrast must be between 0 and 1. 0 being completely transparent, while 1 is maximum opacity',
+        if (option.opacity < 0.0 || option.opacity > 5.0) {
+            accept('error', 'Contrast must be between 0 and 5',
                  { node: option, property: 'opacity' });
         }
     }
@@ -515,7 +515,7 @@ export class VideoMlValidator {
     // TODO : Discuss about the range of the resolution
     checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
         if (option.width > 1920 || option.height > 1080) {
-            accept('error', 'Resolution must be less than FullHD (1920x1080)', { node: option });
+            accept('error', 'Resolution must be less than FullHD (1920x1080) (Format needed : width , height)', { node: option });
         }
     }
 
