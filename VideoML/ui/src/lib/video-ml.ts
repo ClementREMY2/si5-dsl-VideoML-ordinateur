@@ -61,7 +61,7 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'GroupOption','above','alignment','apply','as','at','audio','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','load','of','position','project','shadow','size','start','subtitle','text','to','under','video'
+        'above','alignment','apply','as','at','audio','background','by','delayed','end','extract','font','fontcolor','fontsize','for','from','load','of','options','position','project','shadow','size','start','subtitle','text','to','under','video'
     ],
     operators: [
         ',',':'
