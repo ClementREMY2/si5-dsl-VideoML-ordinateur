@@ -481,8 +481,8 @@ export class VideoMlValidator {
     
     // Check that the brightness is between valid values
     checkVideoBrightness(option: VideoBrightness, accept: ValidationAcceptor): void {
-        if (option.brightness < -10 || option.brightness > 10) {
-            accept('error', 'Brightness must be between 0 and 10',
+        if (option.brightness < -5 || option.brightness > 5) {
+            accept('error', 'Brightness must be between -5 and 5',
                  { node: option, property: 'brightness' });
         }
     }
