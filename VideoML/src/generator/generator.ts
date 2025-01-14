@@ -9,14 +9,14 @@ import {
     TimelineElement,
     isText,
     isSubtitle,
-    isVideo,
-    Video,
+    isVideoElement,
+    VideoElement,
     VideoOriginal,
     isVideoOriginal,
     VideoExtract,
     isVideoExtract,
-    Audio,
-    isAudio,
+    AudioElement,
+    isAudioElement,
     AudioOriginal,
     isAudioOriginal,
     AudioExtract,
@@ -72,17 +72,17 @@ final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
 function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if(isVideo(element)){
+    if(isVideoElement(element)){
         compileVideo(element, element.name, fileNode);
     } else if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
     }
-    else if (isAudio(element)) {
+    else if (isAudioElement(element)) {
         compileAudio(element, element.name, fileNode);
     }
 }
 
-function compileAudio(audio: Audio, name: string, fileNode: CompositeGeneratorNode) {
+function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode) {
     if (isAudioOriginal(audio)) {
         compileAudioOriginal(audio, name, fileNode);
     }
@@ -109,7 +109,7 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
     groupOption.elements.forEach((elementRef) => {
         const element = elementRef.ref; 
         if (element) {
-            if (isVideo(element)) {
+            if (isVideoElement(element)) {
                 compileVideo(element, element.name, fileNode);
             } else if (isTextualElement(element)) {
                 compileTextualElement(element, element, fileNode, groupOption);
@@ -118,7 +118,7 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
     });
 }
 
-function compileVideo(video: Video, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode) {
     if (isVideoOriginal(video)) {
         compileVideoOriginal(video, name, fileNode);
     } else if (isVideoExtract(video)) {
@@ -298,8 +298,8 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
         .join(', ');
     
     const timelineElementsAudioJoined = orderedTimelineElements
-        .filter(({ te }) => isAudio(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
-        .map(({ te }) => isAudio(te.element.ref) ? formatTimelineElementName(te.name) : `${formatTimelineElementName(te.name)}.audio`)
+        .filter(({ te }) => isAudioElement(te.element.ref) || isVideoExtract(te.element.ref) || isVideoOriginal(te.element.ref))
+        .map(({ te }) => isAudioElement(te.element.ref) ? formatTimelineElementName(te.name) : `${formatTimelineElementName(te.name)}.audio`)
         .join(', ');
     
 
@@ -308,7 +308,7 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
 final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
 `, NL);
 
-    if (videoProject.timelineElements.some(te => isAudio(te.element.ref))) {
+    if (videoProject.timelineElements.some(te => isAudioElement(te.element.ref))) {
         fileNode.append(
 `# Concatenate all audios
 final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])

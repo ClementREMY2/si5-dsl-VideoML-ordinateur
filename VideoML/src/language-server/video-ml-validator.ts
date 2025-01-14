@@ -7,7 +7,7 @@ import {
     isRelativeTimelineElement,
     RelativeTimelineElement,
     Subtitle,
-    isVideo,
+    isVideoElement,
     VideoOriginal,
     VideoExtract,
     isVideoExtract,
@@ -438,7 +438,7 @@ export class VideoMlValidator {
     }
 
     checkDuration(element: TimelineElement, accept: ValidationAcceptor): void {
-        if (element.duration && isVideo(element.element.ref)) {
+        if (element.duration && isVideoElement(element.element.ref)) {
             accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
         }
     
