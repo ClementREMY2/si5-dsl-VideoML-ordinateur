@@ -12,18 +12,21 @@ entry VideoProject:
 	(timelineElements+=TimelineElement)*;
 
 Element:
-	(Video | TextualElement | Audio) 'as' name=ID options+=Option*;
+	(VideoElement | TextualElement | AudioElement) 'as' name=ID options+=Option*;
 
-Audio:
-	(AudioOriginal | AudioExtract);
+
+AudioElement:
+	(AudioOriginal | AudioExtract)
+	audioOptions+=AudioOption*;
 
 AudioOriginal:
 	'load' 'audio' filePath=STRING;
 
 AudioExtract:
-	'extract' 'audio' source=[Audio:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
 
 GroupOption:
+	GroupAudioOption | GroupVideoOption
 	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
 
 Option:
@@ -68,14 +71,15 @@ Text:
 Subtitle:
 	'subtitle' text=STRING;
 
-Video:
-	(VideoOriginal | VideoExtract);
+VideoElement:
+	(VideoOriginal | VideoExtract)
+	videoOption+=VideoOption*;
 
 VideoOriginal:
 	'load' 'video' filePath=STRING;
 
 VideoExtract:
-	'extract' 'video' source=[Video:ID] 'from' start=TIME 'to' end=TIME;
+	'extract' 'video' source=[VideoElement:ID] 'from' start=TIME 'to' end=TIME;
 
 TimelineElement:
 	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('for' duration=TIME)? (layerPosition=LayerPosition)?;
@@ -89,6 +93,71 @@ RelativeTimelineElement:
 LayerPosition:
 	position=('above' | 'under') relativeTo=[TimelineElement:HASHTAG_ID];
 
+
+
+// Video options
+
+GroupVideoOption:
+	options+=VideoOption
+	(options+=VideoOption)*;
+
+VideoOption:
+	VideoSpecificOption | VisualElementOption;
+
+VideoSpecificOption: 
+	VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale;
+
+VideoContrast:
+	'contrast' contrast=FLOAT;
+
+VideoBrightness:
+	'brightness' brightness=FLOAT;
+
+VideoSaturation:
+	'saturation' saturation=FLOAT;
+
+VideoOpacity:
+	'opacity' opacity=FLOAT;
+
+VideoResolution:
+	'resolution' width=INT ',' height=INT;
+
+VideoScale:
+	'scale' scale=FLOAT;
+
+
+// Audio options
+GroupAudioOption:
+	options+=AudioOption
+	(options+=AudioOption)*
+	'GroupOption' options+=Option* 'apply' 'to' (elements+=[Element:ID] (',' elements+=[Element:ID])*)?;
+
+AudioOption:
+	(AudioFadeIn | AudioFadeOut | AudioNoiseReduction | AudioVolume | AudioPitch | AudioReverb | AudioSpeed);
+
+AudioFadeIn:
+	'fadeIn' duration=INT;
+
+AudioFadeOut:
+	'fadeOut' duration=INT;
+
+AudioNoiseReduction: 
+	'noiseReduction' noiseReduction=BOOLEAN;
+
+AudioVolume:
+	'volume' volume=FLOAT;
+
+AudioPitch:
+	'pitch' pitch=FLOAT;
+
+AudioReverb:
+	'reverb' reverb=FLOAT;
+
+AudioSpeed:
+	'speed' speed=FLOAT;
+
+
+
 hidden terminal WS: /\s+/;
 // Hashtag ID forma
 terminal HASHTAG_ID returns string: /#[0-9]+/;
@@ -98,8 +167,12 @@ terminal ID: /[_a-zA-Z][\w_]*/;
 terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
 // TIME format: MM:SS
 terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
+// FLOAT format : 0 or non-zero digit followed by zero or more digits
+terminal FLOAT returns number: /[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
 terminal INT returns number: /[0-9]+/;
+// BOOLEAN format: true or false
+terminal BOOLEAN returns boolean: 'true' | 'false';
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 
