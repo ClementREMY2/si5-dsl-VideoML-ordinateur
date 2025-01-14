@@ -154,24 +154,21 @@ function compileVideoEffect(option: VideoOption, name: String, fileNode: Composi
     if (isVideoBrightness(option)) {
         fileNode.append(
             `# Apply brightness effect
-from moviepy.video.fx.MultiplyColor import MultiplyColor
-multiply_effect = MultiplyColor(factor=${option.brightness})
+multiply_effect = moviepy.video.fx.MultiplyColor(factor=${option.brightness})
 ${name} = multiply_effect.apply(${name})`, NL);
     }
 
     if (isVideoScale(option)) {
         fileNode.append(
 `# Apply resolution effect
-from moviepy.video.fx.Resize import Resize
-resize_effect = Resize(new_size=${option.scale})
+resize_effect = moviepy.video.fx.Resize(new_size=${option.scale})
 ${name} = resize_effect.apply(${name})`, NL); 
 }
 
     if (isVideoResolution(option)) {
         fileNode.append(
 `# Apply resolution effect
-from moviepy.video.fx.Resize import Resize
-resize_effect = Resize(new_size=(${option.width}, ${option.height}))
+resize_effect = moviepy.video.fx.Resize(new_size=(${option.width}, ${option.height}))
 ${name} = resize_effect.apply(${name})`, NL);
     }
 
@@ -185,16 +182,14 @@ ${name} = ${name}.with_opacity(${option.opacity})`, NL);
         fileNode.append(
 // Use the colorx effect to adjust the contrast
 `# Apply contrast effect
-from moviepy.video.fx.LumContrast import LumContrast
-lum_contrast_effect = LumContrast(lum=20, contrast=${option.contrast}, contrast_threshold=127)
+lum_contrast_effect = moviepy.video.fx.LumContrast(lum=20, contrast=${option.contrast}, contrast_threshold=127)
 ${name} = lum_contrast_effect.apply(${name})`, NL);
     }
 
     if (isVideoSaturation(option)) {
         fileNode.append(
 `# Apply saturation effect
-from moviepy.video.fx.Painting import Painting
-painting_effect = Painting(saturation=${option.saturation}, black=0.0)
+painting_effect = moviepy.video.fx.Painting(saturation=${option.saturation}, black=0.0)
 ${name} = painting_effect.apply(${name})`, NL);
     }
 
@@ -202,16 +197,14 @@ ${name} = painting_effect.apply(${name})`, NL);
         const calculatedOption = option.painting / 1000;
         fileNode.append(
 `# Apply saturation effect
-from moviepy.video.fx.Painting import Painting
-painting_effect = Painting(saturation=0, black=${calculatedOption})
+painting_effect = moviepy.video.fx.Painting(saturation=0, black=${calculatedOption})
 ${name} = painting_effect.apply(${name})`, NL);  
     }
 
     if (isVideoRotation(option)) {
         fileNode.append(
 `# Apply rotation effect
-from moviepy.video.fx.Rotate import Rotate
-rotate_effect = Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
+rotate_effect = moviepy.video.fx.Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
 ${name} = rotate_effect.apply(${name})`, NL);  
     }
 }
@@ -252,13 +245,7 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
     let bgSizeX = 1920;
     let bgSizeY = 1080;
 
-    let font;
-    const platform = navigator.userAgent || "unknown";
-    if (platform.toLowerCase().includes('win')) {
-        font = 'C:/Windows/Fonts/Arial.ttf';
-    } else {
-        font = 'Arial';
-    }
+    let font = fontDependingOnOS();
     
     let fontSize = 60;
     let fontColor = 'white';
@@ -268,11 +255,7 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
 
     const applyOption = (option: TextOption) => {
         if (isTextFont(option)) {
-            if (platform.toLowerCase().includes('win')) {
-                font = 'C:/Windows/Fonts/' + option.name + '.ttf';
-            } else {
-                font = option.name;
-            }        
+            font = fontDependingOnOS(font); 
         } 
         else if (isTextFontSize(option)) {
             fontSize = option.size;
@@ -309,6 +292,22 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
     `.trim().replace(/\s+/g, ' ');
 
     return `${optionsString}.with_position((${posX}, ${posY})`;
+}
+
+function fontDependingOnOS(font?: string) {
+    const platform = navigator.userAgent || "unknown";
+    if (platform.toLowerCase().includes('win')) {
+        if (font) {
+            return `C:/Windows/Fonts/${font}.ttf`;
+        } 
+        return 'C:/Windows/Fonts/Arial.ttf';
+    } 
+    else {
+        if (font) {
+            return `${font}`;
+        }
+        return 'Arial';
+    }
 }
 
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
