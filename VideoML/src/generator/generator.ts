@@ -31,6 +31,8 @@ import {
     GroupOption,
     TextOption,
     GroupOptionText,
+    GroupOptionVideo,
+    VideoOption,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -109,7 +111,7 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
         const element = elementRef.ref; 
         if (element) {
             if (isVideoElement(element)) {
-                compileVideo(element, element.name, fileNode);
+                compileVideo(element, element.name, fileNode, groupOption as GroupOptionVideo);
             } else if (isTextualElement(element)) {
                 compileTextualElement(element, element, fileNode, groupOption as GroupOptionText);
             }
@@ -117,16 +119,16 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
     });
 }
 
-function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionVideo) {
     if (isVideoOriginal(video)) {
-        compileVideoOriginal(video, name, fileNode);
+        compileVideoOriginal(video, name, fileNode, groupOption?.options);
     } else if (isVideoExtract(video)) {
-        compileVideoExtract(video, name, fileNode);
+        compileVideoExtract(video, name, fileNode, groupOption?.options);
     }
 }
 
 // We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {
     fileNode.append(
 `# Load the video clip original
 ${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
@@ -141,7 +143,7 @@ else:
 , NL);
 }
 
-function compileVideoExtract(videoExtract: VideoExtract, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideoExtract(videoExtract: VideoExtract, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {
     fileNode.append(
 `# Extract a subclip from the video
 ${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
