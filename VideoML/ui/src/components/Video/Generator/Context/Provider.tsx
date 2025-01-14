@@ -1,5 +1,5 @@
 import React, { useState, ReactNode, useMemo, useCallback, useEffect } from 'react';
-import { VideoGeneratorContext, VideoGenerationProgress } from './Context';
+import { VideoGeneratorContext, VideoGenerationStatus, VideoGenerationProgress } from './Context';
 import { usePythonVisualizer } from '../../../PythonVisualizer/Context/Context';
 import { VideoGeneratorModal } from '../Modal';
 
@@ -9,7 +9,7 @@ interface VideoGeneratorProviderProps {
 
 export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ children }) => {
     const { pythonCode } = usePythonVisualizer();
-    const [generationProgress, setGenerationProgress] = useState<VideoGenerationProgress | undefined>(undefined);
+    const [generationStatus, setGenerationStatus] = useState<VideoGenerationStatus | undefined>(undefined);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [videoGeneratedPath, setVideoGeneratedPath] = useState<string | undefined>(undefined);
     const [errorTraceback, setErrorTraceback] = useState<string | undefined>(undefined);
@@ -54,11 +54,15 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
 
     useEffect(() => {
         const handleProgress = (progress: VideoGenerationProgress) => {
-            setGenerationProgress(progress);
+            const isChunk = progress.isChunk;
+            setGenerationStatus((prev) => ({
+                ...prev,
+                [isChunk ? 'chunk' : 'frameIndex']: progress,
+            }));
         };
 
         const handleFinished = (code: number) => {
-            setGenerationProgress(undefined);
+            setGenerationStatus(undefined);
             setIsGenerating(false);
             if (!Number.isInteger(code)) {
                 setVideoGeneratedPath(undefined);
@@ -83,14 +87,14 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
     }, []);
 
     const value = useMemo(() => ({
-        generationProgress,
+        generationStatus,
         handleGenerateVideo,
         isGenerating,
         videoGeneratedPath: isGenerating ? undefined : videoGeneratedPath,
         errorTraceback,
         manualInstallationInstructions,
     }), [
-        generationProgress,
+        generationStatus,
         handleGenerateVideo,
         isGenerating,
         videoGeneratedPath,
@@ -101,7 +105,7 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
     return (
         <VideoGeneratorContext.Provider value={value}>
         {isGenerating && (
-            <VideoGeneratorModal generationProgress={generationProgress} />
+            <VideoGeneratorModal generationStatus={generationStatus} />
         )} 
         {children}
         </VideoGeneratorContext.Provider>
