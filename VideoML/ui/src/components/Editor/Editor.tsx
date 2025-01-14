@@ -28,7 +28,7 @@ export const Editor = ({
     const editorInitializedRef = useRef(false);
     const wrapperRef = useRef<MonacoEditorLanguageClientWrapper | null>(null);
 
-    const { handleNewTimelineElementInfos } = useTimeline();
+    const { handleNewTimelineElementInfos, setIsVideoMLProgramValid } = useTimeline();
     const { setPythonCode, setIsPythonCodeLoaded } = usePythonVisualizer();
 
     useWorkerFactory({
@@ -123,6 +123,7 @@ export const Editor = ({
                             setPythonCode(code);
                             setIsPythonCodeLoaded(true);
                         }
+                        setIsVideoMLProgramValid(!!result.$isValid);
                         running = false;
                     } catch (e) {
                         // failed at some point, log & disable running so we can try again

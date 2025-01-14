@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -78,6 +78,10 @@ function createWindow() {
     return process.cwd();
   });
 
+  ipcMain.handle('show-file-in-folder', async (_, fullPath) => {
+    shell.showItemInFolder(fullPath);
+  });
+
   ipcMain.handle('generate-python-file', async (_, code, dirPath) => {
     const fullPath = path.join(dirPath.replace(/\n$/, ''), 'video.py');
 
@@ -149,22 +153,25 @@ function createWindow() {
 
     // Setup data listeners
     pythonProcess.stderr.on("data", (err) => {
-      console.error('Python process error:', err.toString());
+      const errorString = err.toString();
+      console.error('Python process error:', errorString);
       // frame_index:  10%|▉         | 134/1354 [00:01<00:16, 73.30it/s, now=None]
       // Extract progess, processed frame, total frame, elapsed time, eta time, its
 
       // Regex to capture the desired components
-      const regex = /frame_index:\s+(\d+)%\|.*?\|\s+(\d+)\/(\d+)\s+\[(\d{2}:\d{2})<(\d{2}:\d{2}),\s+([\d.]+)it\/s/;
+      const frameIndexRegex = /frame_index:\s+(\d+)%\|.*?\|\s+(\d+)\/(\d+)\s+\[(\d{2}:\d{2})<(\d{2}:\d{2}),\s+([\d.]+)it\/s/;
+      const chunkRegex = /chunk:\s+(\d+)%\|.*?\|\s+(\d+)\/(\d+)\s+\[(\d{2}:\d{2})<(\d{2}:\d{2}),\s+([\d.]+)it\/s/;
 
-      const match = err.toString().match(regex);
+      const frameIndexMatch = errorString.match(frameIndexRegex);
+      const chunkMatch = errorString.match(chunkRegex);
 
-      if (match) {
-        const progress = parseInt(match[1], 10);       // Progress in percentage
-        const processedFrames = parseInt(match[2], 10); // Number of frames processed
-        const totalFrames = parseInt(match[3], 10);    // Total number of frames
-        const elapsedTime = match[4];                  // Elapsed time (hh:mm)
-        const etaTime = match[5];                      // Estimated time remaining (hh:mm)
-        const itPerSecond = parseFloat(match[6]);      // Iterations per second (it/s)
+      if (frameIndexMatch) {
+        const progress = parseInt(frameIndexMatch[1], 10);       // Progress in percentage
+        const processedFrames = parseInt(frameIndexMatch[2], 10); // Number of frames processed
+        const totalFrames = parseInt(frameIndexMatch[3], 10);    // Total number of frames
+        const elapsedTime = frameIndexMatch[4];                  // Elapsed time (hh:mm)
+        const etaTime = frameIndexMatch[5];                      // Estimated time remaining (hh:mm)
+        const itPerSecond = parseFloat(frameIndexMatch[6]);      // Iterations per second (it/s)
 
         if (win) {
             win.webContents.send('video-generation-progress', {
@@ -173,15 +180,34 @@ function createWindow() {
               totalFrames,
               elapsedTime,
               etaTime,
-              itPerSecond
+              itPerSecond,
+              isFrameIndex: true,
+            });
+        }
+      } else if (chunkMatch) {
+        const progress = parseInt(chunkMatch[1], 10);       // Progress in percentage
+        const processedFrames = parseInt(chunkMatch[2], 10); // Number of frames processed
+        const totalFrames = parseInt(chunkMatch[3], 10);    // Total number of frames
+        const elapsedTime = chunkMatch[4];                  // Elapsed time (hh:mm)
+        const etaTime = chunkMatch[5];                      // Estimated time remaining (hh:mm)
+        const itPerSecond = parseFloat(chunkMatch[6]);      // Iterations per second (it/s)
+
+        if (win) {
+            win.webContents.send('video-generation-progress', {
+              progress,
+              processedFrames,
+              totalFrames,
+              elapsedTime,
+              etaTime,
+              itPerSecond,
+              isChunk: true,
             });
         }
       } else {
         // Send error to renderer process if it's not a progress update
         const ignoreRegex = /chunk|frame_index/;
-        const stringError = err.toString();
-        if (!ignoreRegex.test(stringError) && win) {
-          win.webContents.send('video-generation-error', stringError);
+        if (!ignoreRegex.test(errorString) && win) {
+          win.webContents.send('video-generation-error', errorString);
         }
       }
     });

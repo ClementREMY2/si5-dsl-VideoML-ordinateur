@@ -1,5 +1,5 @@
 import React, { useState, ReactNode, useMemo, useCallback, useEffect } from 'react';
-import { VideoGeneratorContext, VideoGenerationProgress } from './Context';
+import { VideoGeneratorContext, VideoGenerationStatus, VideoGenerationProgress } from './Context';
 import { usePythonVisualizer } from '../../../PythonVisualizer/Context/Context';
 import { VideoGeneratorModal } from '../Modal';
 
@@ -9,29 +9,16 @@ interface VideoGeneratorProviderProps {
 
 export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ children }) => {
     const { pythonCode } = usePythonVisualizer();
-    const [generationProgress, setGenerationProgress] = useState<VideoGenerationProgress | undefined>(undefined);
+    const [generationStatus, setGenerationStatus] = useState<VideoGenerationStatus | undefined>(undefined);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [videoGeneratedPath, setVideoGeneratedPath] = useState<string | undefined>(undefined);
     const [errorTraceback, setErrorTraceback] = useState<string | undefined>(undefined);
+    const [manualInstallationInstructions, setManualInstallationInstructions] = useState<string | undefined>(undefined);
 
     const handleGenerateVideo = useCallback(async () => {
         setIsGenerating(true);
         setErrorTraceback(undefined);
-
-        // Check requirements
-        const isPythonInstalled = await window.ipcRenderer.invoke('is-python-installed');
-        if (!isPythonInstalled) {
-            setErrorTraceback('Python is not installed (need python 3.9+ and binary in PATH accessible by "python3" command)');
-            setIsGenerating(false);
-            return;
-        }
-
-        const requirementsInstallResult = await window.ipcRenderer.invoke('install-requirements');
-        if (!requirementsInstallResult) {
-            setErrorTraceback('Failed to install requirements, please check Electron logs.');
-            setIsGenerating(false);
-            return;
-        }
+        setManualInstallationInstructions(undefined);
 
         const pwd = await window.ipcRenderer.invoke('get-pwd');
         // Extract the video filename, Export line is : 'final_video.write_videofile("XXX")', use regex
@@ -40,16 +27,42 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
 
         await window.ipcRenderer.invoke('generate-python-file', pythonCode, pwd);
 
+        // Check python binary
+        const isPythonInstalled = await window.ipcRenderer.invoke('is-python-installed');
+        if (!isPythonInstalled) {
+            const platform = await window.ipcRenderer.invoke('get-process-platform');
+            const pythonBin = platform === "win32" ? "py" : "python3";
+            setErrorTraceback(`Can't find python binary (need python 3.9+ and binary in PATH accessible by "${pythonBin}" command).`);
+            setManualInstallationInstructions(
+`You can execute manually the video generation:<br>
+- Install the python requirements provided in this file <a href="#" onclick="window.ipcRenderer.invoke('show-file-in-folder', '${pwd}/requirements.txt')">requirements.txt</a> (${pwd}/requirements.txt)<br>
+- Launch this file with the python interpreter <a href="#" onclick="window.ipcRenderer.invoke('show-file-in-folder', '${pwd}/video.py')">video.py</a> (${pwd}/video.py)`);
+            setIsGenerating(false);
+            return;
+        }
+
+        // Install requirements
+        const requirementsInstallResult = await window.ipcRenderer.invoke('install-requirements');
+        if (!requirementsInstallResult) {
+            setErrorTraceback('Failed to install requirements, please check Electron logs.');
+            setIsGenerating(false);
+            return;
+        }
+
         window.ipcRenderer.invoke('generate-video', pwd);
     }, [pythonCode]);
 
     useEffect(() => {
         const handleProgress = (progress: VideoGenerationProgress) => {
-            setGenerationProgress(progress);
+            const isChunk = progress.isChunk;
+            setGenerationStatus((prev) => ({
+                ...prev,
+                [isChunk ? 'chunk' : 'frameIndex']: progress,
+            }));
         };
 
         const handleFinished = (code: number) => {
-            setGenerationProgress(undefined);
+            setGenerationStatus(undefined);
             setIsGenerating(false);
             if (!Number.isInteger(code)) {
                 setVideoGeneratedPath(undefined);
@@ -74,23 +87,25 @@ export const VideoGeneratorProvider: React.FC<VideoGeneratorProviderProps> = ({ 
     }, []);
 
     const value = useMemo(() => ({
-        generationProgress,
+        generationStatus,
         handleGenerateVideo,
         isGenerating,
         videoGeneratedPath: isGenerating ? undefined : videoGeneratedPath,
         errorTraceback,
+        manualInstallationInstructions,
     }), [
-        generationProgress,
+        generationStatus,
         handleGenerateVideo,
         isGenerating,
         videoGeneratedPath,
         errorTraceback,
+        manualInstallationInstructions,
     ]);
 
     return (
         <VideoGeneratorContext.Provider value={value}>
         {isGenerating && (
-            <VideoGeneratorModal generationProgress={generationProgress} />
+            <VideoGeneratorModal generationStatus={generationStatus} />
         )} 
         {children}
         </VideoGeneratorContext.Provider>

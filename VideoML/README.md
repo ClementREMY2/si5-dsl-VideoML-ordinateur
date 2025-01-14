@@ -5,14 +5,11 @@
 This folder contains all necessary files for your language extension.
  * `package.json` - the manifest file in which you declare your language support.
  * `language-configuration.json` - the language configuration used in the VS Code editor, defining the tokens that are used for comments and brackets.
- * `src/extension.ts` - the main code of the extension, which is responsible for launching a language server and client.
  * `src/language-server/video-ml.langium` -  the grammar definition of your language.
  * `src/language-server/main.ts` - the entry point of the language server process.
  * `src/language-server/video-ml-module.ts` - the dependency injection module of your language implementation. Use this to register overridden and added services.
  * `src/language-server/video-ml-validator.ts` - an example validator. You should change it to reflect the semantics of your language.
- * `src/cli/index.ts` - the entry point of the command line interface (CLI) of your language.
  * `src/cli/generator.ts` - the code generator used by the CLI to write output files from DSL documents.
- * `src/cli/cli-util.ts` - utility code for the CLI.
  * `ui/` - contains the UI implementation using Electron, React and Monaco editor.
 
 ## Get up and running straight away
@@ -20,11 +17,6 @@ This folder contains all necessary files for your language extension.
  * Run `npm i` to install Langium.
  * Run `npm run langium:generate` to generate TypeScript code from the grammar definition.
  * Run `npm run build` to compile all TypeScript code.
- * Run `npm run build:extension` to compile the extension.
- * Press `F5` to open a new window with your extension loaded (you need to have the editor opened in this folder).
- * Create a new file with a file name suffix matching your language.
- * Verify that syntax highlighting, validation, completion etc. are working as expected.
- * Run `./bin/cli` to see options for the CLI; `./bin/cli generate <file>` generates code for a given DSL file. (NOTE : on windows, you might put "node" at the beginning of the command.)
 
  ## Run the UI
 

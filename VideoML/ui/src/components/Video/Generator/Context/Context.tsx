@@ -1,5 +1,10 @@
 import { createContext, useContext } from 'react';
 
+export type VideoGenerationStatus = {
+  chunk?: VideoGenerationProgress,
+  frameIndex?: VideoGenerationProgress,
+};
+
 export type VideoGenerationProgress = {
   progress: number,
   processedFrames: number,
@@ -7,14 +12,17 @@ export type VideoGenerationProgress = {
   elapsedTime: string,
   etaTime: string,
   itPerSecond: number,
+  isChunk?: boolean,
+  isFrameIndex?: boolean,
 };
 
 interface VideoGeneratorContextProps {
-    generationProgress: VideoGenerationProgress | undefined,
+    generationStatus: VideoGenerationStatus | undefined,
     handleGenerateVideo: () => Promise<void>,
     videoGeneratedPath: string | undefined,
     isGenerating: boolean,
     errorTraceback: string | undefined,
+    manualInstallationInstructions: string | undefined,
 }
 
 export const VideoGeneratorContext = createContext<VideoGeneratorContextProps | undefined>(undefined);
