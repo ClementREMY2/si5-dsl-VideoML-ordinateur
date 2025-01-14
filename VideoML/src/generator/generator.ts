@@ -45,6 +45,10 @@ import {
     isVisualElementOption,
     isVideoSaturation,
     isVideoRotation,
+    GroupOptionAudio,
+    isAudioOption,
+    AudioOption,
+    isAudioVolume,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -95,13 +99,22 @@ function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
     }
 }
 
-function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode) {
+function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionAudio) {
     if (isAudioOriginal(audio)) {
         compileAudioOriginal(audio, name, fileNode);
     }
     else if (isAudioExtract(audio)) {
         compileAudioExtract(audio, name, fileNode);
     }
+
+    const options = groupOption?.options;
+    if (options !== undefined) {
+        options.forEach((option) => {
+            if (isAudioOption(option)) {
+                compileAudioEffect(option, name, fileNode)
+            }
+    });
+    }   
 }
 
 function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
@@ -126,6 +139,9 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
                 compileVideo(element, element.name, fileNode, groupOption as GroupOptionVideo);
             } else if (isTextualElement(element)) {
                 compileTextualElement(element, element, fileNode, groupOption as GroupOptionText);
+            }
+            else if (isAudioElement(element)) {
+                compileAudio(element, element.name, fileNode, groupOption as GroupOptionAudio);
             }
         }
     });
@@ -206,6 +222,17 @@ ${name} = painting_effect.apply(${name})`, NL);
 `# Apply rotation effect
 rotate_effect = moviepy.video.fx.Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
 ${name} = rotate_effect.apply(${name})`, NL);  
+    }
+}
+
+function compileAudioEffect(option: AudioOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isTextOption(option) || isVisualElementOption(option)) return;
+
+    if (isAudioVolume(option)) {
+        fileNode.append(
+            `# Apply brightness effect
+new_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.volume}, right=${option.volume})
+${name} = new_volume.apply(${name})`, NL);
     }
 }
 
