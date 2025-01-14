@@ -8,6 +8,8 @@ entry VideoProject:
 
 	(groupOptions+=GroupOption)*
 
+	(videoTransitions+=VideoTransition)*
+
 	timelineElements+=TimelineElement
 	(timelineElements+=TimelineElement)*;
 
@@ -124,9 +126,9 @@ VideoScale:
 
 // Video transition
 
-
-
-
+VideoTransition: 
+	'transitionType' transitionType=TRANSITION
+	'videos' (videos+=[VideoElement:ID] (',' videos+=[VideoElement:ID])*)?;
 
 // Audio options 
 
@@ -171,6 +173,8 @@ terminal FLOAT returns number: /[0-9]*\.[0-9]+/;
 terminal INT returns number: /[0-9]+/;
 // BOOLEAN format: true or false
 terminal BOOLEAN returns boolean: 'true' | 'false';
+// TRANSITION format: 'fade' | 'slide' | 'zoom' | 'flip'
+terminal TRANSITION returns string: 'ease_in' | 'ease_out' | 'fade_in' | 'fade_out';
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 
