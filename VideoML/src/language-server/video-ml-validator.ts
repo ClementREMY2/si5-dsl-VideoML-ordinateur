@@ -24,6 +24,17 @@ import {
     isTextFontSize,
     TextFont,
     TextualElement,
+    VideoBrightness,
+    VideoContrast,
+    VideoOpacity,
+    VideoResolution,
+    VideoScale,
+    VideoElement,
+    isVideoBrightness,
+    isVideoContrast,
+    isVideoOpacity,
+    isVideoResolution,
+    isVideoScale,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -377,10 +388,12 @@ export class VideoMlValidator {
         };
     }
 
-
     checkElement(element: Element, accept: ValidationAcceptor): void {
         if(isTextualElement(element)) {
             this.checkTextualElement(element, accept);
+        }
+        if(isVideoElement(element)) {
+            this.checkVideoOption(element, accept);
         }
     }
 
@@ -444,6 +457,69 @@ export class VideoMlValidator {
             if (parseInt(relativeTo.name.slice(1)) > parseInt(element.name.slice(1))) {
                 accept('error', 'You cannot place relatively this element to a future element', { node: element, property: 'relativeTo' });
             }
+        }
+    }
+
+    checkVideoOption(element: VideoElement, accept: ValidationAcceptor): void {
+        if (element.videoOption) {
+            console.log('Checking video option', element.videoOption);
+            element.videoOption.forEach((option) => {
+                console.log('Checking video option', option);
+                console.log('IsVideoOpacity', isVideoOpacity(option));
+                if (isVideoBrightness(option)) {
+                    this.checkVideoBrightness(option, accept);
+                } else if (isVideoContrast(option)) {
+                    this.checkVideoContrast(option, accept);
+                } else if (isVideoOpacity(option)) {
+                    this.checkVideoOpacity(option, accept);
+                } else if (isVideoResolution(option)) {
+                    this.checkVideoResolution(option, accept);
+                } else if (isVideoScale(option)) {
+                    this.checkVideoScale(option, accept);
+                }
+            });
+        }
+    }
+    
+    // Check that the brightness is between valid values
+    checkVideoBrightness(option: VideoBrightness, accept: ValidationAcceptor): void {
+        if (option.brightness < 0 || option.brightness > 2) {
+            accept('error', 'Brightness must be between 0 and 2. For example, 1.5 is 50% brighter',
+                 { node: option, property: 'brightness' });
+        }
+    }
+
+    // Check that the contrast is between valid values
+    checkVideoContrast(option: VideoContrast, accept: ValidationAcceptor): void {
+        if (option.contrast < 0 || option.contrast > 2) {
+            accept('error', 'Contrast must be between 0 and 2. For example, 1.5 increase the contrast by 50%',                 
+                { node: option, property: 'contrast' });
+        }
+    }
+
+    // Check that the contrast is between valid values
+    checkVideoOpacity(option: VideoOpacity, accept: ValidationAcceptor): void {
+        console.log(option.opacity);
+        if (option.opacity < 0.0 || option.opacity > 1.0) {
+            accept('error', 'Contrast must be between 0 and 1. 0 being completely transparent, while 1 is maximum opacity',
+                 { node: option, property: 'opacity' });
+        }
+    }
+
+    // Check that the resolution is between standard values (FullHD at maximum resolution)
+    // TODO : Discuss about the range of the resolution
+    checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
+        if (option.width > 1920 || option.height > 1080) {
+            accept('error', 'Resolution must be less than FullHD (1920x1080)', { node: option });
+        }
+    }
+
+    // Check that the scale is between valid values (100% for now, you can only reduce it)
+    // TODO : Discuss about the range of the scale
+    checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
+        console.log(option.scale);
+        if (option.scale > 1.0 || option.scale < 0.0) {
+            accept('error', 'Scale must be less than or equal to 1. For example, 0.5 is 50% smaller', { node: option });
         }
     }
 }
