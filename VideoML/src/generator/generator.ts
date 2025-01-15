@@ -178,9 +178,10 @@ ${name} = multiply_effect.apply(${name})`, NL);
     }
 
     if (isVideoScale(option)) {
+        const new_value = option.scale / 100;
         fileNode.append(
 `# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(new_size=${option.scale})
+resize_effect = moviepy.video.fx.Resize(new_size=${new_value})
 ${name} = resize_effect.apply(${name})`, NL); 
 }
 

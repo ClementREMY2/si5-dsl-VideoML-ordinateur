@@ -120,7 +120,7 @@ VideoResolution:
 	'resolution' width=INT ',' height=INT;
 
 VideoScale:
-	'scale' scale=FLOAT;
+	'scale' scale=INT;
 
 VideoPainting:
 	'painting' painting=INT;

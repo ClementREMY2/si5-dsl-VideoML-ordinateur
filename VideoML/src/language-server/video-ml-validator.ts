@@ -543,10 +543,9 @@ export class VideoMlValidator {
     }
 
     // Check that the scale is between valid values (100% for now, you can only reduce it)
-    // TODO : Discuss about the range of the scale
     checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
-        if (option.scale > 1.0 || option.scale < 0.0) {
-            accept('error', 'Scale must be less than or equal to 1. For example, 0.5 is 50% smaller', { node: option });
+        if (option.scale > 100 || option.scale < 100) {
+            accept('error', 'Scale is in %. It cannot be less than 100 or more than 100', { node: option });
         }
     }
 
