@@ -52,6 +52,7 @@ import {
     isAudioFadeIn,
     isAudioFadeOut,
     isAudioStereoVolume,
+    isVideoTransitionTest,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -82,9 +83,12 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     // Compile timeline elements (placement, duration)
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
 
+    // Compile video transitions
+    compileVideoTransition(videoProject, fileNode);
+
     // Compile the final video (concatenation)
     compileTimelineElementsOrdered(videoProject, fileNode);
-
+    
     // Export the final video
     fileNode.append(
 `# Export the final video
@@ -226,7 +230,23 @@ ${name} = painting_effect.apply(${name})`, NL);
 rotate_effect = moviepy.video.fx.Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
 ${name} = rotate_effect.apply(${name})`, NL);  
     }
+
+    if (isVideoTransitionTest(option)) {
+        if (option.type === 'fadein') {
+            fileNode.append(
+                `# Apply fade in effect
+fade_in = moviepy.video.fx.CrossFadeIn(1)
+${name} = fade_in.apply(${name})`, NL);
+        }
+        else if (option.type === 'fadeout') {
+            fileNode.append(
+                `# Apply fade out effect
+fade_out = moviepy.video.fx.CrossFadeOut(1)
+${name} = fade_out.apply(${name})`, NL);
+        }
+    }
 }
+
 
 function compileAudioEffect(option: AudioOption, name: String, fileNode: CompositeGeneratorNode) {
     if (isTextOption(option) || isVisualElementOption(option)) return;
@@ -475,6 +495,30 @@ final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
 final_video.audio = final_audio
 `, NL);  
     } 
+}
 
+function compileVideoTransition(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
+    const transitions = videoProject.videoTransitions;
+    if (transitions.length > 0) {
+        fileNode.append(`# Apply video transitions\n`);
+        transitions.forEach((transition, index) => {
+            const videosJoined = transition.videos;
+            
+            for (const video of videosJoined) {
+                const transition_moviepy = transitionEffectHelper(transition.transitionType);
+                fileNode.append(`${video} = ${video}.with_effects([${transition_moviepy}(2)])`);         
+             }
+        });
+    }
+}
+
+function transitionEffectHelper(transitionType: string) {
+    if (transitionType === 'fadeIn') {
+        return 'vfx.CrossFadeIn';
+    }
+    else if (transitionType === 'fadeOut') {
+        return 'vfx.CrossFadeOut';
+    }
+    return null;
 }
 

@@ -47,6 +47,7 @@ import {
     isAudioFadeIn,
     isAudioFadeOut,
     isAudioElement,
+    VideoTransition,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -107,9 +108,9 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
         RelativeTimelineElement: validator.checkRelativeTimelineElement,
-        Element: validator.checkElement
-
-    };
+        Element: validator.checkElement,
+        VideoTransition: validator.checkVideoTransition,
+        };
     registry.register(checks, validator);
 }
 
@@ -602,6 +603,12 @@ export class VideoMlValidator {
                  { node: option, property: 'duration' });
         }
     }
-   
+
+    checkVideoTransition(transition: VideoTransition, accept: ValidationAcceptor): void {
+        if (transition.transitionType !== 'fadeIn' && transition.transitionType !== 'fadeOut') {
+            accept('error', 'Invalid transition type. It must be either fadeIn or fadeOut.',
+                 { node: transition, property: 'transitionType' });
+        }    
+    }
     
 }
