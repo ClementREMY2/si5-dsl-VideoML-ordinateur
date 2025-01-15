@@ -7,12 +7,17 @@ import { useTimeline } from '../Timeline/Context/Context';
 import { usePythonVisualizer } from '../PythonVisualizer/Context/Context';
 import { renderedValidationHandlers } from '../../lib/validators';
 
+const platform = await window.ipcRenderer.invoke('get-process-platform');
+
+const isAudio = (file: File) => file.type.startsWith('audio/');
+const isVideo = (file: File) => file.type.startsWith('video/');
+
 type EditorProps = {
     className?: string;
     style?: React.CSSProperties;
     mc: string;
     vml: string;
-    filesToInsert: string[];
+    filesToInsert: File[];
     onInsertCode: () => void;
 };
 
@@ -147,60 +152,51 @@ export const Editor = ({
         const model = wrapperRef.current.getModel();
         if (model && filesToInsert.length > 0) {
             const value = model.getValue();
-            const newFilesToInsert = filesToInsert.join('\n');
+            let newModelValue = value;
 
-            // Liste des extensions audio et vidéo
-            const audioFormats = [
-                '.mp3', '.aac', '.ogg', '.wma', '.opus', '.m4a', '.flac', '.alac', 
-                '.ape', '.wav', '.aiff', '.au', '.amr', '.dts'
-            ];
-            
-            const videoFormats = [
-                '.mp4', '.avi', '.mkv', '.mov', '.flv', '.wmv', '.webm', '.ogv', 
-                '.3gp', '.rm', '.swf', '.asf', '.mts', '.m2ts'
-            ];
-            
-            // Vérification des fichiers
-            const isVideo = filesToInsert.some(file =>
-                videoFormats.some(format => file.toLowerCase().endsWith(format))
-            );
-            
-            const isAudio = filesToInsert.some(file =>
-                audioFormats.some(format => file.toLowerCase().endsWith(format))
-            );
+            filesToInsert.forEach((file) => {
+                // Get varname from file name e.g. video.mp4 -> video (whitespace removed)
+                const varName = file.name.replace(/\s/g, '').replace(/\.[^/.]+$/, '');
+                // If machine under windows, replace backslashes with forward slashes and keep only the path with and after the first slash.
+                
+                // Generate the line to insert
+                const path = platform === 'win32' ? file.path.replace(/^.*?\\/, '/').replace(/\\/g, '/') : file.path;
+                let lineToInsert: string = '';
+                if (isVideo(file)) lineToInsert =  `load video "${path}" as ${varName}`;
+                else if (isAudio(file)) lineToInsert =  `load audio "${path}" as ${varName}`;
 
-            let lastLoadMatch;
-            let loadIndex = -1;
+                // Process line where to insert the new line
+                let lastLoadMatch;
+                let loadIndex = -1;
 
-            const loadVideoMatches = [...value.matchAll(/load video.*\n/g)];
-            const loadAudioMatches = [...value.matchAll(/load audio.*\n/g)];
+                const loadVideoMatches = [...newModelValue.matchAll(/load video.*\n/g)];
+                const loadAudioMatches = [...newModelValue.matchAll(/load audio.*\n/g)];
 
-            if (isVideo) {
-                // Find the last occurrence of 'load video ... \n'
-                lastLoadMatch = loadVideoMatches[loadVideoMatches.length - 1];
-                loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
-                console.log('loadIndex video', loadIndex);
-            } else if (isAudio) {
-                // Find the last occurrence of 'load audio ... \n'
-                lastLoadMatch = loadAudioMatches[loadAudioMatches.length - 1];
-                loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
-                console.log('loadIndex audio', loadIndex);
-            }
+                if (isVideo(file)) {
+                    // Find the last occurrence of 'load video ... \n'
+                    lastLoadMatch = loadVideoMatches[loadVideoMatches.length - 1];
+                    loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
+                } else if (isAudio(file)) {
+                    // Find the last occurrence of 'load audio ... \n'
+                    lastLoadMatch = loadAudioMatches[loadAudioMatches.length - 1];
+                    loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
+                }
 
-            // Find the index of 'video project ... \n'
-            const videoProjectMatches = [...value.matchAll(/video project.*\n/g)];
-            const videoProjectMatch = videoProjectMatches[0];
-            const videoProjectIndex = videoProjectMatch ? videoProjectMatch.index + videoProjectMatch[0].length : -1;
+                // Find the index of 'video project ... \n'
+                const videoProjectMatches = [...newModelValue.matchAll(/video project.*\n/g)];
+                const videoProjectMatch = videoProjectMatches[0];
+                const videoProjectIndex = videoProjectMatch ? videoProjectMatch.index + videoProjectMatch[0].length : -1;
 
-            // Determine the insert index
-            const insertIndex = loadIndex > -1 ? loadIndex : videoProjectIndex > -1 ? videoProjectIndex : 0;
+                // Determine the insert index
+                const insertIndex = loadIndex > -1 ? loadIndex : videoProjectIndex > -1 ? videoProjectIndex : 0;
 
-            // Insert new videos after the determined index
-            const newValue = insertIndex > 0
-                ? value.slice(0, insertIndex) + (!lastLoadMatch ? '\n' : '') + newFilesToInsert + '\n' + value.slice(insertIndex)
-                : 'video project "name_your_project"\n\n' + newFilesToInsert + '\n';
+                // Insert new videos after the determined index
+                newModelValue = insertIndex > 0
+                    ? newModelValue.slice(0, insertIndex) + (!lastLoadMatch ? '\n' : '') + lineToInsert + '\n' + newModelValue.slice(insertIndex)
+                    : 'video project "name_your_project"\n\n' + lineToInsert + '\n';
+            });
 
-            model.setValue(newValue);
+            model.setValue(newModelValue);
             onInsertCode();
         }
     }, [filesToInsert, onInsertCode]);

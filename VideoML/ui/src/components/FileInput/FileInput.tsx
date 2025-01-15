@@ -25,6 +25,11 @@ export const FileInput: React.FC<FileInputProps> = ({ className, style, onDrop }
       if (e.target.files) {
           onDrop(Array.from(e.target.files));
       }
+
+      // Empty the input value so that the same file can be selected again
+      if (inputRef.current) {
+          inputRef.current.value = '';
+      }
   }, [onDrop]);
 
   useEffect(() => {
@@ -90,6 +95,7 @@ export const FileInput: React.FC<FileInputProps> = ({ className, style, onDrop }
             ref={inputRef}
             onChange={handleFileChange}
             className="d-none"
+            multiple
         />
         {showReleaseFiles
           ? <div>Release files to add</div>
