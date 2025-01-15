@@ -149,8 +149,25 @@ export const Editor = ({
             const value = model.getValue();
             const newFilesToInsert = filesToInsert.join('\n');
 
-            const isVideo = filesToInsert.some(file => file.includes('.mp4'));
-            const isAudio = filesToInsert.some(file => file.includes('.mp3'));
+            // Liste des extensions audio et vidéo
+            const audioFormats = [
+                '.mp3', '.aac', '.ogg', '.wma', '.opus', '.m4a', '.flac', '.alac', 
+                '.ape', '.wav', '.aiff', '.au', '.amr', '.dts'
+            ];
+            
+            const videoFormats = [
+                '.mp4', '.avi', '.mkv', '.mov', '.flv', '.wmv', '.webm', '.ogv', 
+                '.3gp', '.rm', '.swf', '.asf', '.mts', '.m2ts'
+            ];
+            
+            // Vérification des fichiers
+            const isVideo = filesToInsert.some(file =>
+                videoFormats.some(format => file.toLowerCase().endsWith(format))
+            );
+            
+            const isAudio = filesToInsert.some(file =>
+                audioFormats.some(format => file.toLowerCase().endsWith(format))
+            );
 
             let lastLoadMatch;
             let loadIndex = -1;
@@ -168,8 +185,6 @@ export const Editor = ({
                 lastLoadMatch = loadAudioMatches[loadAudioMatches.length - 1];
                 loadIndex = lastLoadMatch ? lastLoadMatch.index + lastLoadMatch[0].length : -1;
                 console.log('loadIndex audio', loadIndex);
-            } else {
-                console.log("prout");
             }
 
             // Find the index of 'video project ... \n'

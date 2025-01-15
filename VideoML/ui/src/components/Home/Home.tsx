@@ -26,10 +26,10 @@ export const Home: React.FC = () => {
       // If machine under windows, replace backslashes with forward slashes and keep only the path with and after the first slash.
       
       const path = platform === 'win32' ? file.path.replace(/^.*?\\/, '/').replace(/\\/g, '/') : file.path;
-      if (file.path.endsWith('.mp4')) {
+      if (file.type.startsWith('video/')) {
         return `load video "${path}" as ${varName}`;
       }
-      else if (file.path.endsWith('.mp3')) {
+      else if (file.type.startsWith('audio/')) {
         return `load audio "${path}" as ${varName}`;
       }
       return "";
