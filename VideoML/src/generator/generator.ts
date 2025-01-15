@@ -72,8 +72,8 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `import moviepy
 `, NL);
 
-    // Compile explicitly declared elements (beofre timeline creation)
-    videoProject.elements.forEach((element) => compileElement(element, fileNode));
+    videoProject.elements.forEach((element) => compileTextElement(element, fileNode));
+
 
     videoProject.groupOptions.forEach((groupOption) => {
         compileGroupOption(groupOption, fileNode);
@@ -91,14 +91,9 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
-function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if(isVideoElement(element)){
-        compileVideo(element, element.name, fileNode);
-    } else if (isTextualElement(element)) {
+function compileTextElement(element: Element, fileNode: CompositeGeneratorNode) {
+    if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
-    }
-    else if (isAudioElement(element)) {
-        compileAudio(element, element.name, fileNode);
     }
 }
 
