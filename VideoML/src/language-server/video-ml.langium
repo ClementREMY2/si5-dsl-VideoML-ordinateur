@@ -102,7 +102,7 @@ VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
-	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting | VideoRotation | VideoTransitionTest);
+	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting | VideoRotation | VideoTransition);
 
 VideoContrast:
 	'contrast' contrast=FLOAT;
@@ -128,21 +128,10 @@ VideoPainting:
 VideoRotation:
 	'rotation' rotation=INT;
 
-// VideoFadeIn:
-// 	fadein=STRING;
-
-// VideoFadeOut:
-// 	fadeout=STRING;
-
-
 // Video transition
 
 VideoTransition:
-    'transitionType' transitionType=STRING
-    'videos' videos+=[TimelineElement:HASHTAG_ID] ',' videos+=[TimelineElement:HASHTAG_ID] (',' videos+=[TimelineElement:HASHTAG_ID])*;
-
-VideoTransitionTest:
-     type=('fadeout' | 'fadein' | '...');
+     type=('fadeout' | 'fadein');
 
 // Audio options 
 

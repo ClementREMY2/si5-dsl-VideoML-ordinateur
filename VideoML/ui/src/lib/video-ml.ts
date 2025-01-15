@@ -61,12 +61,12 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','fadein','fadeout','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','painting','position','project','resolution','right','rotation','saturation','scale','shadow','size','start','stereo','subtitle','text','to','transitionType','under','video','videos','volume'
+        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','fadein','fadeout','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','painting','position','project','resolution','right','rotation','saturation','scale','shadow','size','start','stereo','subtitle','text','to','under','video','volume'
     ],
     operators: [
-        ',','...',':'
+        ',',':'
     ],
-    symbols: /,|\.\.\.|:/,
+    symbols: /,|:/,
 
     tokenizer: {
         initial: [

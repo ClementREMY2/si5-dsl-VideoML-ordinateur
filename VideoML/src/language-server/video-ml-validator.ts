@@ -605,9 +605,9 @@ export class VideoMlValidator {
     }
 
     checkVideoTransition(transition: VideoTransition, accept: ValidationAcceptor): void {
-        if (transition.transitionType !== 'fadeIn' && transition.transitionType !== 'fadeOut') {
+        if (transition.type !== 'fadein' && transition.type !== 'fadeout') {
             accept('error', 'Invalid transition type. It must be either fadeIn or fadeOut.',
-                 { node: transition, property: 'transitionType' });
+                 { node: transition, property: 'type' });
         }    
     }
     

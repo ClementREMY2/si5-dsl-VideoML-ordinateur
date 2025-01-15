@@ -40,7 +40,6 @@ import {
     isVideoOpacity,
     isVideoContrast,
     isVideoPainting,
-    // VisualElementOption,
     isTextOption,
     isVisualElementOption,
     isVideoSaturation,
@@ -52,7 +51,7 @@ import {
     isAudioFadeIn,
     isAudioFadeOut,
     isAudioStereoVolume,
-    isVideoTransitionTest,
+    isVideoTransition,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -82,9 +81,6 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     // Compile timeline elements (placement, duration)
     videoProject.timelineElements.forEach((te) => compileTimelineElement(te, fileNode, videoProject));
-
-    // Compile video transitions
-    compileVideoTransition(videoProject, fileNode);
 
     // Compile the final video (concatenation)
     compileTimelineElementsOrdered(videoProject, fileNode);
@@ -231,7 +227,7 @@ rotate_effect = moviepy.video.fx.Rotate(angle=${option.rotation}, unit="deg", re
 ${name} = rotate_effect.apply(${name})`, NL);  
     }
 
-    if (isVideoTransitionTest(option)) {
+    if (isVideoTransition(option)) {
         if (option.type === 'fadein') {
             fileNode.append(
                 `# Apply fade in effect
@@ -495,30 +491,5 @@ final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
 final_video.audio = final_audio
 `, NL);  
     } 
-}
-
-function compileVideoTransition(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
-    const transitions = videoProject.videoTransitions;
-    if (transitions.length > 0) {
-        fileNode.append(`# Apply video transitions\n`);
-        transitions.forEach((transition, index) => {
-            const videosJoined = transition.videos;
-            
-            for (const video of videosJoined) {
-                const transition_moviepy = transitionEffectHelper(transition.transitionType);
-                fileNode.append(`${video} = ${video}.with_effects([${transition_moviepy}(2)])`);         
-             }
-        });
-    }
-}
-
-function transitionEffectHelper(transitionType: string) {
-    if (transitionType === 'fadeIn') {
-        return 'vfx.CrossFadeIn';
-    }
-    else if (transitionType === 'fadeOut') {
-        return 'vfx.CrossFadeOut';
-    }
-    return null;
 }
 
