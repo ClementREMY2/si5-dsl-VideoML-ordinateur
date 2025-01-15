@@ -61,23 +61,23 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','painting','position','project','resolution','right','rotation','saturation','scale','shadow','size','start','stereo','subtitle','text','to','transitionType','under','video','videos','volume'
+        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','fadein','fadeout','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','painting','position','project','resolution','right','rotation','saturation','scale','shadow','size','start','stereo','subtitle','text','to','transitionType','under','video','videos','volume'
     ],
     operators: [
-        ',',':'
+        ',','...',':'
     ],
-    symbols: /,|:/,
+    symbols: /,|\.\.\.|:/,
 
     tokenizer: {
         initial: [
             { regex: /#[0-9]+/, action: {"token":"string"} },
+            { regex: /fade_in/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
             { regex: /[0-9]*\.[0-9]+/, action: {"token":"number"} },
             { regex: /[0-9]+/, action: {"token":"number"} },
             { regex: /(true|false)/, action: {"token":"boolean"} },
-            { regex: /(((ease_in|ease_out)|fade_in)|fade_out)/, action: {"token":"string"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },
             { include: '@whitespace' },
             { regex: /@symbols/, action: { cases: { '@operators': {"token":"operator"}, '@default': {"token":""} }} },

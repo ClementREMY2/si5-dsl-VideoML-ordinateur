@@ -7,9 +7,10 @@ entry VideoProject:
 
 	(groupOptions+=GroupOption)*
 
-	(videoTransitions+=VideoTransition)*
+	(timelineElements+=TimelineElement)+
 
-	(timelineElements+=TimelineElement)+;
+	(videoTransitions+=VideoTransition)*;
+
 
 Element:
 	(VideoElement | TextualElement | AudioElement) 'as' name=ID;
@@ -101,7 +102,7 @@ VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
-	VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting | VideoRotation;
+	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoPainting | VideoRotation | VideoTransitionTest);
 
 VideoContrast:
 	'contrast' contrast=FLOAT;
@@ -127,12 +128,21 @@ VideoPainting:
 VideoRotation:
 	'rotation' rotation=INT;
 
+// VideoFadeIn:
+// 	fadein=STRING;
+
+// VideoFadeOut:
+// 	fadeout=STRING;
+
 
 // Video transition
 
 VideoTransition:
-    'transitionType' transitionType=TRANSITION
-    'videos' videos+=[VideoElement:ID] ',' videos+=[VideoElement:ID] (',' videos+=[VideoElement:ID])*;
+    'transitionType' transitionType=STRING
+    'videos' videos+=[TimelineElement:HASHTAG_ID] ',' videos+=[TimelineElement:HASHTAG_ID] (',' videos+=[TimelineElement:HASHTAG_ID])*;
+
+VideoTransitionTest:
+     type=('fadeout' | 'fadein' | '...');
 
 // Audio options 
 
@@ -156,6 +166,8 @@ AudioStereoVolume:
 hidden terminal WS: /\s+/;
 // Hashtag ID forma
 terminal HASHTAG_ID returns string: /#[0-9]+/;
+// FADE_IN
+terminal FADEIN returns string: 'fade_in';
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME
@@ -168,8 +180,6 @@ terminal FLOAT returns number: /[0-9]*\.[0-9]+/;
 terminal INT returns number: /[0-9]+/;
 // BOOLEAN format: true or false
 terminal BOOLEAN returns boolean: 'true' | 'false';
-// TRANSITION format: 'fade' | 'slide' | 'zoom' | 'flip'
-terminal TRANSITION returns string: 'ease_in' | 'ease_out' | 'fade_in' | 'fade_out';
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 
