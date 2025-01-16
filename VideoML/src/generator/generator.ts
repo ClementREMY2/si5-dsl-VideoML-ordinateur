@@ -52,6 +52,7 @@ import {
     isAudioFadeOut,
     isAudioStereoVolume,
     isVideoTransition,
+    isTextEffect,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -310,7 +311,7 @@ else:
     , NL);
 }
 
-function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]): string {
+function compileOptionsToTextClip(text: TextualElement, elementName: string, options?: TextOption[]): string {
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
@@ -322,8 +323,12 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
     let align = 'left';
     let posX: number | string = `"center"`;
     let posY: number | string = `"center"`;
+    let effect = false;
 
     const applyOption = (option: TextOption) => {
+        if (isTextEffect(option)) {
+            effect = true;
+        }
         if (isTextFont(option)) {
             font = fontDependingOnOS(font); 
         } 
@@ -351,7 +356,7 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
         posY = 400;
     }
 
-    const optionsString = `
+    let optionsString = `
         text="${text.text}",
         ${bgColor !== 'no' ? `bg_color="${bgColor}",` : ''}
         font="${font}",
@@ -361,7 +366,95 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
         size=(${bgSizeX}, ${bgSizeY}))
     `.trim().replace(/\s+/g, ' ');
 
-    return `${optionsString}.with_position((${posX}, ${posY})`;
+    if (effect === false) {
+        return `${optionsString}.with_position((${posX}, ${posY})`;
+    }
+
+    options?.forEach(option => {
+        if (isTextEffect(option)) {
+            optionsString += `
+import numpy as np
+from scipy.ndimage import label, find_objects
+
+def find_objects_custom(mask):
+    """
+    Recrée le comportement de moviepy.video.tools.segmenting.findObjects
+    pour identifier les zones correspondant aux lettres ou groupes de lettres
+    dans un masque binaire.
+    
+    Args:
+        mask (numpy.ndarray): Masque binaire généré par le clip texte.
+    
+    Returns:
+        list: Liste de tuples (slice_x, slice_y) représentant les positions
+              des objets détectés.
+    """
+    from scipy.ndimage import label, find_objects
+
+    # Étiqueter les régions connectées dans le masque
+    labeled_array, num_features = label(mask)
+
+    # Trouver les limites des objets (lettres ou groupes de lettres)
+    object_slices = find_objects(labeled_array)
+
+    return object_slices
+
+
+screensize = (1920, 1080)
+cvc = moviepy.CompositeVideoClip( [${elementName}.with_position('center')], size = screensize)
+
+rotMatrix = lambda a: np.array( [[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]] )
+ 
+def effect1(screenpos, i, nletters):
+    d = lambda t : 1.0/(0.3 + t**8)
+    a = i * np.pi / nletters 
+    v = rotMatrix(a).dot([-1, 0])
+     
+    if i % 2 : v[1] = -v[1]
+         
+    return lambda t: screenpos + 400 * d(t)*rotMatrix(0.5 * d(t)*a).dot(v)
+
+binary_mask = title1.mask.get_frame(0)
+letters = find_objects_custom(binary_mask)
+
+if not letters:
+    print("Aucun objet trouvé dans le masque binaire.")
+else:
+    print(f"{len(letters)} objets trouvés dans le masque.")
+
+def moveLetters(letters, funcpos, original_clip):
+    """
+    Applique une fonction de positionnement à chaque lettre détectée dans un masque binaire.
+
+    Args:
+        letters (list): Liste de tranches (slices) correspondant aux lettres ou groupes de lettres.
+        funcpos (callable): Fonction prenant (screenpos, i, nletters) et renvoyant une position.
+        original_clip (TextClip): Clip original contenant le texte.
+
+    Returns:
+        list: Liste de clips texte animés.
+    """
+    animated_letters = []
+    for i, letter_slice in enumerate(letters):
+        # Créer un sous-clip pour chaque lettre
+        x_min, x_max = letter_slice[1].start, letter_slice[1].stop
+        y_min, y_max = letter_slice[0].start, letter_slice[0].stop
+        
+        cropped_letter = original_clip.cropped(x1=x_min, x2=x_max, y1=y_min, y2=y_max)
+
+        # Appliquer la position animée
+        animated_letter = cropped_letter.with_position(funcpos((x_min, y_min), i, len(letters)))
+        animated_letters.append(animated_letter)
+    
+    return animated_letters
+
+animated_letters = moveLetters(letters, effect1, title1)
+
+${elementName} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY})
+`
+}});
+
+    return `${optionsString}`;
 }
 
 function fontDependingOnOS(font?: string) {
@@ -383,7 +476,7 @@ function fontDependingOnOS(font?: string) {
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
     fileNode.append(
 `# Load the text clip
-${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, groupOption?.options)})
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element.name, groupOption?.options)})
 `, NL);
 }
 

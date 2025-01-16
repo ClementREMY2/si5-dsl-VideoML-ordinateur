@@ -51,7 +51,7 @@ VisualElementSize:
 	'size' width=INT ',' height=INT;
 
 TextSpecificOption:
-	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment  | TextEffect;
 
 TextFontSize:
 	'fontsize' size=INT;
@@ -67,6 +67,9 @@ TextShadow:
 
 TextAligment:
 	'alignment' alignment=STRING;
+
+TextEffect:
+	type=('crazy');
 
 TextualElement:
 	type=('text' | 'subtitle') text=STRING options+=TextOption*;
