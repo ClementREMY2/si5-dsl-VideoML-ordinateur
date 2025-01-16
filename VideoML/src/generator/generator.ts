@@ -31,6 +31,27 @@ import {
     GroupOption,
     TextOption,
     GroupOptionText,
+    GroupOptionVideo,
+    VideoOption,
+    isVideoOption,
+    isVideoBrightness,
+    isVideoScale,
+    isVideoResolution,
+    isVideoOpacity,
+    isVideoContrast,
+    isVideoPainting,
+    isTextOption,
+    isVisualElementOption,
+    isVideoSaturation,
+    isVideoRotation,
+    GroupOptionAudio,
+    isAudioOption,
+    AudioOption,
+    isAudioVolume,
+    isAudioFadeIn,
+    isAudioFadeOut,
+    isAudioStereoVolume,
+    isVideoTransition,
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
@@ -51,8 +72,8 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `import moviepy
 `, NL);
 
-    // Compile explicitly declared elements (beofre timeline creation)
-    videoProject.elements.forEach((element) => compileElement(element, fileNode));
+    videoProject.elements.forEach((element) => compileTextElement(element, fileNode));
+
 
     videoProject.groupOptions.forEach((groupOption) => {
         compileGroupOption(groupOption, fileNode);
@@ -63,31 +84,35 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 
     // Compile the final video (concatenation)
     compileTimelineElementsOrdered(videoProject, fileNode);
-
+    
     // Export the final video
     fileNode.append(
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
-function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if(isVideoElement(element)){
-        compileVideo(element, element.name, fileNode);
-    } else if (isTextualElement(element)) {
+function compileTextElement(element: Element, fileNode: CompositeGeneratorNode) {
+    if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
-    }
-    else if (isAudioElement(element)) {
-        compileAudio(element, element.name, fileNode);
     }
 }
 
-function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode) {
+function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionAudio) {
     if (isAudioOriginal(audio)) {
         compileAudioOriginal(audio, name, fileNode);
     }
     else if (isAudioExtract(audio)) {
         compileAudioExtract(audio, name, fileNode);
     }
+
+    const options = groupOption?.options;
+    if (options !== undefined) {
+        options.forEach((option) => {
+            if (isAudioOption(option)) {
+                compileAudioEffect(option, name, fileNode)
+            }
+    });
+    }   
 }
 
 function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
@@ -109,24 +134,153 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
         const element = elementRef.ref; 
         if (element) {
             if (isVideoElement(element)) {
-                compileVideo(element,  (element as unknown as Element).name, fileNode);
+                compileVideo(element, element.name, fileNode, groupOption as GroupOptionVideo);
             } else if (isTextualElement(element)) {
                 compileTextualElement(element, element, fileNode, groupOption as GroupOptionText);
+            }
+            else if (isAudioElement(element)) {
+                compileAudio(element, element.name, fileNode, groupOption as GroupOptionAudio);
             }
         }
     });
 }
 
-function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionVideo) {
     if (isVideoOriginal(video)) {
         compileVideoOriginal(video, name, fileNode);
     } else if (isVideoExtract(video)) {
         compileVideoExtract(video, name, fileNode);
     }
+
+    const options = groupOption?.options;
+    if (options !== undefined) {
+        options.forEach((option) => {
+            if (isVideoOption(option)) {
+                compileVideoEffect(option, name, fileNode)
+            }
+    });
+    }    
+}
+
+function compileVideoEffect(option: VideoOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isTextOption(option) || isVisualElementOption(option)) return;
+
+    if (isVideoBrightness(option)) {
+        fileNode.append(
+            `# Apply brightness effect
+multiply_effect = moviepy.video.fx.MultiplyColor(factor=${option.brightness})
+${name} = multiply_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoScale(option)) {
+        const new_value = option.scale / 100;
+        fileNode.append(
+`# Apply resolution effect
+resize_effect = moviepy.video.fx.Resize(new_size=${new_value})
+${name} = resize_effect.apply(${name})`, NL); 
+}
+
+    if (isVideoResolution(option)) {
+        fileNode.append(
+`# Apply resolution effect
+resize_effect = moviepy.video.fx.Resize(new_size=(${option.width}, ${option.height}))
+${name} = resize_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoOpacity(option)) {
+        fileNode.append(
+            `# Apply opacity effect
+${name} = ${name}.with_opacity(${option.opacity})`, NL);
+    }    
+
+    if (isVideoContrast(option)) {
+        fileNode.append(
+// Use the colorx effect to adjust the contrast
+`# Apply contrast effect
+lum_contrast_effect = moviepy.video.fx.LumContrast(lum=20, contrast=${option.contrast}, contrast_threshold=127)
+${name} = lum_contrast_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoSaturation(option)) {
+        fileNode.append(
+`# Apply saturation effect
+painting_effect = moviepy.video.fx.Painting(saturation=${option.saturation}, black=0.0)
+${name} = painting_effect.apply(${name})`, NL);
+    }
+
+    if (isVideoPainting(option)) {
+        const calculatedOption = option.painting / 1000;
+        fileNode.append(
+`# Apply saturation effect
+painting_effect = moviepy.video.fx.Painting(saturation=0, black=${calculatedOption})
+${name} = painting_effect.apply(${name})`, NL);  
+    }
+
+    if (isVideoRotation(option)) {
+        fileNode.append(
+`# Apply rotation effect
+rotate_effect = moviepy.video.fx.Rotate(angle=${option.rotation}, unit="deg", resample="bicubic", expand=True)
+${name} = rotate_effect.apply(${name})`, NL);  
+    }
+
+    if (isVideoTransition(option)) {
+        if (option.type === 'fadein') {
+            fileNode.append(
+                `# Apply fade in effect
+fade_in = moviepy.video.fx.CrossFadeIn(1)
+${name} = fade_in.apply(${name})`, NL);
+        }
+        else if (option.type === 'fadeout') {
+            fileNode.append(
+                `# Apply fade out effect
+fade_out = moviepy.video.fx.CrossFadeOut(1)
+${name} = fade_out.apply(${name})`, NL);
+        }
+    }
+}
+
+
+function compileAudioEffect(option: AudioOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isTextOption(option) || isVisualElementOption(option)) return;
+
+    if (isAudioVolume(option)) {
+        fileNode.append(
+            `# Apply brightness effect
+new_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.volume}, right=${option.volume})
+${name} = new_volume.apply(${name})`, NL);
+    }
+
+    if (isAudioFadeIn(option)) {
+        fileNode.append(
+            `# Apply fade in effect
+fade_in = moviepy.audio.fx.AudioFadeIn(${option.duration})
+${name} = fade_in.apply(${name})`, NL);
+    }
+
+    if (isAudioFadeOut(option)) {
+        fileNode.append(
+            `# Apply fade out effect
+fade_out = moviepy.audio.fx.AudioFadeOut(${option.duration})
+${name} = fade_out.apply(${name})`, NL);
+    }
+
+    if (typeof option === 'string' && option === 'normalize') {
+        fileNode.append(
+            `# Apply normalize effect
+normalize_effect = moviepy.audio.fx.moviepy.audio.fx.AudioNormalize()
+${name} = normalize_effect.apply(${name})`, NL);
+    }
+
+    if (isAudioStereoVolume(option)) { 
+        fileNode.append(
+            `# Apply stereo volume effect
+stereo_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.left}, right=${option.right})
+${name} = stereo_volume.apply(${name})`, NL);
+    }
 }
 
 // We have visualElement and element as separate parameters because in the AST subtypes are weirdly not used
-function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideoOriginal(videoOriginal: VideoOriginal, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {
     fileNode.append(
 `# Load the video clip original
 ${name} = moviepy.VideoFileClip("${videoOriginal.filePath}")
@@ -141,7 +295,7 @@ else:
 , NL);
 }
 
-function compileVideoExtract(videoExtract: VideoExtract, name: String, fileNode: CompositeGeneratorNode) {
+function compileVideoExtract(videoExtract: VideoExtract, name: String, fileNode: CompositeGeneratorNode, options?: VideoOption[]) {
     fileNode.append(
 `# Extract a subclip from the video
 ${name} = ${(videoExtract.source?.ref as Element | undefined)?.name}.subclipped(${helperTimeToSeconds(videoExtract.start)}, ${helperTimeToSeconds(videoExtract.end)})
@@ -160,13 +314,9 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
-    let font;
-    const platform = navigator.userAgent || "unknown";
-    if (platform.toLowerCase().includes('win')) {
-        font = 'C:/Windows/Fonts/Arial.ttf';
-    } else {
-        font = 'Arial';
-    }
+
+    let font = fontDependingOnOS();
+    
     let fontSize = 60;
     let fontColor = 'white';
     let align = 'left';
@@ -175,12 +325,9 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
 
     const applyOption = (option: TextOption) => {
         if (isTextFont(option)) {
-            if (platform.toLowerCase().includes('win')) {
-                font = 'C:/Windows/Fonts/' + option.name + '.ttf';
-            } else {
-                font = option.name;
-            } 
-        } else if (isTextFontSize(option)) {
+            font = fontDependingOnOS(font); 
+        } 
+        else if (isTextFontSize(option)) {
             fontSize = option.size;
         } else if (isTextAligment(option)) {
             align = option.alignment;
@@ -215,6 +362,22 @@ function compileOptionsToTextClip(text: TextualElement, options?: TextOption[]):
     `.trim().replace(/\s+/g, ' ');
 
     return `${optionsString}.with_position((${posX}, ${posY})`;
+}
+
+function fontDependingOnOS(font?: string) {
+    const platform = navigator.userAgent || "unknown";
+    if (platform.toLowerCase().includes('win')) {
+        if (font) {
+            return `C:/Windows/Fonts/${font}.ttf`;
+        } 
+        return 'C:/Windows/Fonts/Arial.ttf';
+    } 
+    else {
+        if (font) {
+            return `${font}`;
+        }
+        return 'Arial';
+    }
 }
 
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
@@ -324,6 +487,5 @@ final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
 final_video.audio = final_audio
 `, NL);  
     } 
-
 }
 
