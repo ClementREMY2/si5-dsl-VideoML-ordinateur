@@ -55,6 +55,8 @@ import {
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
+const textClips = new Set<string>();
+
 
 function formatTimelineElementName(name: string | undefined): string {
     if (!name) throw new Error('Timeline element name is missing');
@@ -394,10 +396,19 @@ function fontDependingOnOS(font?: string) {
 }
 
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
-    fileNode.append(
-`# Load the text clip
-${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, groupOption?.options)})
-`, NL);
+    if (!textClips.has(element.name)) {
+        textClips.add(element.name);
+        fileNode.append(
+            `# Load the text clip
+            ${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, groupOption?.options)})
+            `, NL);
+    }
+    else {
+        fileNode.append(
+            `# Reload the text clip, to apply new effects
+            ${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, groupOption?.options)})
+            `, NL);
+    }
 }
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {
