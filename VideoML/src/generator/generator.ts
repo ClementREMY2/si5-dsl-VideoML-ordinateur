@@ -377,24 +377,10 @@ import numpy as np
 from scipy.ndimage import label, find_objects
 
 def find_objects_custom(mask):
-    """
-    Recrée le comportement de moviepy.video.tools.segmenting.findObjects
-    pour identifier les zones correspondant aux lettres ou groupes de lettres
-    dans un masque binaire.
-    
-    Args:
-        mask (numpy.ndarray): Masque binaire généré par le clip texte.
-    
-    Returns:
-        list: Liste de tuples (slice_x, slice_y) représentant les positions
-              des objets détectés.
-    """
     from scipy.ndimage import label, find_objects
 
-    # Étiqueter les régions connectées dans le masque
     labeled_array, num_features = label(mask)
 
-    # Trouver les limites des objets (lettres ou groupes de lettres)
     object_slices = find_objects(labeled_array)
 
     return object_slices
@@ -423,17 +409,6 @@ else:
     print(f"{len(letters)} objets trouvés dans le masque.")
 
 def moveLetters(letters, funcpos, original_clip):
-    """
-    Applique une fonction de positionnement à chaque lettre détectée dans un masque binaire.
-
-    Args:
-        letters (list): Liste de tranches (slices) correspondant aux lettres ou groupes de lettres.
-        funcpos (callable): Fonction prenant (screenpos, i, nletters) et renvoyant une position.
-        original_clip (TextClip): Clip original contenant le texte.
-
-    Returns:
-        list: Liste de clips texte animés.
-    """
     animated_letters = []
     for i, letter_slice in enumerate(letters):
         # Créer un sous-clip pour chaque lettre
