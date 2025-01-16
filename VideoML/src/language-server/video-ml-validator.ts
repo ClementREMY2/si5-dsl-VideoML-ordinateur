@@ -6,7 +6,7 @@ import {
     TimelineElement,
     isRelativeTimelineElement,
     RelativeTimelineElement,
-    isVideo,
+    isVideoElement,
     VideoOriginal,
     VideoExtract,
     isVideoExtract,
@@ -24,6 +24,30 @@ import {
     isTextFontSize,
     TextFont,
     TextualElement,
+    VideoBrightness,
+    VideoContrast,
+    VideoOpacity,
+    VideoResolution,
+    VideoScale,
+    VideoElement,
+    isVideoBrightness,
+    isVideoContrast,
+    isVideoOpacity,
+    isVideoResolution,
+    isVideoScale,
+    VideoSaturation,
+    VideoPainting,
+    AudioVolume,
+    AudioStereoVolume,
+    AudioFadeIn,
+    AudioFadeOut,
+    AudioElement,
+    isAudioVolume,
+    isAudioStereoVolume,
+    isAudioFadeIn,
+    isAudioFadeOut,
+    isAudioElement,
+    VideoTransition,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -84,9 +108,9 @@ export function registerValidationChecks(services: VideoMlServices) {
         VideoExtract: validator.checkVideoExtract,
         TimelineElement: validator.checkTimelineElement,
         RelativeTimelineElement: validator.checkRelativeTimelineElement,
-        Element: validator.checkElement
-
-    };
+        Element: validator.checkElement,
+        VideoTransition: validator.checkVideoTransition,
+        };
     registry.register(checks, validator);
 }
 
@@ -377,10 +401,15 @@ export class VideoMlValidator {
         };
     }
 
-
     checkElement(element: Element, accept: ValidationAcceptor): void {
         if(isTextualElement(element)) {
             this.checkTextualElement(element, accept);
+        }
+        else if (isVideoElement(element)) {
+            this.checkVideoOption(element, accept);
+        }
+        else if (isAudioElement(element)) {
+            this.checkAudioOption(element, accept);
         }
     }
 
@@ -432,7 +461,7 @@ export class VideoMlValidator {
     }
 
     checkDuration(element: TimelineElement, accept: ValidationAcceptor): void {
-        if (element.duration && isVideo(element.element.ref)) {
+        if (element.duration && isVideoElement(element.element.ref)) {
             accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
         }
     
@@ -446,4 +475,139 @@ export class VideoMlValidator {
             }
         }
     }
+
+    checkVideoOption(element: VideoElement, accept: ValidationAcceptor): void {
+        if (element.videoOption) {
+            element.videoOption.forEach((option) => {
+                if (isVideoBrightness(option)) {
+                    this.checkVideoBrightness(option, accept);
+                } else if (isVideoContrast(option)) {
+                    this.checkVideoContrast(option, accept);
+                } else if (isVideoOpacity(option)) {
+                    this.checkVideoOpacity(option, accept);
+                } else if (isVideoResolution(option)) {
+                    this.checkVideoResolution(option, accept);
+                } else if (isVideoScale(option)) {
+                    this.checkVideoScale(option, accept);
+                }
+            });
+        }
+    }
+    
+    // Check that the brightness is between valid values
+    checkVideoBrightness(option: VideoBrightness, accept: ValidationAcceptor): void {
+        if (option.brightness < -5 || option.brightness > 5) {
+            accept('error', 'Brightness must be between -5 and 5',
+                 { node: option, property: 'brightness' });
+        }
+    }
+
+    // Check that the contrast is between valid values
+    checkVideoContrast(option: VideoContrast, accept: ValidationAcceptor): void {
+        if (option.contrast < 0 || option.contrast > 5) {
+            accept('error', 'Contrast must be between 0 and 5',                 
+                { node: option, property: 'contrast' });
+        }
+    }
+
+    // Check that the saturation is between valid values
+    checkVideoSaturation(option: VideoSaturation, accept: ValidationAcceptor): void {
+        if (option.saturation < -1.0 || option.saturation > 1.0) {
+            accept('error', 'Saturation must be between -1 and 1. For example, 0.5 is no change',
+                 { node: option, property:'saturation' });
+        }
+    }
+
+    // Check that the contrast is between valid values
+    checkVideoOpacity(option: VideoOpacity, accept: ValidationAcceptor): void {
+        if (option.opacity < 0.0 || option.opacity > 5.0) {
+            accept('error', 'Contrast must be between 0 and 5',
+                 { node: option, property: 'opacity' });
+        }
+    }
+
+    // Check that the resolution is between standard values (FullHD at maximum resolution)
+    // TODO : Discuss about the range of the resolution
+    checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
+        if (option.width > 1920 || option.height > 1080 || option.width < 0 || option.height < 0) {
+            accept('error', 'Resolution must be less than FullHD (1920x1080) and cannot be negative (Format needed : width , height)', { node: option });
+        }
+
+        const ratio = option.width / option.height;
+        const optimalRatio = 16 / 9;
+        const tolerance = 0.01;
+
+        if (Math.abs(ratio - optimalRatio) > tolerance) {
+            accept('warning', 'The resolution is not in 16:9 ratio, which is not optimal for most displays.', { node: option });
+        }
+    }
+
+    // Check that the scale is between valid values (100% for now, you can only reduce it)
+    checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
+        if (option.scale > 100 || option.scale < 100) {
+            accept('error', 'Scale is in %. It cannot be less than 100 or more than 100', { node: option });
+        }
+    }
+
+    checkVideoPainting(option: VideoPainting, accept: ValidationAcceptor): void {
+        if (option.painting > 5 || option.painting < 1) {
+            accept('error', 'Painting must be between 1 and 5',
+                 { node: option, property: 'painting' });
+        }
+    }
+
+    // Audio effects ************************************************************************************************
+    checkAudioOption(element: AudioElement, accept: ValidationAcceptor): void {
+        if (element.audioOptions) {
+            element.audioOptions.forEach((option) => {
+                if (isAudioVolume(option)) {
+                    this.checkAudioVolume(option, accept);
+                } else if (isAudioStereoVolume(option)) {
+                    this.checkAudioStereoVolume(option, accept);
+                }
+                else if (isAudioFadeIn(option)) {
+                    this.checkAudioFadeIn(option, accept);
+                }
+                else if (isAudioFadeOut(option)) {
+                    this.checkAudioFadeOut(option, accept);
+                }
+            });
+        }
+    }
+
+    checkAudioVolume(option: AudioVolume, accept: ValidationAcceptor): void {
+        if (option.volume < 0 || option.volume > 1) {
+            accept('error', 'Volume must be between 0 and 1',
+                 { node: option, property: 'volume' });
+        }
+    }
+
+    checkAudioStereoVolume(option: AudioStereoVolume, accept: ValidationAcceptor): void {
+        if (option.left < 0 || option.left > 1 || option.right < 0 || option.right > 1) {
+            accept('error', 'Stereo volume must be between 0 and 1',
+                 { node: option});
+        }
+    }
+
+    checkAudioFadeIn(option: AudioFadeIn, accept: ValidationAcceptor): void {
+        if (option.duration < 0) {
+            accept('error', 'Fade in time must be positive',
+                 { node: option, property: 'duration' });
+        }
+    }
+
+    checkAudioFadeOut(option: AudioFadeOut, accept: ValidationAcceptor): void {
+        if (option.duration < 0) {
+            accept('error', 'Fade out time must be positive',
+                 { node: option, property: 'duration' });
+        }
+    }
+
+    checkVideoTransition(transition: VideoTransition, accept: ValidationAcceptor): void {
+        if (transition.type !== 'fadein' && transition.type !== 'fadeout') {
+            accept('error', 'Invalid transition type. It must be either fadeIn or fadeOut.',
+                 { node: transition, property: 'type' });
+        }    
+    }
+    
 }
