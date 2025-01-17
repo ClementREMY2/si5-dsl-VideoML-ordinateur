@@ -69,7 +69,7 @@ TextAligment:
 	'alignment' alignment=STRING;
 
 TextEffect:
-	type=('crazy');
+	type=('grouping'| 'falling');
 
 TextualElement:
 	type=('text' | 'subtitle') text=STRING options+=TextOption*;

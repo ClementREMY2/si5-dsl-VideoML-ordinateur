@@ -370,8 +370,13 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
         return `${optionsString}.with_position((${posX}, ${posY})`;
     }
 
+    let effectText;
+    let boolEffect = false;
+
     options?.forEach(option => {
         if (isTextEffect(option)) {
+            effectText = option.type;
+            boolEffect = true;
             optionsString += `
 import numpy as np
 from scipy.ndimage import label, find_objects
@@ -390,8 +395,11 @@ screensize = (1920, 1080)
 cvc = moviepy.CompositeVideoClip( [${elementName}.with_position('center')], size = screensize)
 
 rotMatrix = lambda a: np.array( [[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]] )
- 
-def effect1(screenpos, i, nletters):
+`};})
+
+if (effectText === 'grouping') {
+    optionsString += `
+def grouping(screenpos, i, nletters):
     d = lambda t : 1.0/(0.3 + t**8)
     a = i * np.pi / nletters 
     v = rotMatrix(a).dot([-1, 0])
@@ -399,7 +407,22 @@ def effect1(screenpos, i, nletters):
     if i % 2 : v[1] = -v[1]
          
     return lambda t: screenpos + 400 * d(t)*rotMatrix(0.5 * d(t)*a).dot(v)
+`
+}
 
+else if (effectText === 'falling') {
+    optionsString += `
+def falling(screenpos, i, nletters):
+    v = np.array([0, -1])
+     
+    d = lambda t : 1 if t<0 else abs(np.sinc(t)/(1 + t**4))
+     
+    return lambda t: screenpos + v * 400 * d(t-0.15 * i)
+`
+}
+
+if (boolEffect) {
+optionsString += `
 binary_mask = title1.mask.get_frame(0)
 letters = find_objects_custom(binary_mask)
 
@@ -423,11 +446,11 @@ def moveLetters(letters, funcpos, original_clip):
     
     return animated_letters
 
-animated_letters = moveLetters(letters, effect1, title1)
+animated_letters = moveLetters(letters, ${effectText}, title1)
 
 ${elementName} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY})
 `
-}});
+};
 
     return `${optionsString}`;
 }
