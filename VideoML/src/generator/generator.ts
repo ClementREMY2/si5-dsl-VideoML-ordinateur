@@ -56,6 +56,9 @@ import {
 } from '../language-server/generated/ast.js';
 import { getLayer, helperTimeToSeconds } from '../lib/helper.js';
 
+const textClips = new Set<string>();
+
+
 function formatTimelineElementName(name: string | undefined): string {
     if (!name) throw new Error('Timeline element name is missing');
     return `timeline_element_${name.slice(1)}`;
@@ -73,7 +76,7 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `import moviepy
 `, NL);
 
-    videoProject.elements.forEach((element) => compileTextElement(element, fileNode));
+    videoProject.elements.forEach((element) => compileElement(element, fileNode));
 
 
     videoProject.groupOptions.forEach((groupOption) => {
@@ -92,20 +95,27 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
 
-function compileTextElement(element: Element, fileNode: CompositeGeneratorNode) {
-    if (isTextualElement(element)) {
+function compileElement(element: Element, fileNode: CompositeGeneratorNode) {
+    if(isVideoElement(element)){
+        compileVideo(element, element.name, fileNode);
+    } else if (isTextualElement(element)) {
         compileTextualElement(element, element, fileNode);
+    }
+    else if (isAudioElement(element)) {
+        compileAudio(element, element.name, fileNode);
     }
 }
 
 function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionAudio) {
-    if (isAudioOriginal(audio)) {
-        compileAudioOriginal(audio, name, fileNode);
+    if (!groupOption) { //user wants to load the audio
+        if (isAudioOriginal(audio)) {
+            compileAudioOriginal(audio, name, fileNode);
+        }
+        else if (isAudioExtract(audio)) {
+            compileAudioExtract(audio, name, fileNode);
+        }
     }
-    else if (isAudioExtract(audio)) {
-        compileAudioExtract(audio, name, fileNode);
-    }
-
+    else { //user wants to apply effects to the audio
     const options = groupOption?.options;
     if (options !== undefined) {
         options.forEach((option) => {
@@ -113,7 +123,8 @@ function compileAudio(audio: AudioElement, name: string, fileNode: CompositeGene
                 compileAudioEffect(option, name, fileNode)
             }
     });
-    }   
+    } 
+}  
 }
 
 function compileAudioOriginal(audioOriginal: AudioOriginal, name: string, fileNode: CompositeGeneratorNode) {
@@ -147,11 +158,14 @@ function compileGroupOption(groupOption: GroupOption, fileNode: CompositeGenerat
 }
 
 function compileVideo(video: VideoElement, name: String, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionVideo) {
-    if (isVideoOriginal(video)) {
-        compileVideoOriginal(video, name, fileNode);
-    } else if (isVideoExtract(video)) {
-        compileVideoExtract(video, name, fileNode);
+    if (!groupOption) { //user wants to load the video
+        if (isVideoOriginal(video)) {
+            compileVideoOriginal(video, name, fileNode);
+        } else if (isVideoExtract(video)) {
+            compileVideoExtract(video, name, fileNode);
+        }
     }
+    else { //user wants to apply effects to the video
 
     const options = groupOption?.options;
     if (options !== undefined) {
@@ -160,7 +174,8 @@ function compileVideo(video: VideoElement, name: String, fileNode: CompositeGene
                 compileVideoEffect(option, name, fileNode)
             }
     });
-    }    
+    } 
+}   
 }
 
 function compileVideoEffect(option: VideoOption, name: String, fileNode: CompositeGeneratorNode) {
@@ -472,10 +487,19 @@ function fontDependingOnOS(font?: string) {
 }
 
 function compileTextualElement(text: TextualElement, element: Element, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
-    fileNode.append(
-`# Load the text clip
+    if (!textClips.has(element.name)) {
+        textClips.add(element.name);
+        fileNode.append(
+            `# Load the text clip
 ${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element.name, groupOption?.options)})
-`, NL);
+            `, NL);
+    }
+    else {
+        fileNode.append(
+            `# Reload the text clip, to apply new effects
+${element.name} = moviepy.TextClip(${compileOptionsToTextClip(text, element.name, groupOption?.options)})
+            `, NL);
+    }
 }
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {
