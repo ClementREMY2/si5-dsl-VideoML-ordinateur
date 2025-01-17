@@ -52,14 +52,18 @@ function compileVideoOriginal(video: VideoOriginal, fileNode: CompositeGenerator
         `# Load the video clip original
 ${video.name} = moviepy.VideoFileClip("${video.filePath}")
 `, NL);
-    fileNode.append(
-        `# Resize the video clip
-if ${video.name}.size[0]/${video.name}.size[1] == 16/9:
+fileNode.append(
+    `# Resize the video clip
+if ${video.name}.size[0] / ${video.name}.size[1] == 16/9:
     ${video.name} = ${video.name}.resized((1920, 1080))
 else:
+    if ${video.name}.size[0] / ${video.name}.size[1] > 1:
+        ${video.name} = ${video.name}.resized(width=1920)
+    else:
+        ${video.name} = ${video.name}.resized(height=1080)
     ${video.name} = ${video.name}.with_position("center", "center")
     `
-        , NL);
+    , NL);
 }
 
 function compileVideoExtract(video: VideoExtract, fileNode: CompositeGeneratorNode) {
@@ -70,21 +74,14 @@ ${video.name} = ${(video.source?.ref as VideoOriginal)?.name}.subclipped(${helpe
     fileNode.append(
         `# Resize the video clip
 if ${video.name}.size[0]/${video.name}.size[1] == 16/9:
-${video.name} = ${video.name}.resized((1920, 1080))
+    ${video.name} = ${video.name}.resized((1920, 1080))
 else:
-${video.name} = ${video.name}.with_position("center", "center")
+    ${video.name} = ${video.name}.with_position("center", "center")
 `, NL);
 }
 
 function compileVideoOption(option: VideoOption, video: VideoElement, fileNode: CompositeGeneratorNode) {
     const videoName = video.name;
-    const resolutions = [   // TODO: Add more resolutions if needed
-        {
-            name: 'webcam',
-            width: 640,
-            height: 480
-        }
-    ]
     if (isVideoBrightness(option)) {
         fileNode.append(
             `# Apply brightness effect
@@ -107,8 +104,8 @@ ${videoName} = resize_effect.apply(${videoName})`, NL);
 resize_effect = moviepy.video.fx.Resize(new_size=(${option.width}, ${option.height}))
 ${videoName} = resize_effect.apply(${videoName})`, NL);
         }
-        else if (option.resolutionName && resolutions.some(resolution => resolution.name === option.resolutionName)) {
-            const r = resolutions.find(resolution => resolution.name === option.resolutionName);
+        else if (option.resolutionName && getResolution(option.resolutionName)) {
+            const r = getResolution(option.resolutionName);
             fileNode.append(
                 `# Apply resolution effect
 resize_effect = moviepy.video.fx.Resize(new_size=(${r?.width}, ${r?.height}))
@@ -185,12 +182,13 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
             x = `'center'`;
         if (option.alignmenty === 'center')
             y = `'center'`;
-        if (option.alignmentx === 'right')
-            x = 1920 - (video.videoOption.find(isVideoResolution || isVisualElementSize)?.width || 0);
+        if (option.alignmentx === 'right'){
+            x = 1920 - (getResolution(video.videoOption.find(isVideoResolution)?.resolutionName||'')?.width || video.videoOption.find(isVisualElementSize)?.width || 0);
+        }
         if (option.alignmentx === 'left')
             x = 0;
         if (option.alignmenty === 'bottom')
-            y = 1080 - (video.videoOption.find(isVideoResolution || isVisualElementSize)?.height || 0);
+            y = 1080 - (getResolution(video.videoOption.find(isVideoResolution)?.resolutionName||'')?.height || video.videoOption.find(isVisualElementSize)?.height || 0);
         if (option.alignmenty === 'top')
             y = 0;
         fileNode.append(
@@ -202,4 +200,15 @@ ${video.name} = ${video.name}.with_position((${x},${y}))`, NL);
             `# Apply size effect
 ${video.name} = ${video.name}.resized((${option.width},${option.height}))`, NL);
     }
+}
+
+function getResolution(name: string) {
+    const resolutions = [
+        {
+            name: 'webcam',
+            width: 640,
+            height: 480
+        }
+    ]
+    return resolutions.find(resolution => resolution.name === name);
 }

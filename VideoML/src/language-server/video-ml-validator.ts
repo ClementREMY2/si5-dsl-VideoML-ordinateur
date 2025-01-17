@@ -529,16 +529,18 @@ export class VideoMlValidator {
     // Check that the resolution is between standard values (FullHD at maximum resolution)
     // TODO : Discuss about the range of the resolution
     checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
-        if (option.width > 1920 || option.height > 1080 || option.width < 0 || option.height < 0) {
-            accept('error', 'Resolution must be less than FullHD (1920x1080) and cannot be negative (Format needed : width , height)', { node: option });
-        }
+        if(option.width && option.height) { // TODO: il faudra changer la condition pour prendre en compte les résolutions prédéfinies
+            if (option.width > 1920 || option.height > 1080 || option.width < 0 || option.height < 0) {
+                accept('error', 'Resolution must be less than FullHD (1920x1080) and cannot be negative (Format needed : width , height)', { node: option });
+            }
 
-        const ratio = option.width / option.height;
-        const optimalRatio = 16 / 9;
-        const tolerance = 0.01;
+            const ratio = option.width / option.height;
+            const optimalRatio = 16 / 9;
+            const tolerance = 0.01;
 
-        if (Math.abs(ratio - optimalRatio) > tolerance) {
-            accept('warning', 'The resolution is not in 16:9 ratio, which is not optimal for most displays.', { node: option });
+            if (Math.abs(ratio - optimalRatio) > tolerance) {
+                accept('warning', 'The resolution is not in 16:9 ratio, which is not optimal for most displays.', { node: option });
+            }
         }
     }
 
