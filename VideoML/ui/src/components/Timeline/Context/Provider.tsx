@@ -19,26 +19,9 @@ const getStartAtRecursively = (element: PopulatedTimelineElementInfo, timelineEl
     const relativeStartAt = getStartAtRecursively(relativeToElement, timelineElementInfos);
 
     const offset = element.relativePlacement.offset || 0;
-    const place = element.relativePlacement.place === 'END';
+    const placeAtEnd = element.relativePlacement.place === 'END';
 
-    if (element.videoOriginalElement) { 
-        return relativeStartAt + offset + (place ? relativeToElement.videoOriginalElement?.duration || 0 : 0);
-    }
-    else if (element.videoExtractElement) {
-        return relativeStartAt + offset + (place ? relativeToElement.videoExtractElement?.duration || 0 : 0);
-    }
-    else if (element.audioOriginalElement) {
-        return relativeStartAt + offset + (place ? relativeToElement.audioOriginalElement?.duration || 0 : 0);
-    }
-    else if (element.audioExtractElement) {
-        return relativeStartAt + offset + (place ? relativeToElement.audioExtractElement?.duration || 0 : 0);
-    }
-    else if (element.textElement) {
-        return relativeStartAt + offset + (place ? relativeToElement.textElement?.duration || 0 : 0);
-    }
-    else {
-        return 0;
-    }
+    return relativeStartAt + offset + (placeAtEnd ? (relativeToElement.duration || 0) : 0);
 }
 
 
@@ -56,7 +39,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         // Get duration for each element
         if (element.videoOriginalElement) {
 
-            if (element.videoOriginalElement.duration) {
+            if (element.duration) {
                 return element;
             }
 
@@ -66,7 +49,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                element.videoOriginalElement.duration = await getCachedVideoDuration(element.videoOriginalElement.filePath);
+                element.duration = await getCachedVideoDuration(element.videoOriginalElement.filePath);
             } catch (error) {
                 console.error('Error loading video:', error);
                 element.error = 'LOAD_VIDEO';
@@ -74,7 +57,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
         }
         else if (element.audioOriginalElement) {
 
-            if (element.audioOriginalElement.duration) {
+            if (element.duration) {
                 return element;
             }
 
@@ -84,7 +67,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             try {
-                element.audioOriginalElement.duration = await getCachedAudioDuration(element.audioOriginalElement.filePath);
+                element.duration = await getCachedAudioDuration(element.audioOriginalElement.filePath);
             } catch (error) {
                 console.error('Error loading audio:', error);
                 element.error = 'LOAD_VIDEO';
@@ -108,21 +91,7 @@ const handleNewTimelineElementInfos = useCallback(async (newTimelineElementInfos
             }
 
             // Calculate finishAt
-            if (element.videoOriginalElement) {
-                element.finishAt = (element.startAt || 0) + (element.videoOriginalElement.duration || 0);
-            }
-            else if (element.videoExtractElement) {
-                element.finishAt = (element.startAt || 0) + (element.videoExtractElement.duration || 0);
-            }
-            else if (element.audioOriginalElement) {
-                element.finishAt = (element.startAt || 0) + (element.audioOriginalElement.duration || 0);
-            }
-            else if (element.audioExtractElement) {
-                element.finishAt = (element.startAt || 0) + (element.audioExtractElement.duration || 0);
-            }
-            else if (element.textElement) {
-                element.finishAt = (element.startAt || 0) + (element.textElement.duration || 0);
-            } 
+            element.finishAt = (element.startAt || 0) + (element.duration || 0);
         }
 
         acc.push(element);

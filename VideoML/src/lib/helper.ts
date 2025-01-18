@@ -19,3 +19,7 @@ export function getLayer(te: TimelineElement): number {
 
     return diff + getLayer(timelineElementRef);
 }
+
+export function getTimelineElementTextualDuration(duration: string | undefined): string {
+    return duration || '00:05';
+}
