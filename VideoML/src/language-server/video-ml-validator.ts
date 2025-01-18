@@ -238,7 +238,7 @@ export class VideoMlValidator {
 
 
     checkTimelineElement(element: TimelineElement, accept: ValidationAcceptor): void {
-        this.checkDuration(element, accept);
+        this.checkTimelineElementDurationOnlyForText(element, accept);
     }
 
     // Check timeline elemnts names (unique and ordered, first must be 1)
@@ -504,9 +504,9 @@ export class VideoMlValidator {
         }
     }
 
-    checkDuration(element: TimelineElement, accept: ValidationAcceptor): void {
-        if (element.duration && isVideoElement(element.element.ref)) {
-            accept('error', 'Duration is not allowed in video elements, please create an extract.', { node: element , property: 'duration' });
+    checkTimelineElementDurationOnlyForText(te: TimelineElement, accept: ValidationAcceptor): void {
+        if (te.duration && !isTextualElement(te.element.ref)) {
+            accept('error', 'Only textual elements can have duration', { node: te, property: 'duration' });
         }
     
     }
