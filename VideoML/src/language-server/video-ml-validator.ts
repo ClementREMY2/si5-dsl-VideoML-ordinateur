@@ -197,7 +197,10 @@ export class VideoMlValidator {
     }
 
     async checkVideoExtractValidTimeCodes(videoExtract: VideoExtract, accept: ValidationAcceptor): Promise<void> {
-        if (!videoExtract.start || !videoExtract.end) return;
+        if (!videoExtract.start || !videoExtract.end) {
+            accept('error', 'Start and end time must be defined', { node: videoExtract });
+            return;
+        }
 
         // Check if Start time is less than End time
         if (helperTimeToSeconds(videoExtract.start) >= helperTimeToSeconds(videoExtract.end)) {
@@ -215,7 +218,7 @@ export class VideoMlValidator {
         if (isVideoExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isVideoOriginal(source)) {
-            const indexName = `get-video-original-duration-${source.filePath}-${source.$containerProperty}-${source.$containerIndex}`;
+            const indexName = `get-video-original-duration-${videoExtract.$containerProperty}-${videoExtract.$containerIndex}`;
             duration = await invokeSpecialCommand(
                 'get-video-original-duration',
                 { path: source.filePath },
@@ -353,7 +356,10 @@ export class VideoMlValidator {
     }
 
     async checkAudioExtractValidTimeCodes(audioExtract: AudioExtract, accept: ValidationAcceptor): Promise<void> {
-        if (!audioExtract.start || !audioExtract.end) return;
+        if (!audioExtract.start || !audioExtract.end) {
+            accept('error', 'Start and end time must be defined', { node: audioExtract });
+            return;
+        }
 
         // Check if Start time is less than End time
         if (helperTimeToSeconds(audioExtract.start) >= helperTimeToSeconds(audioExtract.end)) {
@@ -371,7 +377,7 @@ export class VideoMlValidator {
         if (isAudioExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isAudioOriginal(source)) {
-            const indexName = `get-audio-original-duration-${source.filePath}-${source.$containerProperty}-'${source.$containerIndex}'`;
+            const indexName = `get-audio-original-duration-${audioExtract.$containerProperty}-'${audioExtract.$containerIndex}'`;
             duration = await invokeSpecialCommand(
                 'get-audio-original-duration',
                 { path: source.filePath },
