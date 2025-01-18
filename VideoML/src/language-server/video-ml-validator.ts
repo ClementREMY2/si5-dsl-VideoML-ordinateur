@@ -27,13 +27,11 @@ import {
     VideoBrightness,
     VideoContrast,
     VideoOpacity,
-    VideoResolution,
     VideoScale,
     VideoElement,
     isVideoBrightness,
     isVideoContrast,
     isVideoOpacity,
-    isVideoResolution,
     isVideoScale,
     VideoSaturation,
     VideoPainting,
@@ -529,8 +527,6 @@ export class VideoMlValidator {
             this.checkVideoContrast(option, accept);
         } else if (isVideoOpacity(option)) {
             this.checkVideoOpacity(option, accept);
-        } else if (isVideoResolution(option)) {
-            this.checkVideoResolution(option, accept);
         } else if (isVideoScale(option)) {
             this.checkVideoScale(option, accept);
         }
@@ -564,30 +560,6 @@ export class VideoMlValidator {
         if (option.opacity < 0.0 || option.opacity > 5.0) {
             accept('error', 'Contrast must be between 0 and 5',
                  { node: option, property: 'opacity' });
-        }
-    }
-
-    // Check that the resolution is between standard values (FullHD at maximum resolution)
-    // TODO : Discuss about the range of the resolution
-    checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
-        if(option.resolutionName) {
-            const validResolutions = ['webcam'];
-            if (!validResolutions.includes(option.resolutionName)) {
-                accept('error', 'Resolution must be webcam or x,y', { node: option });
-            }
-        }
-        if(option.width && option.height) {
-            if (option.width > 1920 || option.height > 1080 || option.width < 0 || option.height < 0) {
-                accept('error', 'Resolution must be less than FullHD (1920x1080) and cannot be negative (Format needed : width , height)', { node: option });
-            }
-
-            const ratio = option.width / option.height;
-            const optimalRatio = 16 / 9;
-            const tolerance = 0.01;
-
-            if (Math.abs(ratio - optimalRatio) > tolerance) {
-                accept('warning', 'The resolution is not in 16:9 ratio, which is not optimal for most displays.', { node: option });
-            }
         }
     }
 
