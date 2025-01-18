@@ -69,7 +69,6 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             name: te.name,
             textElement: {
                 name: te.element.ref.name,
-                text: te.element.ref.text,
                 duration: te.duration ? helperTimeToSeconds(te.duration) : 5,
                 isSubtitle: te.element.ref.type==='subtitle',
             },

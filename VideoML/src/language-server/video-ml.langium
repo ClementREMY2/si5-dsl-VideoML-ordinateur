@@ -33,7 +33,7 @@ GroupOptionText:
 	options+=(TextOption) (',' options+=TextOption)* 'apply' 'to' (elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*)?;
 
 GroupOptionVideo:
-	options+=(VisualElementOption | VideoSpecificOption) (',' options+=(VisualElementOption | VideoSpecificOption))* 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?;
+	options+=VideoOption (',' options+=VideoOption)* 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?; // TODO changer element pour targets ou changer lucid chart
 
 GroupOptionAudio:
 	options+=(AudioOption) (',' options+=AudioOption)* 'apply' 'to' (elements+=[AudioElement:ID] (',' elements+=[AudioElement:ID])*)?;	
@@ -45,7 +45,7 @@ VisualElementBackground:
 	'background' color=STRING;
 
 VisualElementPosition:
-	'position' x=INT ',' y=INT;
+	'position' (x=INT | alignmentx=STRING)',' (y=INT | alignmenty=STRING); // est ce qu'on se fait un enum pour les positions ?
 
 VisualElementSize:
 	'size' width=INT ',' height=INT;
@@ -117,7 +117,7 @@ VideoOpacity:
 	'opacity' opacity=FLOAT;
 
 VideoResolution:
-	'resolution' width=INT ',' height=INT;
+	'resolution' ((width=INT ',' height=INT) | resolutionName=STRING);
 
 VideoScale:
 	'scale' scale=INT;
@@ -164,9 +164,9 @@ terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
 // TIME format: MM:SS
 terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
 // FLOAT format : 0 or non-zero digit followed by zero or more digits
-terminal FLOAT returns number: /[0-9]*\.[0-9]+/;
+terminal FLOAT returns number: /-?[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
-terminal INT returns number: /[0-9]+/;
+terminal INT returns number: /-?[0-9]+/;
 // BOOLEAN format: true or false
 terminal BOOLEAN returns boolean: 'true' | 'false';
 // STRING format: "..."
