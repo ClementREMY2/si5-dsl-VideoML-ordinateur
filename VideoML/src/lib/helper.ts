@@ -10,6 +10,21 @@ export function helperTimeToSeconds(time: string): number {
     return (parseInt(minuteSecondArray[0]) * 60) + (parseInt(secondMillisecondArray[0])) + (parseInt(completedMilliseconds) / 1000);
 }
 
+export function helperOffsetTimeToSeconds(offsetTime: string | undefined): number {
+    let offset: number = 0;
+    if (offsetTime) {
+        const timeSeconds = helperTimeToSeconds(offsetTime.slice(1));
+        const operator = offsetTime[0];
+        if (operator === '-') {
+            offset = -timeSeconds;
+        } else if (operator === '+') {
+            offset = timeSeconds;
+        }
+    }
+
+    return offset;
+}
+
 export function getLayer(te: TimelineElement): number {
     if (!te.layerPosition) return 0;
     

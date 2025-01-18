@@ -11,7 +11,7 @@ import {
     isAudioExtract,
     isTextualElement,
 } from '../../language-server/generated/ast.js';
-import { helperTimeToSeconds, getLayer, getTimelineElementTextualDuration } from '../../lib/helper.js';
+import { helperTimeToSeconds, getLayer, getTimelineElementTextualDuration, helperOffsetTimeToSeconds } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
 
 export function generateTimelineElementInfos(videoProject: VideoProject): TimelineElementInfo[] {
@@ -93,20 +93,9 @@ function compileTimelineElementPlacement(te: TimelineElement): Partial<TimelineE
 function compileRelativeTimelineElement(rte: RelativeTimelineElement): Partial<TimelineElementInfo> {
     if (!rte.relativeTo.ref) throw new Error('Relative to reference is missing');
 
-    let offset: number = 0;
-    if (rte.offset) {
-        const timeSeconds = helperTimeToSeconds(rte.offset.slice(1));
-        const operator = rte.offset[0];
-        if (operator === '-') {
-            offset = -timeSeconds;
-        } else if (operator === '+') {
-            offset = timeSeconds;
-        }
-    }
-
     return {
         relativePlacement: {
-            offset,
+            offset: helperOffsetTimeToSeconds(rte.offset),
             place: rte.place === 'start' ? 'START' : 'END',
             relativeTo: rte.relativeTo.ref?.name,
         }

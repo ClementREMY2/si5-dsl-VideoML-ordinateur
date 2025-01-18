@@ -4,7 +4,12 @@ export const formatTime = (time: number): string => {
   const seconds = Math.floor(time % 60);
 
   const stringTime = time.toString();
-  const millisecondsString = stringTime.includes('.') ? stringTime.split('.')[1] : undefined;
+  let millisecondsString = stringTime.includes('.') ? stringTime.split('.')[1] : undefined;
+
+  // Prevent showing more than 3 digits for milliseconds (can happen due to floating point precision)
+  if (millisecondsString && millisecondsString.length > 3) {
+    millisecondsString = undefined;
+  }
 
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}${millisecondsString ? '.' + millisecondsString : ''}`;
 }

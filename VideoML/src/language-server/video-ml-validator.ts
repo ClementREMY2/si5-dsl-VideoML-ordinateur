@@ -1,4 +1,5 @@
 import { AstNode, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
+import { nanoid } from 'nanoid';
 import {
     VideoProject,
     VideoMLAstType,
@@ -58,7 +59,7 @@ import {
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
-import { helperTimeToSeconds } from '../lib/helper.js';
+import { getTimelineElementTextualDuration, helperOffsetTimeToSeconds, helperTimeToSeconds } from '../lib/helper.js';
 
 const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
 
@@ -74,19 +75,17 @@ if (IS_ELECTRON) {
     });
 } 
 
-let lastId = 10000000;
 // Function to simulate synchronous calls from worker to renderer process in Electron
 async function invokeSpecialCommand(
     command: string,
     commandParams: object,
-    indexName: string,
     executionParams: {
         needNodeJs: boolean;
     },
 ): Promise<any> {
-    return new Promise((resolve) => {
-        const id = Date.now() + lastId++;
-        asyncRequestMap.set(indexName, resolve);
+    return new Promise((resolve, reject) => {
+        const id = nanoid();
+        asyncRequestMap.set(id, resolve);
 
         self.postMessage({
             jsonrpc: "2.0",
@@ -94,11 +93,73 @@ async function invokeSpecialCommand(
             method: `custom/${command}`,
             params: {
                 commandParams,
-                indexName,
+                indexName: id,
                 executionParams,
             },
         });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            if (asyncRequestMap.has(id)) {
+                asyncRequestMap.delete(id);
+                reject(new Error(`Command ${command} timed out`));
+            }
+        }, 5000);
     });
+}
+
+async function getAudioDuration (audioPath: string): Promise<number> {
+    return await invokeSpecialCommand(
+        'get-audio-original-duration',
+        { path: audioPath },
+        { needNodeJs: false },
+    );
+}
+
+async function getVideoDuration (videoPath: string): Promise<number> {
+    return await invokeSpecialCommand(
+        'get-video-original-duration',
+        { path: videoPath },
+        { needNodeJs: false },
+    );
+}
+
+const getStartAtRecursively = async (element: TimelineElement, timelineElementList: TimelineElement[]): Promise<number> => {
+    if (isFixedTimelineElement(element)) return helperTimeToSeconds(element.startAt);
+    if (isRelativeTimelineElement(element)) {
+        const relativeToElement = element.relativeTo.ref;
+        if (!relativeToElement) return 0;
+    
+        const relativeStartAt = await getStartAtRecursively(relativeToElement, timelineElementList);
+    
+        const offset = helperOffsetTimeToSeconds(element.offset);
+
+        let duration = 0;
+        if (element.place === 'end') {
+            if (isTextualElement(relativeToElement.element.ref)) {
+                duration = helperTimeToSeconds(getTimelineElementTextualDuration(relativeToElement.duration));
+            }
+            if (isAudioExtract(relativeToElement.element.ref)) {
+                duration = helperTimeToSeconds(relativeToElement.element.ref.end) - helperTimeToSeconds(relativeToElement.element.ref.start);
+            }
+            if (isVideoExtract(relativeToElement.element.ref)) {
+                duration = helperTimeToSeconds(relativeToElement.element.ref.end) - helperTimeToSeconds(relativeToElement.element.ref.start);
+            }
+            if (isAudioOriginal(relativeToElement.element.ref)) {
+                duration = await getAudioDuration(relativeToElement.element.ref.filePath);
+            }
+            if (isVideoOriginal(relativeToElement.element.ref)) {
+                duration = await getVideoDuration(relativeToElement.element.ref.filePath);
+            }
+        }
+    
+        return relativeStartAt + offset + duration;
+    }
+
+    // Implicit timeline element
+    if (element.$containerIndex === 0) return 0;
+    const previousElement = timelineElementList[(element.$containerIndex || 1) - 1];
+    return await getStartAtRecursively(previousElement, timelineElementList);
 }
 
 /**
@@ -126,13 +187,14 @@ export function registerValidationChecks(services: VideoMlServices) {
  * Implementation of custom validations.
  */
 export class VideoMlValidator {
-    checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
+    async checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): Promise<void> {
         this.checkOutputFileName(videoProject, accept);
         this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkLayerTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkNameForTimelineElements(videoProject, accept);
         this.checkNameForElements(videoProject, accept);
+        await this.checkRelativeTimelineElementsRecursiveNegativeStart(videoProject.timelineElements, accept);
     }
 
     checkNameForElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
@@ -180,6 +242,22 @@ export class VideoMlValidator {
         this.checkTimelineElementRelativePlacementOrder(element, accept);
     }
 
+    async checkRelativeTimelineElementsRecursiveNegativeStart(timelineElementList: TimelineElement[], accept: ValidationAcceptor): Promise<void> {
+        // Check if for all relative timeline elements, the startAt is not negative
+        timelineElementList.forEach(async (element) => {
+            if (isRelativeTimelineElement(element) && element.relativeTo?.ref && element.place) {
+                const isRelativeOrderCorrect = parseInt(element.relativeTo.ref.name.slice(1)) < parseInt(element.name.slice(1));
+
+                if (isRelativeOrderCorrect) {
+                    const startAt = await getStartAtRecursively(element, timelineElementList);
+                    if (startAt < 0) {
+                        accept('error', 'This timeline element will start before the beginning of the video, which is not allowed', { node: element });
+                    }
+                }
+            }
+        });
+    }
+
     async checkAudioOriginal(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkAudioOriginalPath(audioOriginal, accept);
     }
@@ -218,13 +296,7 @@ export class VideoMlValidator {
         if (isVideoExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isVideoOriginal(source)) {
-            const indexName = `get-video-original-duration-${videoExtract.$containerProperty}-${videoExtract.$containerIndex}`;
-            duration = await invokeSpecialCommand(
-                'get-video-original-duration',
-                { path: source.filePath },
-                indexName,
-                { needNodeJs: false },
-            );
+            duration = await getVideoDuration(source.filePath);
         }
         if (!duration || duration === -1) {
             accept('error', 'Failed to get source video duration', { node: videoExtract, property: 'source' });
@@ -319,11 +391,9 @@ export class VideoMlValidator {
             errors = await validateFilePath(videoOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `validate-file-${videoOriginal.filePath}-${videoOriginal.$containerProperty}-${videoOriginal.$containerIndex}`;
             errors = await invokeSpecialCommand(
                 'validate-file',
                 { path: videoOriginal.filePath },
-                indexName,
                 { needNodeJs: true },
             );
         }
@@ -341,11 +411,9 @@ export class VideoMlValidator {
             errors = await validateFilePath(audioOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `validate-file-${audioOriginal.filePath}-${audioOriginal.$containerProperty}-${audioOriginal.$containerIndex}`;
             errors = await invokeSpecialCommand(
                 'validate-file',
                 { path: audioOriginal.filePath },
-                indexName,
                 { needNodeJs: true },
             );
         }
@@ -377,13 +445,7 @@ export class VideoMlValidator {
         if (isAudioExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isAudioOriginal(source)) {
-            const indexName = `get-audio-original-duration-${audioExtract.$containerProperty}-'${audioExtract.$containerIndex}'`;
-            duration = await invokeSpecialCommand(
-                'get-audio-original-duration',
-                { path: source.filePath },
-                indexName,
-                { needNodeJs: false },
-            );
+            duration = await getAudioDuration(source.filePath);
         }
         if (!duration || duration === -1) {
             accept('error', 'Failed to get source audio duration', { node: audioExtract, property: 'source' });
