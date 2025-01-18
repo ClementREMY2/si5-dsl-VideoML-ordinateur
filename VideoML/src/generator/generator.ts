@@ -155,13 +155,13 @@ function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: Co
 
     fileNode.append(
 `# Concatenate all clips
-final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}])
+final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}], size=(1920, 1080))
 `, NL);
 
     if (videoProject.timelineElements.some(te => isAudioElement(te.element.ref))) {
         fileNode.append(
 `# Concatenate all audios
-final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}], size=(1920, 1080))
 `, NL);
     
         fileNode.append(
