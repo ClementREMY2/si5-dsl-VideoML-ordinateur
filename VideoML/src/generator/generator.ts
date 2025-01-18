@@ -21,7 +21,7 @@ import {
 import { compileVideo, populateVideoElements } from './video-generator.js';
 import { compileTextualElement, populateTextualElements } from './text-generator.js';
 import { compileAudio, populateAudioElements } from './audio-generator.js';
-import { helperTimeToSeconds, getLayer } from '../lib/helper.js';
+import { helperTimeToSeconds, getLayer, getTimelineElementTextualDuration } from '../lib/helper.js';
 
 function formatTimelineElementName(name: string | undefined): string {
     if (!name) throw new Error('Timeline element name is missing');
@@ -85,16 +85,13 @@ function compileTimelineElement(te: TimelineElement, fileNode: CompositeGenerato
             const previousElement = videoProject.timelineElements[(te.$containerIndex || 1) - 1];
             fileNode.append(`${te.element.ref?.name}.with_start(${formatTimelineElementName(previousElement.name)}.end)`);
         }
-        if (isTextualElement(te.element.ref)) {
-            if(te.duration){
-                compileWithDurationElement(te.duration, fileNode);
-            }
-            else {
-                compileWithDurationElement('00:05', fileNode);
-            }
-        }
-        fileNode.append(NL);
     }
+
+    if (isTextualElement(te.element.ref)) {
+        compileTimelineElementTextualDuration(te.duration, fileNode);
+    }
+
+    fileNode.append(NL);
 }
 
 function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: CompositeGeneratorNode) {
@@ -112,27 +109,14 @@ function compileRelativeTimelineElement(rte: RelativeTimelineElement, fileNode: 
     }
 
     fileNode.append(`)`);
-    if (rte.duration && (isTextualElement(rte.element.ref)) ) {
-        compileWithDurationElement(rte.duration, fileNode);
-    } else if (isTextualElement(rte.element.ref)){
-        compileWithDurationElement('00:05', fileNode);
-    }
-
-    fileNode.append(NL);
 }
 
 function compileFixedTimelineElement(fte: FixedTimelineElement, fileNode: CompositeGeneratorNode) {
     fileNode.append(`${fte.element.ref?.name}.with_start(${helperTimeToSeconds(fte.startAt)})`);
-    if (fte.duration && isTextualElement(fte.element.ref)) {
-        compileWithDurationElement(fte.duration, fileNode);
-    } else if (isTextualElement(fte.element.ref)){
-        compileWithDurationElement('00:05', fileNode);
-    }
-    fileNode.append(NL);
 }
 
-function compileWithDurationElement(duration: string, fileNode: CompositeGeneratorNode) {
-    fileNode.append(`.with_duration(${helperTimeToSeconds(duration)})`);
+function compileTimelineElementTextualDuration(duration: string | undefined, fileNode: CompositeGeneratorNode) {
+    fileNode.append(`.with_duration(${helperTimeToSeconds(getTimelineElementTextualDuration(duration))})`);
 }
 
 function compileTimelineElementsOrdered(videoProject: VideoProject, fileNode: CompositeGeneratorNode) {
