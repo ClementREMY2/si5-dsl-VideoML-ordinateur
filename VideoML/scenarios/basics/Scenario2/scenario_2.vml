@@ -1,0 +1,26 @@
+video project "resultat_scenario_2"
+
+
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/basics/Scenario2/video_drone.mp4" as video1
+
+text "Voici la vidéo de présentation d'un nouveau drone" as textDebut
+text "Merci d'avoir regardé cette vidéo" as textFin
+subtitle "sous titre 1" as s1
+subtitle "sous titre 2" as s2
+subtitle "le deuxième extrait de clip arrive dans 5 secondes..." as s3
+
+extract video video1 from 00:23 to 01:47 as clip1a
+extract video video1 from 02:01 to 02:21 as clip1b
+
+options background "black" apply to textFin
+
+
+#1: textDebut for 00:10
+#2: clip1a
+#3: s1 at start of #2 for 00:10
+#4: s2 at start of #3 delayed by +00:30 for 00:10 
+#5: clip1b at end of #2
+#6: s3 at start of #5 delayed by -00:05 for 00:15
+#7: textFin for 00:15
+
+

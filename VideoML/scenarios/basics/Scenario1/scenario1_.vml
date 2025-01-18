@@ -1,0 +1,14 @@
+video project "resultat_scenario_1"
+
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/basics/Scenario1/video_italie_1.mp4" as video1
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/basics/Scenario1/video_italie_2.mp4" as video2
+
+
+text "Nous étions en vacances en Italie! :)" as textDebut
+text "Merci d'avoir regardé nos vidéos de vacances! :)" as textFin
+
+
+#1: textDebut for 00:10
+#2: video1
+#3: video2
+#4: textFin for 00:15
