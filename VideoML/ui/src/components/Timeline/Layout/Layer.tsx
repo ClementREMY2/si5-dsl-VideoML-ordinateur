@@ -1,5 +1,7 @@
 import { useTimeline } from "../Context/Context";
 
+import './Layer.scss';
+
 type TimelineLayoutLayerProps = {
     children: React.ReactNode;
     startTime: number;
@@ -10,7 +12,7 @@ export const TimelineLayoutLayer: React.FC<TimelineLayoutLayerProps> = ({ startT
     const { timelineScaleFactor } = useTimeline();
     return (
         <div
-            className="position-relative bg-white mb-1"
+            className="position-relative mb-1 bg-lightgrey"
             style={{
                 height: '50px',
                 width: `${(endTime - startTime) * timelineScaleFactor}px`,
