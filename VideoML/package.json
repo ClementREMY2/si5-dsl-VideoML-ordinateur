@@ -58,6 +58,7 @@
     },
     "dependencies": {
         "langium": "~3.0.0",
+        "nanoid": "^5.0.9",
         "shx": "^0.3.4",
         "vscode-languageserver": "~9.0.1"
     },

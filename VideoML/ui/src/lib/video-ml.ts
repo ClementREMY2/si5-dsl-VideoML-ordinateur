@@ -72,8 +72,8 @@ export function getMonarchGrammar() {
         initial: [
             { regex: /#[0-9]+/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
-            { regex: /[-+][0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
-            { regex: /[0-5][0-9]:[0-5][0-9]/, action: {"token":"string"} },
+            { regex: /[-+][0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/, action: {"token":"string"} },
+            { regex: /[0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/, action: {"token":"string"} },
             { regex: /-?[0-9]*\.[0-9]+/, action: {"token":"number"} },
             { regex: /[0-9]+/, action: {"token":"number"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },

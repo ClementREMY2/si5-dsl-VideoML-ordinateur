@@ -159,9 +159,9 @@ terminal HASHTAG_ID returns string: /#[0-9]+/;
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME
-terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
-// TIME format: MM:SS
-terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
+terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/;
+// TIME format: MM:SS or MM:SS.mmm
+terminal TIME returns string: /[0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/;
 // FLOAT format : 0 or non-zero digit followed by zero or more digits
 terminal FLOAT returns number: /-?[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
