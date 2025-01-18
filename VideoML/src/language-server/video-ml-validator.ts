@@ -41,11 +41,13 @@ import {
     AudioStereoVolume,
     AudioFadeIn,
     AudioFadeOut,
+    AudioDelay,
     AudioElement,
     isAudioVolume,
     isAudioStereoVolume,
     isAudioFadeIn,
     isAudioFadeOut,
+    isAudioDelay,
     isAudioElement,
     VideoTransition,
     GroupOption,
@@ -733,18 +735,21 @@ export class VideoMlValidator {
         else if (isAudioFadeOut(option)) {
             this.checkAudioFadeOut(option, accept);
         }
+        else if (isAudioDelay(option)) {
+            this.checkAudioDelay(option, accept);
+        }
     }
 
     checkAudioVolume(option: AudioVolume, accept: ValidationAcceptor): void {
-        if (option.volume < 0 || option.volume > 1) {
-            accept('error', 'Volume must be between 0 and 1',
+        if (option.volume < 0 || option.volume > 2) {
+            accept('error', 'Volume must be between 0 and 2. 1 is no change',
                  { node: option, property: 'volume' });
         }
     }
 
     checkAudioStereoVolume(option: AudioStereoVolume, accept: ValidationAcceptor): void {
-        if (option.left < 0 || option.left > 1 || option.right < 0 || option.right > 1) {
-            accept('error', 'Stereo volume must be between 0 and 1',
+        if (option.left < 0.0 || option.left > 2.0) {
+            accept('error', 'Stereo volume must be between 0 and 2. 1 is no change',
                  { node: option});
         }
     }
@@ -769,5 +774,11 @@ export class VideoMlValidator {
                  { node: transition, property: 'type' });
         }    
     }
-    
+
+    checkAudioDelay(option: AudioDelay, accept: ValidationAcceptor): void {
+        if (option.numberOfRepetitions < 0) {
+            accept('error', 'Number of repetitions must be positive',
+                 { node: option, property: 'numberOfRepetitions' });
+        }
+    }
 }

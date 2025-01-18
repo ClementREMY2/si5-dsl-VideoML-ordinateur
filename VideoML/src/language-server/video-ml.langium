@@ -130,7 +130,10 @@ VideoTransition:
 // Audio options 
 
 AudioOption:
-	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | 'normalize');
+	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | AudioDelay | 'normalize');
+
+AudioDelay:
+	'repetitions' numberOfRepetitions=INT;
 
 AudioFadeIn:
 	'fadeIn' duration=INT;
