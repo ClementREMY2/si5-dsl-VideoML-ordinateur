@@ -29,13 +29,14 @@ import {
     VideoContrast,
     VideoOpacity,
     VideoScale,
+    VideoRotation,
     VideoElement,
     isVideoBrightness,
     isVideoContrast,
     isVideoOpacity,
     isVideoScale,
+    isVideoRotation,
     VideoSaturation,
-    VideoPainting,
     AudioVolume,
     AudioStereoVolume,
     AudioFadeIn,
@@ -662,6 +663,8 @@ export class VideoMlValidator {
             this.checkVideoOpacity(option, accept);
         } else if (isVideoScale(option)) {
             this.checkVideoScale(option, accept);
+        } else if (isVideoRotation(option)) {
+            this.checkVideoRotation(option, accept);
         }
     }
     // Check that the brightness is between valid values
@@ -698,15 +701,14 @@ export class VideoMlValidator {
 
     // Check that the scale is between valid values (100% for now, you can only reduce it)
     checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
-        if (option.scale > 100 || option.scale < 100) {
-            accept('error', 'Scale is in %. It cannot be less than 100 or more than 100', { node: option });
+        if (option.scale > 1.0 || option.scale < 0.0) {
+            accept('error', 'Scale is a coefficiant between 0 and 1', { node: option });
         }
     }
 
-    checkVideoPainting(option: VideoPainting, accept: ValidationAcceptor): void {
-        if (option.painting > 5 || option.painting < 1) {
-            accept('error', 'Painting must be between 1 and 5',
-                 { node: option, property: 'painting' });
+    checkVideoRotation(option: VideoRotation, accept: ValidationAcceptor): void {
+        if (option.rotation < 0 || option.rotation > 360) {
+            accept('error', 'Rotation must be between 0 and 360', { node: option });
         }
     }
 
