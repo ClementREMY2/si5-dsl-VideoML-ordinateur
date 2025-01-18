@@ -613,7 +613,7 @@ export class VideoMlValidator {
     }
 
     checkFontSetting(fontSetting: TextFont, accept: ValidationAcceptor): void {
-        const validFonts = ['Arial', 'Rockwell', 'Calibri', 'Verdana', 'Georgia', 'Elephant', 'Book Antiqua', 'Gadugi', 'Garamond', 'Ebrima', 'Impact'];
+        const validFonts = ['Arial', 'Calibri', 'Verdana', 'Georgia', 'Elephant', 'Book Antiqua', 'Gadugi', 'Garamond', 'Ebrima', 'Impact'];
         if (!validFonts.includes(fontSetting.name)) {
             accept('error', 'Font must be a valid font name', { node: fontSetting, property: 'name' });
         }
