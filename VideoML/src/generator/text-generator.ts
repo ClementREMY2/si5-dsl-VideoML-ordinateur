@@ -67,8 +67,10 @@ function compileOptionsToTextClip(text: TextualElement): string {
         } else if (isVisualElementBackground(option)) {
             bgColor = option.color;
         } else if (isVisualElementSize(option)) {
-            bgSizeX = option.width;
-            bgSizeY = option.height;
+            if(option.width && option.height){
+                bgSizeX = option.width;
+                bgSizeY = option.height;
+            }
         } else if (isVisualElementPosition(option) && text.type === 'subtitle') {
             if(option.x)
                 posX = option.x;
