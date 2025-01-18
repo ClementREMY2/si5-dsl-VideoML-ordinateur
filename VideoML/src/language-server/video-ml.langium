@@ -164,9 +164,9 @@ terminal RELATIVE_TIME returns string: /[-+][0-5][0-9]:[0-5][0-9]/;
 // TIME format: MM:SS
 terminal TIME returns string: /[0-5][0-9]:[0-5][0-9]/;
 // FLOAT format : 0 or non-zero digit followed by zero or more digits
-terminal FLOAT returns number: /[0-9]*\.[0-9]+/;
+terminal FLOAT returns number: /-?[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
-terminal INT returns number: /[0-9]+/;
+terminal INT returns number: /-?[0-9]+/;
 // BOOLEAN format: true or false
 terminal BOOLEAN returns boolean: 'true' | 'false';
 // STRING format: "..."

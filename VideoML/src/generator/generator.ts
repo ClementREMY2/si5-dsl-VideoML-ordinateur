@@ -43,19 +43,16 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     const videoElements = videoProject.elements.filter(isVideoElement);
     const groupVideoOptions: GroupOptionVideo[] = videoProject.groupOptions.filter(isGroupOptionVideo);
     const populatedVideoElements = populateVideoElements(videoElements, groupVideoOptions);
-    console.log(populatedVideoElements);
     populatedVideoElements.forEach((video) => compileVideo(video, fileNode));
 
     const textualElements = videoProject.elements.filter(isTextualElement);
     const groupTextOptions: GroupOptionText[] = videoProject.groupOptions.filter(isGroupOptionText);
     const populatedTextualElements = populateTextualElements(textualElements, groupTextOptions);
-    console.log(populatedTextualElements);
     populatedTextualElements.forEach((text) => compileTextualElement(text, fileNode));
 
     const audioElements = videoProject.elements.filter(isAudioElement);
     const groupAudioOptions: GroupOptionAudio[] = videoProject.groupOptions.filter(isGroupOptionAudio);
     const populatedAudioElements = populateAudioElements(audioElements, groupAudioOptions);
-    console.log(populatedAudioElements);
     populatedAudioElements.forEach((audio) => compileAudio(audio, fileNode));
     
 
