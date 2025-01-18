@@ -17,6 +17,7 @@ import {
     FixedTimelineElement,
     isVideoExtract,
     isVideoOriginal,
+    TextualElement,
 } from '../language-server/generated/ast.js';
 import { compileVideo, populateVideoElements } from './video-generator.js';
 import { compileTextualElement, populateTextualElements } from './text-generator.js';
@@ -48,8 +49,11 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     const textualElements = videoProject.elements.filter(isTextualElement);
     const groupTextOptions: GroupOptionText[] = videoProject.groupOptions.filter(isGroupOptionText);
     const populatedTextualElements = populateTextualElements(textualElements, groupTextOptions);
-    populatedTextualElements.forEach((text) => compileTextualElement(text, fileNode));
-
+    populatedTextualElements.forEach((text) => {
+        const correspondingGroupTextOption = findGroupTextOption(text, groupTextOptions);
+        compileTextualElement(text, fileNode, correspondingGroupTextOption);
+    });
+    
     const audioElements = videoProject.elements.filter(isAudioElement);
     const groupAudioOptions: GroupOptionAudio[] = videoProject.groupOptions.filter(isGroupOptionAudio);
     const populatedAudioElements = populateAudioElements(audioElements, groupAudioOptions);
@@ -66,6 +70,11 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     fileNode.append(
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
+}
+
+// Function to find the corresponding groupTextOption for a given textElement
+function findGroupTextOption(textElement: TextualElement, groupTextOptions: GroupOptionText[]): any {
+    return groupTextOptions.find(option => option.elements.some(element => element.ref === textElement));
 }
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {

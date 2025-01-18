@@ -42,6 +42,7 @@ ${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text, text.name, grou
 }
 
 function compileOptionsToTextClip(text: TextualElement, elementName: string, options?: TextOption[]): string {
+    console.log("options: " + options)
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
@@ -102,6 +103,9 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
 
     let effectText;
     let boolEffect = false;
+
+    console.log("eeuenduei", effectText);
+    console.log("options", options);
 
     options?.forEach(option => {
         if (isTextEffect(option)) {

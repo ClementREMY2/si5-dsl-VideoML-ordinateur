@@ -49,7 +49,7 @@ VisualElementSize:
 	'size' width=INT ',' height=INT;
 
 TextSpecificOption:
-	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment  | TextEffect;
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment | TextEffect;
 
 TextFontSize:
 	'fontsize' size=INT;
