@@ -36,7 +36,6 @@ import {
     isVideoResolution,
     isVideoScale,
     VideoSaturation,
-    VideoPainting,
     AudioVolume,
     AudioStereoVolume,
     AudioFadeIn,
@@ -604,13 +603,6 @@ export class VideoMlValidator {
         }
     }
 
-    checkVideoPainting(option: VideoPainting, accept: ValidationAcceptor): void {
-        if (option.painting > 5 || option.painting < 1) {
-            accept('error', 'Painting must be between 1 and 5',
-                 { node: option, property: 'painting' });
-        }
-    }
-
     // Audio effects ************************************************************************************************
     checkAudioElement(element: AudioElement, accept: ValidationAcceptor): void {
         if (element.audioOptions) {
@@ -643,7 +635,7 @@ export class VideoMlValidator {
 
     checkAudioStereoVolume(option: AudioStereoVolume, accept: ValidationAcceptor): void {
         if (option.left < 0 || option.left > 2 || option.right < 0 || option.right > 2) {
-            accept('error', 'Stereo volume must be between 0 and 1',
+            accept('error', 'Stereo volume must be between 0 and 2',
                  { node: option});
         }
     }
