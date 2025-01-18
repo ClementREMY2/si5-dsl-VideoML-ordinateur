@@ -145,7 +145,7 @@ final_video = moviepy.CompositeVideoClip([${timelineElementsVideoJoined}], size=
     if (videoProject.timelineElements.some(te => isAudioElement(te.element.ref))) {
         fileNode.append(
 `# Concatenate all audios
-final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}], size=(1920, 1080))
+final_audio = moviepy.CompositeAudioClip([${timelineElementsAudioJoined}])
 `, NL);
     
         fileNode.append(
