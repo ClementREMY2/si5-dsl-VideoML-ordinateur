@@ -64,21 +64,23 @@ export const Timeline: React.FC = () => {
   return (
     <div className="h-100 w-100">
       <div className="d-flex flex-row w-100">
-        <div className="pe-2">
-          <TimelineLayoutLayerNames layers={Object.keys(layers)} />
-        </div>
+        {isTimelineLoaded && (
+            <div className="pe-2">
+              <TimelineLayoutLayerNames layers={Object.keys(layers)} />
+          </div>
+        )}
         <div className="d-flex flex-column w-100 position-relative mb-3 overflow-auto ps-4">
           {!isTimelineLoaded && (
             <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
           )}
-          {Object.entries(layers)
+          {isTimelineLoaded && Object.entries(layers)
             .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
             .map(([layer, elements,]) => (
               <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
                 {elements.map((element) => <TimelineElement key={element.id} element={element} color={'secondary'} />)}
               </TimelineLayoutLayer>
             ))}
-          <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+          {isTimelineLoaded && <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />}
         </div>
       </div>
     </div>
