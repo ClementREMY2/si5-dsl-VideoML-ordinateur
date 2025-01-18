@@ -1,4 +1,4 @@
-import { AstNode, ValidationAcceptor, ValidationChecks } from 'langium';
+import { AstNode, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
 import {
     VideoProject,
     VideoMLAstType,
@@ -48,6 +48,13 @@ import {
     isAudioFadeOut,
     isAudioElement,
     VideoTransition,
+    GroupOption,
+    isGroupOptionVideo,
+    isGroupOptionAudio,
+    isGroupOptionText,
+    TextOption,
+    VideoOption,
+    AudioOption,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -110,6 +117,7 @@ export function registerValidationChecks(services: VideoMlServices) {
         RelativeTimelineElement: validator.checkRelativeTimelineElement,
         Element: validator.checkElement,
         VideoTransition: validator.checkVideoTransition,
+        GroupOption: validator.checkGroupOption,
         };
     registry.register(checks, validator);
 }
@@ -141,6 +149,32 @@ export class VideoMlValidator {
             } 
         });
     } 
+
+    checkGroupOption(groupOption: GroupOption, accept: ValidationAcceptor): void {
+        if (groupOption.elements) {
+            const names = new Set<string>();
+            groupOption.elements.forEach((element: Reference<VideoElement|TextualElement|AudioElement>) => {
+                if (element.ref) {
+                    if (names.has(element.ref?.name)) {
+                        accept('error', 'Element names must be unique', { node: groupOption });
+                    }
+                    names.add(element.ref.name);
+                }
+            });
+        }
+        if(groupOption.options) {
+            groupOption.options.forEach((option: any) => {
+                if(isGroupOptionVideo(groupOption)) {
+                    this.checkVideoOption(option, accept);
+                } else if (isGroupOptionAudio(groupOption)) {
+                    this.checkAudioOption(option, accept);
+                } else if (isGroupOptionText(groupOption)) {
+                    this.checkTextOption(option, accept);
+                }
+            });
+        
+        }
+    }
 
     checkRelativeTimelineElement(element: RelativeTimelineElement, accept: ValidationAcceptor): void {
         this.checkTimelineElementRelativePlacementOrder(element, accept);
@@ -406,10 +440,10 @@ export class VideoMlValidator {
             this.checkTextualElement(element, accept);
         }
         else if (isVideoElement(element)) {
-            this.checkVideoOption(element, accept);
+            this.checkVideoElement(element, accept);
         }
         else if (isAudioElement(element)) {
-            this.checkAudioOption(element, accept);
+            this.checkAudioElement(element, accept);
         }
     }
 
@@ -419,25 +453,29 @@ export class VideoMlValidator {
         }
         if (!element.options) return;
         element.options.forEach((option) => {
-            if (isTextFontColor(option)) {
-                this.checkColor(option.color, option, 'color', accept);
-            } else if(isVisualElementPosition(option) && element.type === 'subtitle') {
-                accept('error', 'Position is not allowed in subtitle elements', { node: option });
-            } else if (isTextFont(option)) {
-                this.checkFontSetting(option, accept);
-            } else if (isTextAligment(option)) {
-                const validAlignments = ['left', 'center', 'right'];
-                if (!validAlignments.includes(option.alignment)) {
-                    accept('error', 'Alignment must be "left", "center" or "right"', { node: option, property: 'alignment' });
-                }
-            } else if (isTextFont(option)) {
-                this.checkFontSetting(option, accept);
-            } else if (isTextFontSize(option)) {
-                if (option.size < 0 || option.size > 128) {
-                    accept('error', 'Font size must be between 0 and 128', { node: option, property: 'size' });
-                }
-            }
+            this.checkTextOption(option, accept, element);
         });
+    }
+
+    checkTextOption(option: TextOption, accept: ValidationAcceptor, element?: TextualElement): void {
+        if (isTextFontColor(option)) {
+            this.checkColor(option.color, option, 'color', accept);
+        } else if(isVisualElementPosition(option) && (element?.type === 'subtitle' || false)) {
+            accept('error', 'Position is not allowed in subtitle elements', { node: option });
+        } else if (isTextFont(option)) {
+            this.checkFontSetting(option, accept);
+        } else if (isTextAligment(option)) {
+            const validAlignments = ['left', 'center', 'right'];
+            if (!validAlignments.includes(option.alignment)) {
+                accept('error', 'Alignment must be "left", "center" or "right"', { node: option, property: 'alignment' });
+            }
+        } else if (isTextFont(option)) {
+            this.checkFontSetting(option, accept);
+        } else if (isTextFontSize(option)) {
+            if (option.size < 0 || option.size > 128) {
+                accept('error', 'Font size must be between 0 and 128', { node: option, property: 'size' });
+            }
+        }
     }
 
     checkFontSetting(fontSetting: TextFont, accept: ValidationAcceptor): void {
@@ -476,24 +514,27 @@ export class VideoMlValidator {
         }
     }
 
-    checkVideoOption(element: VideoElement, accept: ValidationAcceptor): void {
+    checkVideoElement(element: VideoElement, accept: ValidationAcceptor): void {
         if (element.videoOption) {
             element.videoOption.forEach((option) => {
-                if (isVideoBrightness(option)) {
-                    this.checkVideoBrightness(option, accept);
-                } else if (isVideoContrast(option)) {
-                    this.checkVideoContrast(option, accept);
-                } else if (isVideoOpacity(option)) {
-                    this.checkVideoOpacity(option, accept);
-                } else if (isVideoResolution(option)) {
-                    this.checkVideoResolution(option, accept);
-                } else if (isVideoScale(option)) {
-                    this.checkVideoScale(option, accept);
-                }
+                this.checkVideoOption(option, accept);
             });
         }
     }
     
+    checkVideoOption(option: VideoOption, accept: ValidationAcceptor): void {
+        if (isVideoBrightness(option)) {
+            this.checkVideoBrightness(option, accept);
+        } else if (isVideoContrast(option)) {
+            this.checkVideoContrast(option, accept);
+        } else if (isVideoOpacity(option)) {
+            this.checkVideoOpacity(option, accept);
+        } else if (isVideoResolution(option)) {
+            this.checkVideoResolution(option, accept);
+        } else if (isVideoScale(option)) {
+            this.checkVideoScale(option, accept);
+        }
+    }
     // Check that the brightness is between valid values
     checkVideoBrightness(option: VideoBrightness, accept: ValidationAcceptor): void {
         if (option.brightness < -5 || option.brightness > 5) {
@@ -529,7 +570,13 @@ export class VideoMlValidator {
     // Check that the resolution is between standard values (FullHD at maximum resolution)
     // TODO : Discuss about the range of the resolution
     checkVideoResolution(option: VideoResolution, accept: ValidationAcceptor): void {
-        if(option.width && option.height) { // TODO: il faudra changer la condition pour prendre en compte les résolutions prédéfinies
+        if(option.resolutionName) {
+            const validResolutions = ['webcam'];
+            if (!validResolutions.includes(option.resolutionName)) {
+                accept('error', 'Resolution must be webcam or x,y', { node: option });
+            }
+        }
+        if(option.width && option.height) {
             if (option.width > 1920 || option.height > 1080 || option.width < 0 || option.height < 0) {
                 accept('error', 'Resolution must be less than FullHD (1920x1080) and cannot be negative (Format needed : width , height)', { node: option });
             }
@@ -559,21 +606,25 @@ export class VideoMlValidator {
     }
 
     // Audio effects ************************************************************************************************
-    checkAudioOption(element: AudioElement, accept: ValidationAcceptor): void {
+    checkAudioElement(element: AudioElement, accept: ValidationAcceptor): void {
         if (element.audioOptions) {
             element.audioOptions.forEach((option) => {
-                if (isAudioVolume(option)) {
-                    this.checkAudioVolume(option, accept);
-                } else if (isAudioStereoVolume(option)) {
-                    this.checkAudioStereoVolume(option, accept);
-                }
-                else if (isAudioFadeIn(option)) {
-                    this.checkAudioFadeIn(option, accept);
-                }
-                else if (isAudioFadeOut(option)) {
-                    this.checkAudioFadeOut(option, accept);
-                }
+                this.checkAudioOption(option, accept);
             });
+        }
+    }
+
+    checkAudioOption(option: AudioOption, accept: ValidationAcceptor): void {
+        if (isAudioVolume(option)) {
+            this.checkAudioVolume(option, accept);
+        } else if (isAudioStereoVolume(option)) {
+            this.checkAudioStereoVolume(option, accept);
+        }
+        else if (isAudioFadeIn(option)) {
+            this.checkAudioFadeIn(option, accept);
+        }
+        else if (isAudioFadeOut(option)) {
+            this.checkAudioFadeOut(option, accept);
         }
     }
 
