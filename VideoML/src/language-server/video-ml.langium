@@ -46,7 +46,7 @@ VisualElementPosition:
 	'position' (x=INT | alignmentx=STRING)',' (y=INT | alignmenty=STRING); // est ce qu'on se fait un enum pour les positions ?
 
 VisualElementSize:
-	'size' width=INT ',' height=INT;
+	'size' (width=INT ',' height=INT | resolution=STRING);
 
 TextSpecificOption:
 	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment | TextEffect;
@@ -103,7 +103,7 @@ VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
-	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoResolution | VideoScale | VideoRotation | VideoTransition);
+	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoScale | VideoRotation | VideoTransition);
 
 VideoContrast:
 	'contrast' contrast=FLOAT;
@@ -116,9 +116,6 @@ VideoSaturation:
 
 VideoOpacity:
 	'opacity' opacity=FLOAT;
-
-VideoResolution:
-	'resolution' ((width=INT ',' height=INT) | resolutionName=STRING);
 
 VideoScale:
 	'scale' scale=INT;

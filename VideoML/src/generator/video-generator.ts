@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoResolution, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementSize, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
+import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementSize, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
 import { helperTimeToSeconds } from "../lib/helper.js";
 
 export function populateVideoElements(videoElements: VideoElement[], groupVideoOptions: GroupOptionVideo[]): VideoElement[] {
@@ -19,8 +19,16 @@ export function populateVideoElements(videoElements: VideoElement[], groupVideoO
                 return acc;
             }
 
-            // Add the option to the list
-            acc.set(option.$type, option);
+            if(isVideoTransition(option)){
+                if(acc.has(option.type)){
+                    return acc;
+                }
+                acc.set(option.type, option);
+            } else{
+                // Add the option to the list
+                acc.set(option.$type, option);
+            }
+
             return acc;
         }, new Map<string, VideoOption>());
 
@@ -97,22 +105,6 @@ resize_effect = moviepy.video.fx.Resize(new_size=${new_value})
 ${videoName} = resize_effect.apply(${videoName})`, NL);
     }
 
-    if (isVideoResolution(option)) {
-        if (option.width && option.height) {
-            fileNode.append(
-                `# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(new_size=(${option.width}, ${option.height}))
-${videoName} = resize_effect.apply(${videoName})`, NL);
-        }
-        else if (option.resolutionName && getResolution(option.resolutionName)) {
-            const r = getResolution(option.resolutionName);
-            fileNode.append(
-                `# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(new_size=(${r?.width}, ${r?.height}))
-${videoName} = resize_effect.apply(${videoName})`, NL);
-        }
-    }
-
     if (isVideoOpacity(option)) {
         fileNode.append(
             `# Apply opacity effect
@@ -174,13 +166,8 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
             x = `'center'`;
         if (option.alignmenty === 'center')
             y = `'center'`;
-        if (option.alignmentx === 'right'){
-            x = 1920 - (getResolution(video.videoOption.find(isVideoResolution)?.resolutionName||'')?.width || video.videoOption.find(isVisualElementSize)?.width || 0);
-        }
         if (option.alignmentx === 'left')
             x = 0;
-        if (option.alignmenty === 'bottom')
-            y = 1080 - (getResolution(video.videoOption.find(isVideoResolution)?.resolutionName||'')?.height || video.videoOption.find(isVisualElementSize)?.height || 0);
         if (option.alignmenty === 'top')
             y = 0;
         fileNode.append(
@@ -188,19 +175,10 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
 ${video.name} = ${video.name}.with_position((${x},${y}))`, NL);
     }
     if (isVisualElementSize(option)) {
+        if(option.width && option.height){
         fileNode.append(
             `# Apply size effect
 ${video.name} = ${video.name}.resized((${option.width},${option.height}))`, NL);
-    }
-}
-
-function getResolution(name: string) {
-    const resolutions = [
-        {
-            name: 'webcam',
-            width: 640,
-            height: 480
         }
-    ]
-    return resolutions.find(resolution => resolution.name === name);
+    }
 }
