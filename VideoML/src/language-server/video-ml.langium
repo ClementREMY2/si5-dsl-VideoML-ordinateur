@@ -133,7 +133,7 @@ AudioOption:
 	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | AudioDelay | 'normalize');
 
 AudioDelay:
-	'repetitions' numberOfRepetitions=INT;
+	'delay' delay=FLOAT ',' 'repetitions' repetitions=INT;
 
 AudioFadeIn:
 	'fadeIn' duration=INT;

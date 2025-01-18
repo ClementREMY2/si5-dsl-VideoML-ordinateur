@@ -776,9 +776,13 @@ export class VideoMlValidator {
     }
 
     checkAudioDelay(option: AudioDelay, accept: ValidationAcceptor): void {
-        if (option.numberOfRepetitions < 0) {
+        if (option.repetitions < 0) {
             accept('error', 'Number of repetitions must be positive',
-                 { node: option, property: 'numberOfRepetitions' });
+                 { node: option, property: 'repetitions' });
+        }
+        else if (option.delay < 0) {
+            accept('error', 'Delay time must be positive',
+                 { node: option, property: 'delay' });
         }
     }
 }

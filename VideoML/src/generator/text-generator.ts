@@ -56,7 +56,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
 
     const applyOption = (option: TextOption) => {
         if (isTextFont(option)) {
-            font = fontDependingOnOS(font); 
+            font = fontDependingOnOS(option.name); 
         } 
         else if (isTextFontSize(option)) {
             fontSize = option.size;
