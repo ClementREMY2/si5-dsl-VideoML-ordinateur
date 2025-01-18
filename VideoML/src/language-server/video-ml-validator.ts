@@ -59,7 +59,7 @@ import {
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
-import { getTimelineElementTextualDuration, helperOffsetTimeToSeconds, helperTimeToSeconds } from '../lib/helper.js';
+import { getLayer, getTimelineElementTextualDuration, helperOffsetTimeToSeconds, helperTimeToSeconds } from '../lib/helper.js';
 
 const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
 
@@ -124,42 +124,88 @@ async function getVideoDuration (videoPath: string): Promise<number> {
     );
 }
 
-const getStartAtRecursively = async (element: TimelineElement, timelineElementList: TimelineElement[]): Promise<number> => {
-    if (isFixedTimelineElement(element)) return helperTimeToSeconds(element.startAt);
-    if (isRelativeTimelineElement(element)) {
-        const relativeToElement = element.relativeTo.ref;
-        if (!relativeToElement) return 0;
+const getTimelineElementPopulated = async (element: TimelineElement, timelineElementList: TimelineElement[]): Promise<{ calculatedStartAt?: number, calculatedDuration?: number, calculatedFinishAt?: number, layer?: number }> => {
+    if (!element.name || !element.element?.ref) return {};
+
+    // Get layer
+    let layer = undefined;
+    if (element.layerPosition?.relativeTo?.ref) {
+        layer = getLayer(element);
+    }
     
-        const relativeStartAt = await getStartAtRecursively(relativeToElement, timelineElementList);
+    // Calculate duration
+    let duration = 0;
+    if (isTextualElement(element.element.ref)) {
+        duration = helperTimeToSeconds(getTimelineElementTextualDuration(element.duration));
+    }
+    if (isAudioExtract(element.element.ref)) {
+        duration = helperTimeToSeconds(element.element.ref.end) - helperTimeToSeconds(element.element.ref.start);
+    }
+    if (isVideoExtract(element.element.ref)) {
+        duration = helperTimeToSeconds(element.element.ref.end) - helperTimeToSeconds(element.element.ref.start);
+    }
+    if (isAudioOriginal(element.element.ref)) {
+        duration = await getAudioDuration(element.element.ref.filePath);
+    }
+    if (isVideoOriginal(element.element.ref)) {
+        duration = await getVideoDuration(element.element.ref.filePath);
+    }
+
+    // Calculate start at & finish at
+    if (isFixedTimelineElement(element)) {
+        const startAt = helperTimeToSeconds(element.startAt)
+        return {
+            calculatedStartAt: startAt,
+            calculatedDuration: duration,
+            calculatedFinishAt: startAt + duration,
+            layer,
+        };
+    }
+    if (isRelativeTimelineElement(element)) {
+        const relativeToElement = element.relativeTo?.ref;
+        if (!relativeToElement) {
+            return {
+                calculatedStartAt: 0,
+                calculatedDuration: duration,
+                calculatedFinishAt: duration,
+                layer,
+            };
+        }
+
+        const isRelativeOrderCorrect = parseInt(relativeToElement.name.slice(1)) < parseInt(element.name.slice(1));
+        if (!isRelativeOrderCorrect) return { layer };
+    
+        const { calculatedStartAt: relativeStartAt, calculatedDuration: relativeDuration } = await getTimelineElementPopulated(relativeToElement, timelineElementList);
     
         const offset = helperOffsetTimeToSeconds(element.offset);
-
-        let duration = 0;
-        if (element.place === 'end') {
-            if (isTextualElement(relativeToElement.element.ref)) {
-                duration = helperTimeToSeconds(getTimelineElementTextualDuration(relativeToElement.duration));
-            }
-            if (isAudioExtract(relativeToElement.element.ref)) {
-                duration = helperTimeToSeconds(relativeToElement.element.ref.end) - helperTimeToSeconds(relativeToElement.element.ref.start);
-            }
-            if (isVideoExtract(relativeToElement.element.ref)) {
-                duration = helperTimeToSeconds(relativeToElement.element.ref.end) - helperTimeToSeconds(relativeToElement.element.ref.start);
-            }
-            if (isAudioOriginal(relativeToElement.element.ref)) {
-                duration = await getAudioDuration(relativeToElement.element.ref.filePath);
-            }
-            if (isVideoOriginal(relativeToElement.element.ref)) {
-                duration = await getVideoDuration(relativeToElement.element.ref.filePath);
-            }
-        }
     
-        return relativeStartAt + offset + duration;
+        const startAt = (relativeStartAt || 0) + offset + (element.place === 'end' ? (relativeDuration || 0) : 0);
+
+        return {
+            calculatedStartAt: startAt,
+            calculatedDuration: duration,
+            calculatedFinishAt: startAt + duration,
+            layer,
+        };
     }
 
     // Implicit timeline element
-    if (element.$containerIndex === 0) return 0;
+    if (element.$containerIndex === 0) {
+        return {
+            calculatedStartAt: 0,
+            calculatedDuration: duration,
+            calculatedFinishAt: duration,
+            layer,
+        }
+    }
     const previousElement = timelineElementList[(element.$containerIndex || 1) - 1];
-    return await getStartAtRecursively(previousElement, timelineElementList);
+    const previousElementInfo = await getTimelineElementPopulated(previousElement, timelineElementList);
+    return {
+        calculatedStartAt: previousElementInfo.calculatedFinishAt || 0,
+        calculatedDuration: duration,
+        calculatedFinishAt: (previousElementInfo.calculatedFinishAt || 0) + duration,
+        layer,
+    };
 }
 
 /**
@@ -194,7 +240,7 @@ export class VideoMlValidator {
         this.checkLayerTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkNameForTimelineElements(videoProject, accept);
         this.checkNameForElements(videoProject, accept);
-        await this.checkRelativeTimelineElementsRecursiveNegativeStart(videoProject.timelineElements, accept);
+        await this.checkTimelineElementsTimePlacement(videoProject.timelineElements, accept);
     }
 
     checkNameForElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
@@ -242,19 +288,38 @@ export class VideoMlValidator {
         this.checkTimelineElementRelativePlacementOrder(element, accept);
     }
 
-    async checkRelativeTimelineElementsRecursiveNegativeStart(timelineElementList: TimelineElement[], accept: ValidationAcceptor): Promise<void> {
+    async checkTimelineElementsTimePlacement(timelineElementList: TimelineElement[], accept: ValidationAcceptor): Promise<void> {
+        // Populate each timeline element with some useful info
+        const populatedTimeTimelineElements = await Promise.all(
+            timelineElementList.map(async (element) => {
+                const info = await getTimelineElementPopulated(element, timelineElementList);
+                return {
+                    ...element,
+                    ...info,
+                };
+            })
+        );
+        
         // Check if for all relative timeline elements, the startAt is not negative
-        timelineElementList.forEach(async (element) => {
-            if (isRelativeTimelineElement(element) && element.relativeTo?.ref && element.place) {
-                const isRelativeOrderCorrect = parseInt(element.relativeTo.ref.name.slice(1)) < parseInt(element.name.slice(1));
-
-                if (isRelativeOrderCorrect) {
-                    const startAt = await getStartAtRecursively(element, timelineElementList);
-                    if (startAt < 0) {
-                        accept('error', 'This timeline element will start before the beginning of the video, which is not allowed', { node: element });
-                    }
-                }
+        populatedTimeTimelineElements.forEach((element) => {
+            if ((element.calculatedStartAt || 0) < 0) {
+                accept('error', 'This timeline element will start before the beginning of the video, which is not allowed', { node: element });
             }
+        });
+
+        // Check if some timeline elements that are on the same layer might overlap
+        populatedTimeTimelineElements.forEach((fromElement) => {
+            populatedTimeTimelineElements.forEach((toElement) => {
+                if (fromElement.name === toElement.name) return;
+                if (fromElement.layer !== toElement.layer) return;
+
+                const isToStartInsideFrom = ((fromElement.calculatedStartAt || 0) < (toElement.calculatedStartAt || 0) && (toElement.calculatedStartAt || 0) < (fromElement.calculatedFinishAt || 0));
+                const isToEndInsideFrom = ((fromElement.calculatedStartAt || 0) < (toElement.calculatedFinishAt || 0) && (toElement.calculatedFinishAt || 0) < (fromElement.calculatedFinishAt || 0));
+
+                if (isToStartInsideFrom || isToEndInsideFrom) {
+                    accept('warning', `This element is overlapping with ${toElement.name} on the same layer`, { node: fromElement });
+                }
+            });
         });
     }
 
