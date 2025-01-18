@@ -1,4 +1,5 @@
 import { AstNode, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
+import { nanoid } from 'nanoid';
 import {
     VideoProject,
     VideoMLAstType,
@@ -58,7 +59,7 @@ import {
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
-import { helperTimeToSeconds } from '../lib/helper.js';
+import { getLayer, getTimelineElementTextualDuration, helperOffsetTimeToSeconds, helperTimeToSeconds } from '../lib/helper.js';
 
 const IS_ELECTRON = process.env.IS_ELECTRON === 'true';
 
@@ -74,19 +75,17 @@ if (IS_ELECTRON) {
     });
 } 
 
-let lastId = 10000000;
 // Function to simulate synchronous calls from worker to renderer process in Electron
 async function invokeSpecialCommand(
     command: string,
     commandParams: object,
-    indexName: string,
     executionParams: {
         needNodeJs: boolean;
     },
 ): Promise<any> {
-    return new Promise((resolve) => {
-        const id = Date.now() + lastId++;
-        asyncRequestMap.set(indexName, resolve);
+    return new Promise((resolve, reject) => {
+        const id = nanoid();
+        asyncRequestMap.set(id, resolve);
 
         self.postMessage({
             jsonrpc: "2.0",
@@ -94,11 +93,119 @@ async function invokeSpecialCommand(
             method: `custom/${command}`,
             params: {
                 commandParams,
-                indexName,
+                indexName: id,
                 executionParams,
             },
         });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            if (asyncRequestMap.has(id)) {
+                asyncRequestMap.delete(id);
+                reject(new Error(`Command ${command} timed out`));
+            }
+        }, 5000);
     });
+}
+
+async function getAudioDuration (audioPath: string): Promise<number> {
+    return await invokeSpecialCommand(
+        'get-audio-original-duration',
+        { path: audioPath },
+        { needNodeJs: false },
+    );
+}
+
+async function getVideoDuration (videoPath: string): Promise<number> {
+    return await invokeSpecialCommand(
+        'get-video-original-duration',
+        { path: videoPath },
+        { needNodeJs: false },
+    );
+}
+
+const getTimelineElementPopulated = async (element: TimelineElement, timelineElementList: TimelineElement[]): Promise<{ calculatedStartAt?: number, calculatedDuration?: number, calculatedFinishAt?: number, layer?: number }> => {
+    if (!element.name || !element.element?.ref) return {};
+
+    // Get layer
+    let layer = undefined;
+    if (element.layerPosition?.relativeTo?.ref) {
+        layer = getLayer(element);
+    }
+    
+    // Calculate duration
+    let duration = 0;
+    if (isTextualElement(element.element.ref)) {
+        duration = helperTimeToSeconds(getTimelineElementTextualDuration(element.duration));
+    }
+    if (isAudioExtract(element.element.ref)) {
+        duration = helperTimeToSeconds(element.element.ref.end) - helperTimeToSeconds(element.element.ref.start);
+    }
+    if (isVideoExtract(element.element.ref)) {
+        duration = helperTimeToSeconds(element.element.ref.end) - helperTimeToSeconds(element.element.ref.start);
+    }
+    if (isAudioOriginal(element.element.ref)) {
+        duration = await getAudioDuration(element.element.ref.filePath);
+    }
+    if (isVideoOriginal(element.element.ref)) {
+        duration = await getVideoDuration(element.element.ref.filePath);
+    }
+
+    // Calculate start at & finish at
+    if (isFixedTimelineElement(element)) {
+        const startAt = helperTimeToSeconds(element.startAt)
+        return {
+            calculatedStartAt: startAt,
+            calculatedDuration: duration,
+            calculatedFinishAt: startAt + duration,
+            layer,
+        };
+    }
+    if (isRelativeTimelineElement(element)) {
+        const relativeToElement = element.relativeTo?.ref;
+        if (!relativeToElement) {
+            return {
+                calculatedStartAt: 0,
+                calculatedDuration: duration,
+                calculatedFinishAt: duration,
+                layer,
+            };
+        }
+
+        const isRelativeOrderCorrect = parseInt(relativeToElement.name.slice(1)) < parseInt(element.name.slice(1));
+        if (!isRelativeOrderCorrect) return { layer };
+    
+        const { calculatedStartAt: relativeStartAt, calculatedDuration: relativeDuration } = await getTimelineElementPopulated(relativeToElement, timelineElementList);
+    
+        const offset = helperOffsetTimeToSeconds(element.offset);
+    
+        const startAt = (relativeStartAt || 0) + offset + (element.place === 'end' ? (relativeDuration || 0) : 0);
+
+        return {
+            calculatedStartAt: startAt,
+            calculatedDuration: duration,
+            calculatedFinishAt: startAt + duration,
+            layer,
+        };
+    }
+
+    // Implicit timeline element
+    if (element.$containerIndex === 0) {
+        return {
+            calculatedStartAt: 0,
+            calculatedDuration: duration,
+            calculatedFinishAt: duration,
+            layer,
+        }
+    }
+    const previousElement = timelineElementList[(element.$containerIndex || 1) - 1];
+    const previousElementInfo = await getTimelineElementPopulated(previousElement, timelineElementList);
+    return {
+        calculatedStartAt: previousElementInfo.calculatedFinishAt || 0,
+        calculatedDuration: duration,
+        calculatedFinishAt: (previousElementInfo.calculatedFinishAt || 0) + duration,
+        layer,
+    };
 }
 
 /**
@@ -126,13 +233,14 @@ export function registerValidationChecks(services: VideoMlServices) {
  * Implementation of custom validations.
  */
 export class VideoMlValidator {
-    checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): void {
+    async checkVideoProject(videoProject: VideoProject, accept: ValidationAcceptor): Promise<void> {
         this.checkOutputFileName(videoProject, accept);
         this.checkTimelineElementAtStart(videoProject, accept);
         this.checkRelativeTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkLayerTimelineElementsInfiniteRecursion(videoProject, accept);
         this.checkNameForTimelineElements(videoProject, accept);
         this.checkNameForElements(videoProject, accept);
+        await this.checkTimelineElementsTimePlacement(videoProject.timelineElements, accept);
     }
 
     checkNameForElements(videoProject: VideoProject, accept: ValidationAcceptor): void {
@@ -180,6 +288,41 @@ export class VideoMlValidator {
         this.checkTimelineElementRelativePlacementOrder(element, accept);
     }
 
+    async checkTimelineElementsTimePlacement(timelineElementList: TimelineElement[], accept: ValidationAcceptor): Promise<void> {
+        // Populate each timeline element with some useful info
+        const populatedTimeTimelineElements = await Promise.all(
+            timelineElementList.map(async (element) => {
+                const info = await getTimelineElementPopulated(element, timelineElementList);
+                return {
+                    ...element,
+                    ...info,
+                };
+            })
+        );
+        
+        // Check if for all relative timeline elements, the startAt is not negative
+        populatedTimeTimelineElements.forEach((element) => {
+            if ((element.calculatedStartAt || 0) < 0) {
+                accept('error', 'This timeline element will start before the beginning of the video, which is not allowed', { node: element });
+            }
+        });
+
+        // Check if some timeline elements that are on the same layer might overlap
+        populatedTimeTimelineElements.forEach((fromElement) => {
+            populatedTimeTimelineElements.forEach((toElement) => {
+                if (fromElement.name === toElement.name) return;
+                if (fromElement.layer !== toElement.layer) return;
+
+                const isToStartInsideFrom = ((fromElement.calculatedStartAt || 0) < (toElement.calculatedStartAt || 0) && (toElement.calculatedStartAt || 0) < (fromElement.calculatedFinishAt || 0));
+                const isToEndInsideFrom = ((fromElement.calculatedStartAt || 0) < (toElement.calculatedFinishAt || 0) && (toElement.calculatedFinishAt || 0) < (fromElement.calculatedFinishAt || 0));
+
+                if (isToStartInsideFrom || isToEndInsideFrom) {
+                    accept('warning', `This element is overlapping with ${toElement.name} on the same layer`, { node: fromElement });
+                }
+            });
+        });
+    }
+
     async checkAudioOriginal(audioOriginal: AudioOriginal, accept: ValidationAcceptor): Promise<void> {
         await this.checkAudioOriginalPath(audioOriginal, accept);
     }
@@ -218,13 +361,7 @@ export class VideoMlValidator {
         if (isVideoExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isVideoOriginal(source)) {
-            const indexName = `get-video-original-duration-${videoExtract.$containerProperty}-${videoExtract.$containerIndex}`;
-            duration = await invokeSpecialCommand(
-                'get-video-original-duration',
-                { path: source.filePath },
-                indexName,
-                { needNodeJs: false },
-            );
+            duration = await getVideoDuration(source.filePath);
         }
         if (!duration || duration === -1) {
             accept('error', 'Failed to get source video duration', { node: videoExtract, property: 'source' });
@@ -319,11 +456,9 @@ export class VideoMlValidator {
             errors = await validateFilePath(videoOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `validate-file-${videoOriginal.filePath}-${videoOriginal.$containerProperty}-${videoOriginal.$containerIndex}`;
             errors = await invokeSpecialCommand(
                 'validate-file',
                 { path: videoOriginal.filePath },
-                indexName,
                 { needNodeJs: true },
             );
         }
@@ -341,11 +476,9 @@ export class VideoMlValidator {
             errors = await validateFilePath(audioOriginal.filePath);
         } else {
             // Filepath verification will be handled by Electron (main process)
-            const indexName = `validate-file-${audioOriginal.filePath}-${audioOriginal.$containerProperty}-${audioOriginal.$containerIndex}`;
             errors = await invokeSpecialCommand(
                 'validate-file',
                 { path: audioOriginal.filePath },
-                indexName,
                 { needNodeJs: true },
             );
         }
@@ -377,13 +510,7 @@ export class VideoMlValidator {
         if (isAudioExtract(source)) {
             duration = helperTimeToSeconds(source.end) - helperTimeToSeconds(source.start);
         } else if (isAudioOriginal(source)) {
-            const indexName = `get-audio-original-duration-${audioExtract.$containerProperty}-'${audioExtract.$containerIndex}'`;
-            duration = await invokeSpecialCommand(
-                'get-audio-original-duration',
-                { path: source.filePath },
-                indexName,
-                { needNodeJs: false },
-            );
+            duration = await getAudioDuration(source.filePath);
         }
         if (!duration || duration === -1) {
             accept('error', 'Failed to get source audio duration', { node: audioExtract, property: 'source' });

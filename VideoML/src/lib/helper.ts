@@ -1,8 +1,28 @@
 import { TimelineElement } from "../language-server/generated/ast.js";
 
 export function helperTimeToSeconds(time: string): number {
-    const timeArray = time.split(':');
-    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1]);
+    const minuteSecondArray = time.split(':');
+    const secondMillisecondArray = minuteSecondArray[1].split('.');
+
+    const milliseconds = secondMillisecondArray[1] || '0';
+    const completedMilliseconds = milliseconds.padEnd(3, '0');
+
+    return (parseInt(minuteSecondArray[0]) * 60) + (parseInt(secondMillisecondArray[0])) + (parseInt(completedMilliseconds) / 1000);
+}
+
+export function helperOffsetTimeToSeconds(offsetTime: string | undefined): number {
+    let offset: number = 0;
+    if (offsetTime) {
+        const timeSeconds = helperTimeToSeconds(offsetTime.slice(1));
+        const operator = offsetTime[0];
+        if (operator === '-') {
+            offset = -timeSeconds;
+        } else if (operator === '+') {
+            offset = timeSeconds;
+        }
+    }
+
+    return offset;
 }
 
 export function getLayer(te: TimelineElement): number {
