@@ -9,31 +9,16 @@ import { VideoPlayer } from '../Video/Player';
 import { VideoGeneratorButton } from '../Video/Generator/Button';
 import { TimelineZoom } from '../Timeline/Zoom';
 
-const platform = await window.ipcRenderer.invoke('get-process-platform');
-
 export const Home: React.FC = () => {
   const [monacoWorkerPath, setMonacoWorkerPath] = useState<string | null>(null);
   const [videomlWorkerPath, setVideomlWorkerPath] = useState<string | null>(null);
 
   const [openedTab, setOpenedTab] = useState<'timeline' | 'python'| 'video'>('timeline');
 
-  const [filesToInsert, setFilesToInsert] = useState<string[]>([]);
+  const [filesToInsert, setFilesToInsert] = useState<File[]>([]);
   
   const onFilesDrop = useCallback((acceptedFiles: File[]) => {
-    setFilesToInsert(acceptedFiles.map((file) => {
-      // Get varname from file name e.g. video.mp4 -> video (whitespace removed)
-      const varName = file.name.replace(/\s/g, '').replace(/\.[^/.]+$/, '');
-      // If machine under windows, replace backslashes with forward slashes and keep only the path with and after the first slash.
-      
-      const path = platform === 'win32' ? file.path.replace(/^.*?\\/, '/').replace(/\\/g, '/') : file.path;
-      if (file.path.endsWith('.mp4')) {
-        return `load video "${path}" as ${varName}`;
-      }
-      else if (file.path.endsWith('.mp3')) {
-        return `load audio "${path}" as ${varName}`;
-      }
-      return "";
-    }));
+    setFilesToInsert(acceptedFiles);
   }, []);
 
   const onInsertCode = useCallback(() => {
