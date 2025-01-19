@@ -118,10 +118,7 @@ VideoOpacity:
 	'opacity' opacity=FLOAT;
 
 VideoScale:
-	'scale' scale=INT;
-
-VideoPainting:
-	'painting' painting=INT;
+	'scale' scale=FLOAT;
 
 VideoRotation:
 	'rotation' rotation=INT;
@@ -134,7 +131,10 @@ VideoTransition:
 // Audio options 
 
 AudioOption:
-	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | 'normalize');
+	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | AudioDelay | 'normalize');
+
+AudioDelay:
+	'delay' delay=FLOAT ',' 'repetitions' repetitions=INT;
 
 AudioFadeIn:
 	'fadeIn' duration=INT;

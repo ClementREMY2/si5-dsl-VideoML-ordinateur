@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { AudioElement, GroupOptionAudio, AudioOption, isAudioExtract, isAudioOption, isAudioOriginal, AudioOriginal, AudioExtract, isAudioFadeIn, isAudioFadeOut, isAudioStereoVolume, isAudioVolume } from "../language-server/generated/ast.js";
+import { AudioElement, GroupOptionAudio, AudioOption, isAudioExtract, isAudioOption, isAudioOriginal, AudioOriginal, AudioExtract, isAudioDelay, isAudioFadeIn, isAudioFadeOut, isAudioStereoVolume, isAudioVolume } from "../language-server/generated/ast.js";
 import { helperTimeToSeconds } from "../lib/helper.js";
 
 export function populateAudioElements(audioElements: AudioElement[], groupAudioOptions: GroupOptionAudio[]): AudioElement[] {
@@ -63,9 +63,16 @@ ${audioExtract.name} = ${(audioExtract.source?.ref as AudioElement).name}.subcli
 }
 
 function compileAudioEffect(option: AudioOption, name: String, fileNode: CompositeGeneratorNode) {
+    if (isAudioDelay(option)) {
+        fileNode.append(
+            `# # Apply audio delay effect
+new_volume = moviepy.audio.fx.AudioDelay(offset=${option.delay},n_repeats=${option.repetitions})
+${name} = new_volume.apply(${name})`, NL);
+    }
+
     if (isAudioVolume(option)) {
         fileNode.append(
-            `# Apply brightness effect
+            `# Apply audio volume effect
 new_volume = moviepy.audio.fx.MultiplyStereoVolume(left=${option.volume}, right=${option.volume})
 ${name} = new_volume.apply(${name})`, NL);
     }

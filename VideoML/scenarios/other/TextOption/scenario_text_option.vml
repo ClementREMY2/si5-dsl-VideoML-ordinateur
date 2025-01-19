@@ -1,0 +1,22 @@
+video project "resultat_scenario_options_text"
+
+
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/other/TextOption/VideoTextOption.mp4" as video1
+
+text "Bienvenue dans cette vidéo!" background "red" as t1
+text "Je vais essayer différentes options de texte, comme de réduire celui-ci" background "red" fontsize 40 as t2
+text "... et de lui mettre une autre couleur, en changeant celle du fond également..."background "blue" fontcolor "yellow" fontsize 40 as t3
+text "bien, voyons ce que ça donne sur une vidéo!" background "blue" fontcolor "yellow" fontsize 40 as t4
+text "ceci est un message en Arial" as t5
+text "tandis que celui ci est en Verdana" font "Verdana" as t6
+
+#1: t1
+#2: t2
+#3: t3
+#4: t4
+#5: video1
+#6: t5 at start of #5 delayed by +00:01 for 00:08
+#7: t6 for 00:08
+
+
+

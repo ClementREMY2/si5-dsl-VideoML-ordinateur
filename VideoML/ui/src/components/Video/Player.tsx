@@ -49,10 +49,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ className }) => {
                 <div>No video generated yet</div>
             )}
             {errorTraceback && (
-                <>
+                <div className="overflow-auto">
                     <div className="text-danger mb-2">An error occured during generation:</div>
                     <pre>{errorTraceback}</pre>
-                </>
+                </div>
             )}
             {manualInstallationInstructions && (
                 <div dangerouslySetInnerHTML={{ __html: manualInstallationInstructions }} />

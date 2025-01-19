@@ -1,0 +1,21 @@
+video project "resultat_scenario_audio"
+
+
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/extensions/Audio/VideoScenarioAudio.mp4" as video1
+
+load audio "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/extensions/Audio/audio_numero1.mp3" as audio1
+load audio "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/extensions/Audio/audio_numero2.mp3" as audioHaut
+load audio "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/extensions/Audio/audio_numero3.mp3" as audioBas
+
+subtitle "prochaine partie dans 5 secondes!" as s1
+
+options volume 1.5 apply to audioHaut
+options volume 0.5 apply to audioBas
+
+#1: video1
+#2: audio1 at start of #1
+#3: s1 for 00:05
+#4: audioHaut at end of #3
+#5: audioBas at end of #4
+
+

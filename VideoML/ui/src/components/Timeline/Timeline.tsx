@@ -4,15 +4,13 @@ import { Spinner } from 'reactstrap';
 import { useTimeline } from './Context/Context';
 import { TimelineElementInfoFormatted } from './helper';
 import { TimelineLayoutTimecodes } from './Layout/Timecodes';
-import { TimelineLayoutLayerIndicator } from './Layout/LayerIndicator';
 import { TimelineElement } from './Element/Element';
 import { TimelineLayoutLayer } from './Layout/Layer';
+import { TimelineLayoutLayerNames } from './Layout/LayerNames';
 
 type TimelineLayers = {
   [layer: string]: TimelineElementInfoFormatted[];
 }
-
-const PADDING_LEFT = 30;
 
 export const Timeline: React.FC = () => {
   const { timelineElementInfos, isTimelineLoaded, timelineScaleFactor } = useTimeline();
@@ -55,7 +53,7 @@ export const Timeline: React.FC = () => {
     const timelineDurationRounded = roundedTo10(maxEndTime);
 
     const parentContainer = document.querySelector('#TimelineParent');
-    const parentWidth = (parentContainer?.clientWidth || PADDING_LEFT) - PADDING_LEFT;
+    const parentWidth = (parentContainer?.clientWidth || 0);
 
     const timelineEndTime = Math.max(timelineDurationRounded, roundedTo10(parentWidth / timelineScaleFactor) - 10);
 
@@ -64,20 +62,26 @@ export const Timeline: React.FC = () => {
   }, [timelineElementInfos, timelineScaleFactor]);
 
   return (
-    <div className="h-100 w-100 overflow-scroll py-3" style={{ paddingLeft: PADDING_LEFT }}>
-      <div className="d-flex flex-column w-100 position-relative mb-3">
-        {!isTimelineLoaded && (
-          <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
+    <div className="h-100 w-100">
+      <div className="d-flex flex-row w-100">
+        {isTimelineLoaded && (
+            <div className="pe-2">
+              <TimelineLayoutLayerNames layers={Object.keys(layers)} />
+          </div>
         )}
-        {Object.entries(layers)
-          .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
-          .map(([layer, elements,]) => (
-            <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
-              <TimelineLayoutLayerIndicator layer={parseInt(layer)} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
-              {elements.map((element) => <TimelineElement key={element.id} element={element} color={'secondary'} />)}
-            </TimelineLayoutLayer>
-          ))}
-        <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />
+        <div className="d-flex flex-column w-100 position-relative mb-3 overflow-auto ps-4">
+          {!isTimelineLoaded && (
+            <div><Spinner className="me-2" size="sm" />Loading timeline...</div>
+          )}
+          {isTimelineLoaded && Object.entries(layers)
+            .sort(([layerA], [layerB]) => parseInt(layerB) - parseInt(layerA))
+            .map(([layer, elements,]) => (
+              <TimelineLayoutLayer key={layer} startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime}>
+                {elements.map((element) => <TimelineElement key={element.id} element={element} color={'secondary'} />)}
+              </TimelineLayoutLayer>
+            ))}
+          {isTimelineLoaded && <TimelineLayoutTimecodes startTime={timelineBounds.timelineStartTime} endTime={timelineBounds.timelineEndTime} />}
+        </div>
       </div>
     </div>
   );
