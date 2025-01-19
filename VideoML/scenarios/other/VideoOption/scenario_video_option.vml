@@ -1,0 +1,29 @@
+video project "resultat_scenario_options_videos"
+
+load video "/Users/clrem/OneDrive/Documents/Travail/5A/S9.2/Ingenierie_Modele_Langages_Specifiques_Domaines/si5-dsl-VideoML-ordinateur/VideoML/scenarios/basics/Scenario2/video_drone.mp4" as video1
+
+extract video video1 from 00:20 to 00:30 as videoNormal
+extract video video1 from 00:20 to 00:30 saturation 3.0 as videoSaturation 
+extract video video1 from 00:20 to 00:30 contrast 5.0 as videoContrast
+extract video video1 from 00:20 to 00:30 as videoBrightnessAndScale
+extract video video1 from 00:20 to 00:30 as videoOpacity
+
+subtitle "Voici la vidéo normale!" as st0
+subtitle "Voici la vidéo saturée!" as st1
+subtitle "Voici la vidéo contrastée!" as st2
+subtitle "Voici la vidéo réduite, et plus lumineuse!" as st3
+subtitle "Voici la vidéo moins opaque!" as st4
+
+options brightness 2, scale 0.5, position "center", "center" apply to videoBrightnessAndScale
+options opacity 0.5 apply to videoOpacity
+
+#1: videoNormal
+#2: videoSaturation
+#3: videoContrast
+#4: videoBrightnessAndScale
+#5: videoOpacity
+#7: st0 at start of #1 for 00:10 
+#8: st1 at start of #2 for 00:10
+#9: st2 at start of #3 for 00:10
+#10: st3 at start of #4 for 00:10 
+#11: st4 at start of #5 for 00:10 

@@ -56,7 +56,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
 
     const applyOption = (option: TextOption) => {
         if (isTextFont(option)) {
-            font = fontDependingOnOS(font); 
+            font = fontDependingOnOS(option.name); 
         } 
         else if (isTextFontSize(option)) {
             fontSize = option.size;
@@ -71,7 +71,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
                 bgSizeX = option.width;
                 bgSizeY = option.height;
             }
-        } else if (isVisualElementPosition(option) && text.type === 'subtitle') {
+        } else if (isVisualElementPosition(option) && text.type === 'text') {
             if(option.x)
                 posX = option.x;
             if(option.y)

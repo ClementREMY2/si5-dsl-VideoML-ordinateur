@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoPainting, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementSize, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
+import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementSize, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
 import { helperTimeToSeconds } from "../lib/helper.js";
 
 export function populateVideoElements(videoElements: VideoElement[], groupVideoOptions: GroupOptionVideo[]): VideoElement[] {
@@ -98,10 +98,10 @@ ${videoName} = multiply_effect.apply(${videoName})`, NL);
     }
 
     if (isVideoScale(option)) {
-        const new_value = option.scale / 100;
+        const new_value = option.scale;
         fileNode.append(
             `# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(new_size=${new_value})
+resize_effect = moviepy.video.fx.Resize(${new_value})
 ${videoName} = resize_effect.apply(${videoName})`, NL);
     }
 
@@ -123,14 +123,6 @@ ${videoName} = lum_contrast_effect.apply(${videoName})`, NL);
         fileNode.append(
             `# Apply saturation effect
 painting_effect = moviepy.video.fx.Painting(saturation=${option.saturation}, black=0.0)
-${videoName} = painting_effect.apply(${videoName})`, NL);
-    }
-
-    if (isVideoPainting(option)) {
-        const calculatedOption = option.painting / 1000;
-        fileNode.append(
-            `# Apply saturation effect
-painting_effect = moviepy.video.fx.Painting(saturation=0, black=${calculatedOption})
 ${videoName} = painting_effect.apply(${videoName})`, NL);
     }
 

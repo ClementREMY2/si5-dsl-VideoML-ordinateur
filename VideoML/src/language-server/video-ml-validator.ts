@@ -29,22 +29,25 @@ import {
     VideoContrast,
     VideoOpacity,
     VideoScale,
+    VideoRotation,
     VideoElement,
     isVideoBrightness,
     isVideoContrast,
     isVideoOpacity,
     isVideoScale,
+    isVideoRotation,
     VideoSaturation,
-    VideoPainting,
     AudioVolume,
     AudioStereoVolume,
     AudioFadeIn,
     AudioFadeOut,
+    AudioDelay,
     AudioElement,
     isAudioVolume,
     isAudioStereoVolume,
     isAudioFadeIn,
     isAudioFadeOut,
+    isAudioDelay,
     isAudioElement,
     VideoTransition,
     GroupOption,
@@ -610,7 +613,7 @@ export class VideoMlValidator {
     }
 
     checkFontSetting(fontSetting: TextFont, accept: ValidationAcceptor): void {
-        const validFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino Linotype', 'Book Antiqua', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact'];
+        const validFonts = ['Arial', 'Calibri', 'Verdana', 'Georgia', 'Elephant', 'Book Antiqua', 'Gadugi', 'Garamond', 'Ebrima', 'Impact'];
         if (!validFonts.includes(fontSetting.name)) {
             accept('error', 'Font must be a valid font name', { node: fontSetting, property: 'name' });
         }
@@ -662,6 +665,8 @@ export class VideoMlValidator {
             this.checkVideoOpacity(option, accept);
         } else if (isVideoScale(option)) {
             this.checkVideoScale(option, accept);
+        } else if (isVideoRotation(option)) {
+            this.checkVideoRotation(option, accept);
         }
     }
     // Check that the brightness is between valid values
@@ -698,15 +703,14 @@ export class VideoMlValidator {
 
     // Check that the scale is between valid values (100% for now, you can only reduce it)
     checkVideoScale(option: VideoScale, accept: ValidationAcceptor): void {
-        if (option.scale > 100 || option.scale < 100) {
-            accept('error', 'Scale is in %. It cannot be less than 100 or more than 100', { node: option });
+        if (option.scale > 1.0 || option.scale < 0.0) {
+            accept('error', 'Scale is a coefficiant between 0 and 1', { node: option });
         }
     }
 
-    checkVideoPainting(option: VideoPainting, accept: ValidationAcceptor): void {
-        if (option.painting > 5 || option.painting < 1) {
-            accept('error', 'Painting must be between 1 and 5',
-                 { node: option, property: 'painting' });
+    checkVideoRotation(option: VideoRotation, accept: ValidationAcceptor): void {
+        if (option.rotation < 0 || option.rotation > 360) {
+            accept('error', 'Rotation must be between 0 and 360', { node: option });
         }
     }
 
@@ -731,18 +735,21 @@ export class VideoMlValidator {
         else if (isAudioFadeOut(option)) {
             this.checkAudioFadeOut(option, accept);
         }
+        else if (isAudioDelay(option)) {
+            this.checkAudioDelay(option, accept);
+        }
     }
 
     checkAudioVolume(option: AudioVolume, accept: ValidationAcceptor): void {
-        if (option.volume < 0 || option.volume > 1) {
-            accept('error', 'Volume must be between 0 and 1',
+        if (option.volume < 0 || option.volume > 2) {
+            accept('error', 'Volume must be between 0 and 2. 1 is no change',
                  { node: option, property: 'volume' });
         }
     }
 
     checkAudioStereoVolume(option: AudioStereoVolume, accept: ValidationAcceptor): void {
-        if (option.left < 0 || option.left > 1 || option.right < 0 || option.right > 1) {
-            accept('error', 'Stereo volume must be between 0 and 1',
+        if (option.left < 0.0 || option.left > 2.0) {
+            accept('error', 'Stereo volume must be between 0 and 2. 1 is no change',
                  { node: option});
         }
     }
@@ -767,5 +774,15 @@ export class VideoMlValidator {
                  { node: transition, property: 'type' });
         }    
     }
-    
+
+    checkAudioDelay(option: AudioDelay, accept: ValidationAcceptor): void {
+        if (option.repetitions < 0) {
+            accept('error', 'Number of repetitions must be positive',
+                 { node: option, property: 'repetitions' });
+        }
+        else if (option.delay < 0) {
+            accept('error', 'Delay time must be positive',
+                 { node: option, property: 'delay' });
+        }
+    }
 }
