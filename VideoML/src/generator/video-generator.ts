@@ -166,8 +166,13 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
             x = `'center'`;
         if (option.alignmenty === 'center')
             y = `'center'`;
+        if (option.alignmentx === 'right'){
+            x = 1920 - (getResolution(video.videoOption.find(isVisualElementSize)?.resolution||'')?.width || video.videoOption.find(isVisualElementSize)?.width || 0);
+        }
         if (option.alignmentx === 'left')
             x = 0;
+        if (option.alignmenty === 'bottom')
+            y = 1080 - (getResolution(video.videoOption.find(isVisualElementSize)?.resolution||'')?.height || video.videoOption.find(isVisualElementSize)?.height || 0);
         if (option.alignmenty === 'top')
             y = 0;
         fileNode.append(
@@ -180,5 +185,22 @@ ${video.name} = ${video.name}.with_position((${x},${y}))`, NL);
             `# Apply size effect
 ${video.name} = ${video.name}.resized((${option.width},${option.height}))`, NL);
         }
+        if(option.resolution){
+            const resolution = getResolution(option.resolution);
+            fileNode.append(
+                `# Apply resolution effect
+${video.name} = ${video.name}.resized((${resolution?.width},${resolution?.height}))`, NL);
+        }
     }
+}
+
+function getResolution(name: string) {
+    const resolutions = [
+        {
+            name: 'webcam',
+            width: 640,
+            height: 480
+        }
+    ]
+    return resolutions.find(resolution => resolution.name === name);
 }

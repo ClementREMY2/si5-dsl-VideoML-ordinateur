@@ -87,6 +87,7 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
 
     if (text.type === 'subtitle') {
         posY = 400;
+        posX = `"center"`;
     }
 
     let optionsString = `
@@ -105,9 +106,6 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
 
     let effectText;
     let boolEffect = false;
-
-    console.log("eeuenduei", effectText);
-    console.log("options", options);
 
     options?.forEach(option => {
         if (isTextEffect(option)) {
