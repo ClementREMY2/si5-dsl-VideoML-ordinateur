@@ -88,7 +88,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
                     posX = 0;
                 }
                 if(option.alignmentx === 'right'){
-                    posX = 1920 - bgSizeX;              // on va surement avoir un problème ici
+                    posX = 1920 - bgSizeX;
                 }
             }
             if(option.alignmenty){
@@ -99,7 +99,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
                     posY = 0;
                 }
                 if(option.alignmenty === 'bottom'){
-                    posY = 1080 - bgSizeY;              // on va surement avoir un problème ici
+                    posY = 1080 - bgSizeY;
                 }
             }
         }
