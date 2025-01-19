@@ -70,22 +70,24 @@ export const Home: React.FC = () => {
                 </NavLink>
             </NavItem>
         </Nav>
-        <TabContent activeTab={openedTab} className="flex-grow-1 overflow-hidden">
-            <TabPane tabId="timeline" className="h-100 overflow-auto" id="TimelineParent">
-                <Timeline />
-            </TabPane>
-            <TabPane tabId="python" className="h-100 overflow-auto">
-                <PythonVisualizer className="h-100" />
-            </TabPane>
-            <TabPane tabId="video" className="h-100">
-                <VideoPlayer className="h-100 w-100" />
-            </TabPane>
-        </TabContent>
-        <TabContent activeTab={openedTab} className="overflow-hidden">
-            <TabPane tabId="timeline" className="h-100">
-                <TimelineZoom />
-            </TabPane>
-        </TabContent>
+        <div className="flex-grow-1 d-flex flex-column overflow-hidden">
+          <TabContent activeTab={openedTab} className="overflow-hidden h-100">
+              <TabPane tabId="timeline" className="h-100 overflow-auto" id="TimelineParent">
+                  <Timeline />
+              </TabPane>
+              <TabPane tabId="python" className="h-100 overflow-auto">
+                  <PythonVisualizer className="h-100" />
+              </TabPane>
+              <TabPane tabId="video" className="h-100">
+                  <VideoPlayer className="h-100 w-100 overflow-hidden d-flex flex-column" />
+              </TabPane>
+          </TabContent>
+          <TabContent activeTab={openedTab} className="overflow-hidden">
+              <TabPane tabId="timeline" className="h-100">
+                  <TimelineZoom />
+              </TabPane>
+          </TabContent>
+        </div>
     </div>
     <div style={{ height: '50vh' }} className="overflow-auto d-flex flex-column py-3">
         <div className="d-flex flex-row align-items-center mb-2 mx-3 justify-content-between">

@@ -98,10 +98,10 @@ ${videoName} = multiply_effect.apply(${videoName})`, NL);
     }
 
     if (isVideoScale(option)) {
-        const new_value = option.scale / 100;
+        const new_value = option.scale;
         fileNode.append(
             `# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(new_size=${new_value})
+resize_effect = moviepy.video.fx.Resize(${new_value})
 ${videoName} = resize_effect.apply(${videoName})`, NL);
     }
 

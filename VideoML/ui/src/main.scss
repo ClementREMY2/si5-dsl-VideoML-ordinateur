@@ -8,3 +8,7 @@ $primary: #569CD6;          // Changer la couleur principale
     background-color: #1e1e1e !important;
     color: white;
 }
+
+html, body, div#root {
+    height: 100%;
+}

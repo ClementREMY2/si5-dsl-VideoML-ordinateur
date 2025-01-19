@@ -61,7 +61,7 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
             effect = true;
         }
         if (isTextFont(option)) {
-            font = fontDependingOnOS(font); 
+            font = fontDependingOnOS(option.name); 
         } 
         else if (isTextFontSize(option)) {
             fontSize = option.size;
@@ -76,9 +76,33 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
                 bgSizeX = option.width;
                 bgSizeY = option.height;
             }
-        } else if (isVisualElementPosition(option) && text.type === 'subtitle') {
-            posX = option.x !== undefined ? option.x : posX;
-            posY = option.y !== undefined ? option.y : posY;
+        } else if (isVisualElementPosition(option) && text.type === 'text') {
+            if(option.x)
+                posX = option.x;
+            if(option.y)
+                posY = option.y;
+            if(option.alignmentx){
+                if(option.alignmentx === 'center'){
+                    posX = `"center"`;
+                }
+                if(option.alignmentx === 'left'){
+                    posX = 0;
+                }
+                if(option.alignmentx === 'right'){
+                    posX = 1920 - bgSizeX;              // on va surement avoir un problème ici
+                }
+            }
+            if(option.alignmenty){
+                if(option.alignmenty === 'center'){
+                    posY = `"center"`;
+                }
+                if(option.alignmenty === 'top'){
+                    posY = 0;
+                }
+                if(option.alignmenty === 'bottom'){
+                    posY = 1080 - bgSizeY;              // on va surement avoir un problème ici
+                }
+            }
         }
     };
 

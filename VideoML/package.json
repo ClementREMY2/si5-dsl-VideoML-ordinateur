@@ -54,7 +54,8 @@
         "build:worker": "node scripts/build-worker.mjs",
         "ui:grammar": "node scripts/generate-monarch-grammar.mjs",
         "langium:generate": "langium generate && npm run ui:grammar",
-        "langium:watch": "langium generate --watch"
+        "langium:watch": "langium generate --watch",
+        "launch": "npm i && npm run langium:generate && cd ui && npm i && cd .. && npm run build:ui && cd ui && npm run dev"
     },
     "dependencies": {
         "langium": "~3.0.0",
