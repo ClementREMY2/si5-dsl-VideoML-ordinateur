@@ -23,7 +23,7 @@ If you want to use the project, you'll need at least :
 ## What's in the folder
 
 This folder contains all necessary files for our VideoML language.
- * `src/language-server/video-ml.langium` -  the grammar definition out VideoML langauge.
+ * `src/language-server/video-ml.langium` -  the grammar definition our VideoML langauge.
  * `src/language-server/main-browser.ts` - the entry point of the language server process (used as Web Worker in the browser).
  * `src/language-server/video-ml-module.ts` - the dependency injection module of our language implementation.
  * `src/language-server/video-ml-validator.ts` - our custom validator implementation.
@@ -39,5 +39,5 @@ This folder contains all necessary files for our VideoML language.
  ## Run the UI
 
  * Go in the `ui` folder and run `npm i` to install the dependencies.
- * Go back in `VideoML` folder and run `npm run build:ui` to build the UI.
+ * Go back in the root folder and run `npm run build:ui` to build the UI.
  * Go in the `ui` folder and run `npm run dev` to start the UI, it should open a new window with the UI loaded.
