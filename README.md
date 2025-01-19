@@ -41,3 +41,5 @@ This folder contains all necessary files for our VideoML language.
  * Go in the `ui` folder and run `npm i` to install the dependencies.
  * Go back in the root folder and run `npm run build:ui` to build the UI.
  * Go in the `ui` folder and run `npm run dev` to start the UI, it should open a new window with the UI loaded.
+
+It might happen that video generation doesn't work (you might see an error about installing Python dependencies in the Electron console). Unfortunately, we do not handle every Python process spawn error at the moment. If you encounter this issue and still want to generate the video, you can install the Python dependencies from the [ui/requirements.txt](https://github.com/ClementREMY2/si5-dsl-VideoML-ordinateur/blob/main/ui/requirements.txt) file and then execute a Python program using the code found in the "Python" tab in the UI.
