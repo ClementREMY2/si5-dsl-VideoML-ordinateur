@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { TextualElement, GroupOptionText, TextOption, isTextAligment, isTextFont, isTextFontColor, isTextFontSize, isVisualElementBackground, isVisualElementPosition, isVisualElementSize } from "../language-server/generated/ast.js";
+import { TextualElement, GroupOptionText, TextOption, isTextFont, isTextFontColor, isTextFontSize, isVisualElementBackground, isVisualElementPosition, isVisualElementSizePixels, isText, isVisualElementPositionCoordinates, isVisualElementPositionAlignment, isSubtitle } from "../language-server/generated/ast.js";
 
 export function populateTextualElements(textualElements: TextualElement[], groupTextOptions: GroupOptionText[]): TextualElement[] {
     return textualElements.map((text) => {
@@ -50,7 +50,6 @@ function compileOptionsToTextClip(text: TextualElement): string {
     
     let fontSize = 60;
     let fontColor = 'white';
-    let align = 'left';
     let posX: number | string = `"center"`;
     let posY: number | string = `"center"`;
 
@@ -60,42 +59,46 @@ function compileOptionsToTextClip(text: TextualElement): string {
         } 
         else if (isTextFontSize(option)) {
             fontSize = option.size;
-        } else if (isTextAligment(option)) {
-            align = option.alignment;
         } else if (isTextFontColor(option)) {
             fontColor = option.color;
         } else if (isVisualElementBackground(option)) {
             bgColor = option.color;
-        } else if (isVisualElementSize(option)) {
+        } else if (isVisualElementSizePixels(option)) {
             if(option.width && option.height){
                 bgSizeX = option.width;
                 bgSizeY = option.height;
             }
-        } else if (isVisualElementPosition(option) && text.type === 'text') {
-            if(option.x)
-                posX = option.x;
-            if(option.y)
-                posY = option.y;
-            if(option.alignmentx){
-                if(option.alignmentx === 'center'){
-                    posX = `"center"`;
+        } else if (isVisualElementPosition(option) && isText(text)) {
+            if (isVisualElementPositionCoordinates(option)) {
+                if(option.x)
+                    posX = option.x;
+                if(option.y)
+                    posY = option.y;
+            } else if (isVisualElementPositionAlignment(option)) {
+                // Rmove \" from alignmentX and alignmentY
+                option.alignmentX = option.alignmentX?.replace(/"/g, '');
+                option.alignmentY = option.alignmentY?.replace(/"/g, '');
+                if(option.alignmentX){
+                    if(option.alignmentX === 'center'){
+                        posX = `"center"`;
+                    }
+                    if(option.alignmentX === 'left'){
+                        posX = 0;
+                    }
+                    if(option.alignmentX === 'right'){
+                        posX = 1920 - bgSizeX;
+                    }
                 }
-                if(option.alignmentx === 'left'){
-                    posX = 0;
-                }
-                if(option.alignmentx === 'right'){
-                    posX = 1920 - bgSizeX;              // on va surement avoir un problème ici
-                }
-            }
-            if(option.alignmenty){
-                if(option.alignmenty === 'center'){
-                    posY = `"center"`;
-                }
-                if(option.alignmenty === 'top'){
-                    posY = 0;
-                }
-                if(option.alignmenty === 'bottom'){
-                    posY = 1080 - bgSizeY;              // on va surement avoir un problème ici
+                if(option.alignmentY){
+                    if(option.alignmentY === 'center'){
+                        posY = `"center"`;
+                    }
+                    if(option.alignmentY === 'top'){
+                        posY = 0;
+                    }
+                    if(option.alignmentY === 'bottom'){
+                        posY = 1080 - bgSizeY;
+                    }
                 }
             }
         }
@@ -103,7 +106,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
     
     text.options.forEach(applyOption);
     
-    if (text.type === 'subtitle') {
+    if (isSubtitle(text)) {
         posY = 400;
         posX = `"center"`
     }
@@ -114,7 +117,6 @@ function compileOptionsToTextClip(text: TextualElement): string {
         font="${font}",
         font_size=${fontSize},
         color="${fontColor}",
-        text_align="${align}",
         size=(${bgSizeX}, ${bgSizeY}))
     `.trim().replace(/\s+/g, ' ');
     

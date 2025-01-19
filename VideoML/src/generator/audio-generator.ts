@@ -8,7 +8,7 @@ export function populateAudioElements(audioElements: AudioElement[], groupAudioO
 
         // This list can have duplicates
         const mergedOptions = [
-            ...(audio.audioOptions || []), // Video options
+            ...(audio.options || []), // Video options
             ...relatedGroupOptions.map((groupOption) => groupOption.options).flat(), // Group options
         ];
 
@@ -25,7 +25,7 @@ export function populateAudioElements(audioElements: AudioElement[], groupAudioO
         }, new Map<string, AudioOption>());
 
         // Map to array and sort for some special cases
-        audio.audioOptions = Array.from(uniqueOptionMap.values()).sort((a, b) => {
+        audio.options = Array.from(uniqueOptionMap.values()).sort((a, b) => {
             const order = ['AudioVolume', 'AudioFadeIn', 'AudioFadeOut', 'AudioStereoVolume'];
             return order.indexOf(a.$type) - order.indexOf(b.$type);
         });
@@ -41,7 +41,7 @@ export function compileAudio(audio: AudioElement, fileNode: CompositeGeneratorNo
     else if (isAudioExtract(audio)) {
         compileAudioExtract(audio, fileNode);
     }
-    audio.audioOptions.forEach((option) => {
+    audio.options.forEach((option) => {
         if (isAudioOption(option)) {
             compileAudioEffect(option, audio.name, fileNode)
         }

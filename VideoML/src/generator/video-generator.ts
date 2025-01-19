@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementSize, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
+import { GroupOptionVideo, isVideoBrightness, isVideoContrast, isVideoExtract, isVideoOpacity, isVideoOriginal, isVideoRotation, isVideoSaturation, isVideoScale, isVideoTransition, isVisualElementOption, isVisualElementPosition, isVisualElementPositionAlignment, isVisualElementPositionCoordinates, isVisualElementSize, isVisualElementSizePixels, isVisualElementSizeResolution, VideoElement, VideoExtract, VideoOption, VideoOriginal, VisualElementOption } from "../language-server/generated/ast.js";
 import { helperTimeToSeconds } from "../lib/helper.js";
 
 export function populateVideoElements(videoElements: VideoElement[], groupVideoOptions: GroupOptionVideo[]): VideoElement[] {
@@ -8,7 +8,7 @@ export function populateVideoElements(videoElements: VideoElement[], groupVideoO
 
         // This list can have duplicates
         const mergedOptions = [
-            ...(video.videoOption || []), // Video options
+            ...(video.options || []), // Video options
             ...relatedGroupOptions.map((groupOption) => groupOption.options).flat(), // Group options
         ];
 
@@ -33,7 +33,7 @@ export function populateVideoElements(videoElements: VideoElement[], groupVideoO
         }, new Map<string, VideoOption>());
 
         // Map to array and sort for some special cases
-        video.videoOption = Array.from(uniqueOptionMap.values()).sort((a, b) => {
+        video.options = Array.from(uniqueOptionMap.values()).sort((a, b) => {
             const order = ['VideoResolution', 'VisualElementSize', 'VisualElementPosition'];
             return order.indexOf(a.$type) - order.indexOf(b.$type);
         });
@@ -50,7 +50,7 @@ export function compileVideo(video: VideoElement, fileNode: CompositeGeneratorNo
         compileVideoExtract(video, fileNode);
     }
     // Add the video options
-    video.videoOption?.forEach((option) => {
+    video.options?.forEach((option) => {
         compileVideoOption(option, video, fileNode);
     });
 }
@@ -158,34 +158,40 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
     if (isVisualElementPosition(option)) {
         let x: String | Number = 0;
         let y: String | Number = 0;
-        if (option.x)
-            x = option.x;
-        if (option.y)
-            y = option.y;
-        if (option.alignmentx === 'center')
-            x = `'center'`;
-        if (option.alignmenty === 'center')
-            y = `'center'`;
-        if (option.alignmentx === 'right'){
-            x = 1920 - (getResolution(video.videoOption.find(isVisualElementSize)?.resolution||'')?.width || video.videoOption.find(isVisualElementSize)?.width || 0);
+        if (isVisualElementPositionCoordinates(option)) {
+            if (option.x)
+                x = option.x;
+            if (option.y)
+                y = option.y;
+        } else if (isVisualElementPositionAlignment(option)) {
+            // Rmove \" from alignmentX and alignmentY
+            option.alignmentX = option.alignmentX?.replace(/"/g, '');
+            option.alignmentY = option.alignmentY?.replace(/"/g, '');
+            if (option.alignmentX === 'center')
+                x = `'center'`;
+            if (option.alignmentY === 'center')
+                y = `'center'`;
+            if (option.alignmentX === 'right'){
+                x = 1920 - (getResolution(video.options.find(isVisualElementSizeResolution)?.resolution||'')?.width || video.options.find(isVisualElementSizePixels)?.width || 0);
+            }
+            if (option.alignmentX === 'left')
+                x = 0;
+            if (option.alignmentY === 'bottom')
+                y = 1080 - (getResolution(video.options.find(isVisualElementSizeResolution)?.resolution||'')?.height || video.options.find(isVisualElementSizePixels)?.height || 0);
+            if (option.alignmentY === 'top')
+                y = 0;
         }
-        if (option.alignmentx === 'left')
-            x = 0;
-        if (option.alignmenty === 'bottom')
-            y = 1080 - (getResolution(video.videoOption.find(isVisualElementSize)?.resolution||'')?.height || video.videoOption.find(isVisualElementSize)?.height || 0);
-        if (option.alignmenty === 'top')
-            y = 0;
         fileNode.append(
             `# Apply position effect
 ${video.name} = ${video.name}.with_position((${x},${y}))`, NL);
     }
     if (isVisualElementSize(option)) {
-        if(option.width && option.height){
+        if(isVisualElementSizePixels(option) && option.width && option.height){
         fileNode.append(
             `# Apply size effect
 ${video.name} = ${video.name}.resized((${option.width},${option.height}))`, NL);
         }
-        if(option.resolution){
+        if(isVisualElementSizeResolution(option) && option.resolution){
             const resolution = getResolution(option.resolution);
             fileNode.append(
                 `# Apply resolution effect

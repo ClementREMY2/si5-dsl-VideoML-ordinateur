@@ -61,7 +61,7 @@ export function createUserConfig(config: ClassicConfig): UserConfig {
 export function getMonarchGrammar() {
     return {
     keywords: [
-        'above','alignment','apply','as','at','audio','background','brightness','by','contrast','delayed','end','extract','fadeIn','fadeOut','fadein','fadeout','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','painting','position','project','right','rotation','saturation','scale','shadow','size','start','stereo','subtitle','text','to','under','video','volume'
+        'apply','as','at','audio','background','brightness','by','contrast','delay','delayed','extract','fadeIn','fadeOut','font','fontcolor','fontsize','for','from','left','load','normalize','of','opacity','options','position','project','repetitions','right','rotation','saturation','scale','size','stereo','subtitle','text','to','video','volume'
     ],
     operators: [
         ',',':'
@@ -70,14 +70,16 @@ export function getMonarchGrammar() {
 
     tokenizer: {
         initial: [
+            { regex: /(fadeout|fadein)/, action: {"token":"VIDEO_TRANSITION_TYPE"} },
+            { regex: /(((("center"|"left")|"right")|"top")|"bottom")/, action: {"token":"ALIGNMENT"} },
+            { regex: /(start|end)/, action: {"token":"RELATIVE_PLACEMENT"} },
+            { regex: /(above|under)/, action: {"token":"LAYER_PLACEMENT"} },
             { regex: /#[0-9]+/, action: {"token":"string"} },
-            { regex: /fade_in/, action: {"token":"string"} },
             { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[-+][0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/, action: {"token":"string"} },
             { regex: /[0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/, action: {"token":"string"} },
             { regex: /-?[0-9]*\.[0-9]+/, action: {"token":"number"} },
             { regex: /-?[0-9]+/, action: {"token":"number"} },
-            { regex: /(true|false)/, action: {"token":"boolean"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },
             { include: '@whitespace' },
             { regex: /@symbols/, action: { cases: { '@operators': {"token":"operator"}, '@default': {"token":""} }} },

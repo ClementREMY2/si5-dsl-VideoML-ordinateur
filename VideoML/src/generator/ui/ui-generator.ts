@@ -10,6 +10,7 @@ import {
     isAudioOriginal,
     isAudioExtract,
     isTextualElement,
+    isSubtitle,
 } from '../../language-server/generated/ast.js';
 import { helperTimeToSeconds, getLayer, getTimelineElementTextualDuration, helperOffsetTimeToSeconds } from '../../lib/helper.js';
 import { TimelineElementInfo } from './types.js';
@@ -70,7 +71,7 @@ function compileTimelineElement(te: TimelineElement): TimelineElementInfo {
             duration: helperTimeToSeconds(getTimelineElementTextualDuration(te.duration)),
             textElement: {
                 name: te.element.ref.name,
-                isSubtitle: te.element.ref.type==='subtitle',
+                isSubtitle: isSubtitle(te.element.ref),
             },
             layer: getLayer(te),
             ...(compileTimelineElementPlacement(te)),

@@ -3,80 +3,21 @@ grammar VideoMl
 entry VideoProject:
 	'video' 'project' outputName=STRING
 
-        (elements+=Element)+
+    (elements+=Element)+
 
 	(groupOptions+=GroupOption)*
 
-	(timelineElements+=TimelineElement)+
-
-	(videoTransitions+=VideoTransition)*;
+	(timelineElements+=TimelineElement)+;
 
 
+// Element
 Element:
 	(VideoElement | TextualElement | AudioElement) 'as' name=ID;
 
-
-AudioElement:
-	(AudioOriginal | AudioExtract)
-	audioOptions+=AudioOption*;
-
-AudioOriginal:
-	'load' 'audio' filePath=STRING;
-
-AudioExtract:
-	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
-
-GroupOption:
-	'options' (GroupOptionText | GroupOptionVideo | GroupOptionAudio);
-
-GroupOptionText:
-	options+=(TextOption) (',' options+=TextOption)* 'apply' 'to' (elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*)?;
-
-GroupOptionVideo:
-	options+=VideoOption (',' options+=VideoOption)* 'apply' 'to' (elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*)?; // TODO changer element pour targets ou changer lucid chart
-
-GroupOptionAudio:
-	options+=(AudioOption) (',' options+=AudioOption)* 'apply' 'to' (elements+=[AudioElement:ID] (',' elements+=[AudioElement:ID])*)?;	
-
-VisualElementOption:
-	(VisualElementBackground | VisualElementPosition | VisualElementSize);
-
-VisualElementBackground:
-	'background' color=STRING;
-
-VisualElementPosition:
-	'position' (x=INT | alignmentx=STRING)',' (y=INT | alignmenty=STRING); // est ce qu'on se fait un enum pour les positions ?
-
-VisualElementSize:
-	'size' (width=INT ',' height=INT | resolution=STRING);
-
-TextSpecificOption:
-	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
-
-TextFontSize:
-	'fontsize' size=INT;
-
-TextFontColor:
-	'fontcolor' color=STRING;
-
-TextFont:
-	'font' name=STRING;
-
-TextShadow:
-	'shadow' color=STRING;
-
-TextAligment:
-	'alignment' alignment=STRING;
-
-TextualElement:
-	type=('text' | 'subtitle') text=STRING options+=TextOption*;
-
-TextOption:
-	(TextSpecificOption | VisualElementOption);
-
+// Video element
 VideoElement:
 	(VideoOriginal | VideoExtract)
-	videoOption+=VideoOption*;
+	(options+=VideoOption)*;
 
 VideoOriginal:
 	'load' 'video' filePath=STRING;
@@ -84,20 +25,69 @@ VideoOriginal:
 VideoExtract:
 	'extract' 'video' source=[VideoElement:ID] 'from' start=TIME 'to' end=TIME;
 
-TimelineElement:
-	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('for' duration=TIME)? (layerPosition=LayerPosition)?;
+// Textual element
+TextualElement:
+	(Text | Subtitle) text=STRING
+	(options+=TextOption)*;
 
-FixedTimelineElement:
-	'at' startAt=TIME;
+Subtitle:
+	{infer Subtitle}
+	'subtitle';
 
-RelativeTimelineElement:
-	'at' place=('start' | 'end') 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+Text:
+	{infer Text}
+	'text';
 
-LayerPosition:
-	position=('above' | 'under') relativeTo=[TimelineElement:HASHTAG_ID];
+// Audio element
+AudioElement:
+	(AudioOriginal | AudioExtract)
+	(options+=AudioOption)*;
+
+AudioOriginal:
+	'load' 'audio' filePath=STRING;
+
+AudioExtract:
+	'extract' 'audio' source=[AudioElement:ID] 'from' start=TIME 'to' end=TIME;
+
+// Group options
+GroupOption:
+	'options' (GroupOptionText | GroupOptionVideo | GroupOptionAudio);
+
+GroupOptionText:
+	options+=TextOption (',' options+=TextOption)* 'apply' 'to' elements+=[TextualElement:ID] (',' elements+=[TextualElement:ID])*;
+
+GroupOptionVideo:
+	options+=VideoOption (',' options+=VideoOption)* 'apply' 'to' elements+=[VideoElement:ID] (',' elements+=[VideoElement:ID])*;
+
+GroupOptionAudio:
+	options+=AudioOption (',' options+=AudioOption)* 'apply' 'to' elements+=[AudioElement:ID] (',' elements+=[AudioElement:ID])*;
+
+// Visual element options (used by VideoOption and TextOption)
+VisualElementOption:
+	(VisualElementBackground | VisualElementPosition | VisualElementSize);
+
+VisualElementBackground:
+	'background' color=STRING;
+
+VisualElementPosition:
+	'position' (VisualElementPositionAlignment | VisualElementPositionCoordinates);
+
+VisualElementPositionAlignment:
+	alignmentX=ALIGNMENT ',' alignmentY=ALIGNMENT;
+
+VisualElementPositionCoordinates:
+	x=INT ',' y=INT;
+
+VisualElementSize:
+	'size' (VisualElementSizePixels | VisualElementSizeResolution);
+
+VisualElementSizePixels:
+	width=INT ',' height=INT;
+
+VisualElementSizeResolution:
+	resolution=STRING;
 
 // Video options
-
 VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
@@ -122,15 +112,32 @@ VideoScale:
 VideoRotation:
 	'rotation' rotation=INT;
 
-// Video transition
-
 VideoTransition:
-     type=('fadeout' | 'fadein');
+     type=VIDEO_TRANSITION_TYPE;
 
-// Audio options 
+// Text options
+TextOption:
+	(TextSpecificOption | VisualElementOption);
 
+TextSpecificOption:
+	TextFontSize | TextFontColor | TextFont;
+
+TextFontSize:
+	'fontsize' size=INT;
+
+TextFontColor:
+	'fontcolor' color=STRING;
+
+TextFont:
+	'font' name=STRING;
+
+// Audio options
 AudioOption:
-	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | AudioDelay | 'normalize');
+	(AudioFadeIn | AudioFadeOut | AudioVolume | AudioStereoVolume | AudioDelay | AudioNormalize);
+
+AudioNormalize:
+	{infer AudioNormalize}
+	'normalize';
 
 AudioDelay:
 	'delay' delay=FLOAT ',' 'repetitions' repetitions=INT;
@@ -147,13 +154,34 @@ AudioVolume:
 AudioStereoVolume:
 	'stereo' 'left' left=FLOAT 'right' right=FLOAT;
 
+// Timeline
+TimelineElement:
+	name=HASHTAG_ID':' element=[Element:ID] (FixedTimelineElement | RelativeTimelineElement)? ('for' duration=TIME)? (layerPosition=LayerPosition)?;
+
+FixedTimelineElement:
+	'at' startAt=TIME;
+
+RelativeTimelineElement:
+	'at' place=RELATIVE_PLACEMENT 'of' relativeTo=[TimelineElement:HASHTAG_ID] ('delayed' 'by' offset=RELATIVE_TIME)?;
+
+LayerPosition:
+	position=LAYER_PLACEMENT relativeTo=[TimelineElement:HASHTAG_ID];
+
+//************* ENUMS **************** 
+
+terminal VIDEO_TRANSITION_TYPE: 'fadeout' | 'fadein';
+
+terminal ALIGNMENT: '"center"' | '"left"' | '"right"' | '"top"' | '"bottom"';
+
+terminal RELATIVE_PLACEMENT: 'start' | 'end';
+
+terminal LAYER_PLACEMENT: 'above' | 'under';
+
 //************* TERMINALS **************** 
 
 hidden terminal WS: /\s+/;
 // Hashtag ID forma
 terminal HASHTAG_ID returns string: /#[0-9]+/;
-// FADE_IN
-terminal FADEIN returns string: 'fade_in';
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME
@@ -164,8 +192,6 @@ terminal TIME returns string: /[0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/;
 terminal FLOAT returns number: /-?[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
 terminal INT returns number: /-?[0-9]+/;
-// BOOLEAN format: true or false
-terminal BOOLEAN returns boolean: 'true' | 'false';
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 
