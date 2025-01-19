@@ -33,16 +33,15 @@ export function populateTextualElements(textualElements: TextualElement[], group
     });
 }
 
-export function compileTextualElement(text: TextualElement, fileNode: CompositeGeneratorNode, groupOption?: GroupOptionText) {
+export function compileTextualElement(text: TextualElement, fileNode: CompositeGeneratorNode) {
         fileNode.append(
             `
 # Load the text clip, to apply new effects
-${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text, text.name, groupOption?.options)}
+${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text)}
             `, NL);
 }
 
-function compileOptionsToTextClip(text: TextualElement, elementName: string, options?: TextOption[]): string {
-    console.log("options: " + options)
+function compileOptionsToTextClip(text: TextualElement): string {
     let bgColor = 'no';
     let bgSizeX = 1920;
     let bgSizeY = 1080;
@@ -59,6 +58,7 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
     const applyOption = (option: TextOption) => {
         if (isTextEffect(option)) {
             effect = true;
+            console.log("Effect setted to true");
         }
         if (isTextFont(option)) {
             font = fontDependingOnOS(option.name); 
@@ -106,7 +106,6 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
         }
     };
 
-    options?.forEach(applyOption);
     text.options?.forEach(applyOption);
 
     if (text.type === 'subtitle') {
@@ -124,6 +123,8 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
         size=(${bgSizeX}, ${bgSizeY}))
     `.trim().replace(/\s+/g, ' ');
 
+
+    console.log("what is the effect setted to"+effect);
     if (effect === false) {
         return `${optionsString}.with_position((${posX}, ${posY}))`;
     }
@@ -131,7 +132,7 @@ function compileOptionsToTextClip(text: TextualElement, elementName: string, opt
     let effectText;
     let boolEffect = false;
 
-    options?.forEach(option => {
+    text.options?.forEach(option => {
         if (isTextEffect(option)) {
             effectText = option.type;
             boolEffect = true;
@@ -150,7 +151,7 @@ def find_objects_custom(mask):
 
 
 screensize = (1920, 1080)
-cvc = moviepy.CompositeVideoClip( [${elementName}.with_position('center')], size = screensize)
+cvc = moviepy.CompositeVideoClip( [${text.name}.with_position('center')], size = screensize)
 
 rotMatrix = lambda a: np.array( [[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]] )
 `};})
@@ -206,7 +207,7 @@ def moveLetters(letters, funcpos, original_clip):
 
 animated_letters = moveLetters(letters, ${effectText}, title1)
 
-${elementName} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY}))
+${text.name} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY}))
 `
 }
     return optionsString;
