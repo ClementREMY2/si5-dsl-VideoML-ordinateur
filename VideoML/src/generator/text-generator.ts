@@ -41,6 +41,10 @@ ${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text)}
             `, NL);
 }
 
+let alreadyTextEffectCompiled = false;
+let alreadyFallingTextEffectCompiled = false;
+let alreadyGroupingTextEffectCompiled = false;
+
 function compileOptionsToTextClip(text: TextualElement): string {
     let bgColor = 'no';
     let bgSizeX = 1920;
@@ -133,6 +137,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
         if (isTextEffect(option)) {
             effectText = option.type;
             boolEffect = true;
+            if (alreadyTextEffectCompiled === false) {
             optionsString += `
 import numpy as np
 from scipy.ndimage import label, find_objects
@@ -151,9 +156,9 @@ screensize = (1920, 1080)
 cvc = moviepy.CompositeVideoClip( [${text.name}.with_position('center')], size = screensize)
 
 rotMatrix = lambda a: np.array( [[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]] )
-`};})
+`}};})
 
-if (effectText === 'grouping') {
+if (effectText === 'grouping' && alreadyGroupingTextEffectCompiled === false) {
     optionsString += `
 def grouping(screenpos, i, nletters):
     d = lambda t : 1.0/(0.3 + t**8)
@@ -164,9 +169,10 @@ def grouping(screenpos, i, nletters):
          
     return lambda t: screenpos + 400 * d(t)*rotMatrix(0.5 * d(t)*a).dot(v)
 `
+    alreadyGroupingTextEffectCompiled = true;
 }
 
-else if (effectText === 'falling') {
+else if (effectText === 'falling' && alreadyFallingTextEffectCompiled === false) {
     optionsString += `
 def falling(screenpos, i, nletters):
     v = np.array([0, -1])
@@ -175,9 +181,10 @@ def falling(screenpos, i, nletters):
      
     return lambda t: screenpos + v * 400 * d(t-0.15 * i)
 `
+    alreadyFallingTextEffectCompiled = true;
 }
 
-if (boolEffect) {
+if (boolEffect && alreadyTextEffectCompiled === false) {
 optionsString += `
 binary_mask = title1.mask.get_frame(0)
 letters = find_objects_custom(binary_mask)
@@ -206,6 +213,7 @@ animated_letters = moveLetters(letters, ${effectText}, title1)
 
 ${text.name} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY}))
 `
+    alreadyTextEffectCompiled = true;
 }
     return optionsString;
 }

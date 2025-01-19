@@ -57,6 +57,7 @@ import {
     TextOption,
     VideoOption,
     AudioOption,
+    isTextEffect,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -636,7 +637,6 @@ export class VideoMlValidator {
         if (te.duration && !isTextualElement(te.element.ref)) {
             accept('error', 'Only textual elements can have duration', { node: te, property: 'duration' });
         }
-    
     }
 
     checkTimelineElementRelativePlacementOrder(element: RelativeTimelineElement, accept: ValidationAcceptor): void {
