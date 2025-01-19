@@ -103,16 +103,20 @@ export function getMonarchGrammar() {
  * Retrieves the program code to display, either a default or from local storage
  */
 export function getMainCode() {
-    let mainCode = `
-video project "output"
+    let mainCode = `video project "resultat_scenario_1"
 
-load video "put_a_real_path_here.mp4" in video1
-load video "put_a_real_path_here2.mp4" in video2
+// Update the paths below to point to your own video files or use the file input to upload them
+load video "path_to_video_here" as video1
+load video "path_to_video_here" as video2
 
-add video1 as first to timeline at 00:00
-add video1 as second to timeline at 00:15 in layer 5
-add video2 as third to timeline at start of first delayed by +00:05
-    `;
+text "Nous étions en vacances en Italie! :)" as textDebut
+text "Merci d'avoir regardé nos vidéos de vacances! :)" as textFin
+
+#1: textDebut for 00:10
+#2: video1
+#3: video2
+#4: textFin for 00:15
+`;
     
     // seek to restore any previous code from our last session
     if (window.localStorage) {
