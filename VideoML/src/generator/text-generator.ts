@@ -58,7 +58,6 @@ function compileOptionsToTextClip(text: TextualElement): string {
     const applyOption = (option: TextOption) => {
         if (isTextEffect(option)) {
             effect = true;
-            console.log("Effect setted to true");
         }
         if (isTextFont(option)) {
             font = fontDependingOnOS(option.name); 
@@ -123,8 +122,6 @@ function compileOptionsToTextClip(text: TextualElement): string {
         size=(${bgSizeX}, ${bgSizeY}))
     `.trim().replace(/\s+/g, ' ');
 
-
-    console.log("what is the effect setted to"+effect);
     if (effect === false) {
         return `${optionsString}.with_position((${posX}, ${posY}))`;
     }
