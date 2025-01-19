@@ -2,12 +2,11 @@
 **/generated
 **/out
 
-!VideoML/generated
-
 .DS_Store
 
-VideoML/syntaxes
+syntaxes
 
 # Files generated for video
-VideoML/ui/video.py
-VideoML/ui/*.mp4
+ui/video.py
+ui/*.mp4
+ui/*.mp3
