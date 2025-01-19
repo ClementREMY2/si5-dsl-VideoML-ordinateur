@@ -30,10 +30,10 @@ extract audio audio_partie2 from 00:00 to 01:03 volume 0.3 fadeOut 3 as audio_cl
 
 text "Partie 3 - fonctionnalités de montage vidéos (commentaires par audio)" font "Calibri" as text_partie3
 
-subtitle "NB : les options audios ne sont pas explicitement présentées en vidéo, cependant..." as subtitle_option_audio1
-subtitle "Vous avez pu constaté du changement de volume" as subtitle_option_audio2
-subtitle "Et vous constaterez une répétition d'un même audio, à intervalle régulier dans la partie 3" as subtitle_option_audio3
-subtitle "C'est ainsi que sont présentées les options audios :)" as subtitle_option_audio4
+subtitle "NB : les options audios ne sont pas explicitement présentées en vidéo, cependant..." fontsize 30 as subtitle_option_audio1
+subtitle "Vous avez pu constaté du changement de volume entre les audios..." fontsize 30 as subtitle_option_audio2
+subtitle "Et vous constaterez une répétition d'un même audio, à intervalle régulier dans la partie 3" fontsize 30 as subtitle_option_audio3
+subtitle "C'est ainsi que sont présentées les options audios :)" fontsize 30 as subtitle_option_audio4
 
 load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_validateurs_elements_options_partie3.mp4" as video_1_partie3
 
@@ -75,7 +75,7 @@ options stereo left 1.2 right 1.3 apply to audio_validateur_element_1
 options volume 1.5, fadeOut 3 apply to audio_validateur_element_2
 options fadeIn 2 apply to audio_validateur_element_3
 
-options brightness 2, scale 0.5 apply to video_clip_saturation_partie3
+options brightness 2, scale 0.5 apply to video_clip_brightness_and_scale_partie3
 options opacity 0.5 apply to video_clip_opacity_partie3
 options delay 5.0, repetitions 4 apply to audio_video_option2
 

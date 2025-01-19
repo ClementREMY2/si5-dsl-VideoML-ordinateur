@@ -122,12 +122,6 @@ else:
 # Apply saturation effect
 painting_effect = moviepy.video.fx.Painting(saturation=3, black=0.0)
 video_clip_saturation_partie3 = painting_effect.apply(video_clip_saturation_partie3)
-# Apply brightness effect
-multiply_effect = moviepy.video.fx.MultiplyColor(factor=2)
-video_clip_saturation_partie3 = multiply_effect.apply(video_clip_saturation_partie3)
-# Apply resolution effect
-resize_effect = moviepy.video.fx.Resize(0.5)
-video_clip_saturation_partie3 = resize_effect.apply(video_clip_saturation_partie3)
 # Extract a subclip from the video
 video_clip_contraste_partie3 = video_1_partie3.subclipped(0, 5)
 
@@ -149,6 +143,12 @@ if video_clip_brightness_and_scale_partie3.size[0]/video_clip_brightness_and_sca
 else:
     video_clip_brightness_and_scale_partie3 = video_clip_brightness_and_scale_partie3.with_position("center", "center")
 
+# Apply brightness effect
+multiply_effect = moviepy.video.fx.MultiplyColor(factor=2)
+video_clip_brightness_and_scale_partie3 = multiply_effect.apply(video_clip_brightness_and_scale_partie3)
+# Apply resolution effect
+resize_effect = moviepy.video.fx.Resize(0.5)
+video_clip_brightness_and_scale_partie3 = resize_effect.apply(video_clip_brightness_and_scale_partie3)
 # Extract a subclip from the video
 video_clip_opacity_partie3 = video_1_partie3.subclipped(0, 5)
 
@@ -255,19 +255,19 @@ text_partie3 = moviepy.TextClip(text="Partie 3 - fonctionnalités de montage vid
             
 
 # Load the text clip, to apply new effects
-subtitle_option_audio1 = moviepy.TextClip(text="NB : les options audios ne sont pas explicitement présentées en vidéo, cependant...", font="C:/Windows/Fonts/Arial.ttf", font_size=60, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
+subtitle_option_audio1 = moviepy.TextClip(text="NB : les options audios ne sont pas explicitement présentées en vidéo, cependant...", font="C:/Windows/Fonts/Arial.ttf", font_size=30, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
             
 
 # Load the text clip, to apply new effects
-subtitle_option_audio2 = moviepy.TextClip(text="Vous avez pu constaté du changement de volume", font="C:/Windows/Fonts/Arial.ttf", font_size=60, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
+subtitle_option_audio2 = moviepy.TextClip(text="Vous avez pu constaté du changement de volume entre les audios...", font="C:/Windows/Fonts/Arial.ttf", font_size=30, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
             
 
 # Load the text clip, to apply new effects
-subtitle_option_audio3 = moviepy.TextClip(text="Et vous constaterez une répétition d'un même audio, à intervalle régulier dans la partie 3", font="C:/Windows/Fonts/Arial.ttf", font_size=60, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
+subtitle_option_audio3 = moviepy.TextClip(text="Et vous constaterez une répétition d'un même audio, à intervalle régulier dans la partie 3", font="C:/Windows/Fonts/Arial.ttf", font_size=30, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
             
 
 # Load the text clip, to apply new effects
-subtitle_option_audio4 = moviepy.TextClip(text="C'est ainsi que sont présentées les options audios :)", font="C:/Windows/Fonts/Arial.ttf", font_size=60, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
+subtitle_option_audio4 = moviepy.TextClip(text="C'est ainsi que sont présentées les options audios :)", font="C:/Windows/Fonts/Arial.ttf", font_size=30, color="white", text_align="left", size=(1920, 1080)).with_position(("center", 400))
             
 
 # Load the text clip, to apply new effects
