@@ -280,6 +280,11 @@ export class VideoMlValidator {
                     this.checkAudioOption(option, accept);
                 } else if (isGroupOptionText(groupOption)) {
                     this.checkTextOption(option, accept);
+                    if (isGroupOptionText(groupOption)) {
+                        if (groupOption.elements.length > 1 && groupOption.options.forEach(option => isTextEffect(option))) {
+                            accept('error', 'Text effect can only be applied to one element', { node: groupOption });
+                        }
+                    }
                 }
             });
         
