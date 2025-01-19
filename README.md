@@ -1,18 +1,24 @@
 # VideoML
 
 #### Team Ordinateur
-Membres : 
+Members : 
   - Arnaud AVOCAT GROS
   - Alexis MALOSSE
   - Clément REMY
   - Samuel BOIS
 
-### Features à la carte choisies : 
+### Features "à la carte" implemented : 
   - Support for Audio
   - Support for stacking and transitions between clips
 
 ### Add-on : 
-Application de bureau Electron intégrant l'éditeur de code avec validateur, affichage de d'une timeline visuelle et génération de vidéo.
+Desktop application, made with Electron, featuring code editor with validator, visual timeline display and video generation.
+
+### Prerequisites
+
+If you want to use the project, you'll need at least :
+- Python 3 executable on your machine
+- Node, version 18 or higher
 
 ## What's in the folder
 
