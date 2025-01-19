@@ -1,0 +1,137 @@
+video project "video_presentation_finale"
+
+text "Bienvenue dans cette vidéo de présentation du projet VideoML! :)" fontcolor "black" background "white" as text_intro
+text "Partie 1 - Comment installer et utiliser le projet? (commentaires avec webcam)" fontsize 40 fontcolor "black" background "white" as text_partie1
+
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_partie1.mp4" as video_partie1
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/webcam_partie1.mp4" size "webcam" position "right", "top" as webcam_partie1
+
+text "Partie 2 - Présentation et utilisation de la UI (commentaires textuels)" background "blue" fontcolor "yellow" as text_partie2
+
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_partie2.mp4" as video_partie2
+
+text "En arrivant sur la UI, on remarque qu'il nous manque la vidéo webcam partie 1..." fontsize 30 as text_1_partie2
+subtitle "Heureusement, nous pouvons ajouter ce fichier en cliquant ou en glissant/déposant juste au dessus" fontsize 30 as subtitle_1_partie2
+subtitle "Et voilà! la vidéo a été chargée, et on la voit apparaître sur la timeline!" fontsize 30 as subtitle_2_partie2
+text "Il est également possible d'étendre la timeline pour pouvoir voir le nom des éléments trop petits" fontsize 30 as text_2_partie2
+text "Voyons désormais la partie génération de code python" as text_3_partie2
+subtitle "Le code correspondant a été généré. Mais, que se passe t-il si je décide de supprimer une ligne de mon scénario?" fontsize 25 as subtitle_3_partie2
+text "On constate que le code python est mis à jour!" as text_4_partie2
+subtitle "!!! INCROYABLE !!!" font "Gadugi" fontsize 80 as subtitle_4_partie2
+text "Si on remet la ligne du scénario, le code se remet à jour." as text_5_partie2
+text "Regardons désormais la partie vidéo" as text_6_partie2
+subtitle "Rien n'a encore été généré, il faut cliquer sur le bouton generate" as subtitle_5_partie2
+text "La génération se lance. Cela peut prendre du temps..." as text_7_partie2
+text "Bien, ça se lance, mais nous ne regarderons pas toute la génération. Passons à la suite..." fontsize 30 as text_8_partie2
+subtitle "Musique : One piece : We did it! Party" as subtitle_6_partie2
+
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_partie2.mp3" as audio_partie2
+extract audio audio_partie2 from 00:00 to 01:03 volume 0.3 fadeOut 3 as audio_clip_partie_2
+
+text "Partie 3 - fonctionnalités de montage vidéos (commentaires par audio)" font "Calibri" as text_partie3
+
+subtitle "NB : les options audios ne sont pas explicitement présentées en vidéo, cependant..." as subtitle_option_audio1
+subtitle "Vous avez pu constaté du changement de volume" as subtitle_option_audio2
+subtitle "Et vous constaterez une répétition d'un même audio, à intervalle régulier dans la partie 3" as subtitle_option_audio3
+subtitle "C'est ainsi que sont présentées les options audios :)" as subtitle_option_audio4
+
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_validateurs_elements_options_partie3.mp4" as video_1_partie3
+
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_intro_partie3.mp3" as audio_intro_partie3
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_validateurs_elements_options1.mp3" as audio_validateur_element_1
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_validateurs_elements_options2.mp3" as audio_validateur_element_2
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_validateurs_elements_options3.mp3" as audio_validateur_element_3
+
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_validateurs_timeline_partie3.mp4" as video_2_partie3
+
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_validateurs_timeline.mp3" as audio_validateur_timeline
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_video_option1.mp3" as audio_video_option1
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_video_option2.mp3" as audio_video_option2
+
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_generation1.mp4" as video_generation_1
+load video "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/video_generation2.mp4" as video_generation_2
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_generation1.mp3" as audio_generation_1
+load audio "/Users/clrem/Downloads/scenarios_resources/video_presentation/resources/audio_generation2.mp3" as audio_generation_2
+
+subtitle "Vidéo clip saturé" as subtitle_saturate
+subtitle "Vidéo clip contrasté" as subtitle_contrast
+subtitle "Vidéo clip lumineux et scalé" as subtitle_bright_scale
+subtitle "Vidéo clip opaque" as subtitle_opacity
+subtitle "Vidéo clip tourné à 180°" as subtitle_rotate
+text "Merci pour votre attention! :)" as texteFin
+
+extract video video_1_partie3 from 00:00 to 00:05 as video_clip_normal_partie3
+extract video video_1_partie3 from 00:00 to 00:05 saturation 3.0 as video_clip_saturation_partie3
+extract video video_1_partie3 from 00:00 to 00:05 contrast 5.0 as video_clip_contraste_partie3
+extract video video_1_partie3 from 00:00 to 00:05 as video_clip_brightness_and_scale_partie3
+extract video video_1_partie3 from 00:00 to 00:05 as video_clip_opacity_partie3
+extract video video_1_partie3 from 00:00 to 00:05 rotation 180 as video_clip_rotate_partie3
+
+extract video video_generation_2 from 00:35 to 00:50 as video_clip_generation_2
+
+options fadein, fadeout apply to webcam_partie1
+
+options stereo left 1.2 right 1.3 apply to audio_validateur_element_1
+options volume 1.5, fadeOut 3 apply to audio_validateur_element_2
+options fadeIn 2 apply to audio_validateur_element_3
+
+options brightness 2, scale 0.5 apply to video_clip_saturation_partie3
+options opacity 0.5 apply to video_clip_opacity_partie3
+options delay 5.0, repetitions 4 apply to audio_video_option2
+
+
+
+
+
+
+#1: text_intro
+#2: text_partie1
+#3: video_partie1
+#4: webcam_partie1 at start of #3 above #3
+#5: text_partie2 at end of #3
+#6: video_partie2
+#7: text_1_partie2 at start of #6 for 00:03 above #6
+#8: subtitle_1_partie2 for 00:04 above #6 
+#9: subtitle_2_partie2 above #6 
+#10: text_2_partie2 at end of #9 delayed by -00:02 for 00:10 above #9
+#11: text_3_partie2 above #6
+#12: subtitle_3_partie2 at end of #11 delayed by -00:02 for 00:06 above #9
+#13: text_4_partie2 above #6
+#14: subtitle_4_partie2 at start of #13 delayed by +00:01 above #9
+#15: text_5_partie2 for 00:03 above #6
+#16: text_6_partie2 above #6
+#17: subtitle_5_partie2 at start of #16 delayed by +00:03 for 00:07 above #16
+#18: text_7_partie2 for 00:08 above #6
+#19: text_8_partie2 for 00:07 above #6 
+#20: subtitle_6_partie2 at end of #18 for 00:07 above #18
+#21: audio_clip_partie_2 at start of #6 under #6
+#22: text_partie3 for 01:14
+#23: audio_intro_partie3 at start of #22 under #22
+#24: video_1_partie3 at end of #22
+#25: audio_validateur_element_1 at start of #24 under #24
+#26: audio_validateur_element_2  under #24
+#27: audio_validateur_element_3  under #24
+#28: video_2_partie3 
+#29: audio_validateur_timeline at start of #28 under #28
+#30: video_clip_normal_partie3 at end of #28
+#31: video_clip_saturation_partie3
+#32: video_clip_contraste_partie3
+#33: video_clip_brightness_and_scale_partie3
+#34: video_clip_opacity_partie3
+#35: video_clip_rotate_partie3
+#36: audio_video_option1 at start of #30 under #30
+#37: audio_video_option2 under #30
+#38: video_generation_1 at end of #35
+#39: video_clip_generation_2
+#40: audio_generation_1 at start of #38 under #38
+#41: audio_generation_2 under #38
+#42: subtitle_saturate at start of #31 above #31
+#43: subtitle_contrast at start of #32 above #32
+#44: subtitle_bright_scale at start of #33 above #33
+#45: subtitle_opacity at start of #34 above #34
+#46: subtitle_rotate at start of #35 above #35
+#47: subtitle_option_audio1 at end of #22 delayed by -00:15 for 00:04 above #22
+#48: subtitle_option_audio2 for 00:04 above #22
+#49: subtitle_option_audio3 for 00:04 above #22
+#50: subtitle_option_audio4 for 00:03 above #22
+#51: texteFin at end of #39 for 00:10 
