@@ -17,7 +17,7 @@ Desktop application, made with Electron, featuring code editor with validator, v
 ### Prerequisites
 
 If you want to use the project, you'll need at least :
-- Python 3 executable on your machine
+- Python 3 executable on your machine (accessible via the command "python3" on Linux/macOS and "py" on Windows)
 - Node, version 18 or higher
 
 ## What's in the folder
