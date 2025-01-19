@@ -8,7 +8,7 @@ export function populateVideoElements(videoElements: VideoElement[], groupVideoO
 
         // This list can have duplicates
         const mergedOptions = [
-            ...(video.videoOption || []), // Video options
+            ...(video.options || []), // Video options
             ...relatedGroupOptions.map((groupOption) => groupOption.options).flat(), // Group options
         ];
 
@@ -33,7 +33,7 @@ export function populateVideoElements(videoElements: VideoElement[], groupVideoO
         }, new Map<string, VideoOption>());
 
         // Map to array and sort for some special cases
-        video.videoOption = Array.from(uniqueOptionMap.values()).sort((a, b) => {
+        video.options = Array.from(uniqueOptionMap.values()).sort((a, b) => {
             const order = ['VideoResolution', 'VisualElementSize', 'VisualElementPosition'];
             return order.indexOf(a.$type) - order.indexOf(b.$type);
         });
@@ -50,7 +50,7 @@ export function compileVideo(video: VideoElement, fileNode: CompositeGeneratorNo
         compileVideoExtract(video, fileNode);
     }
     // Add the video options
-    video.videoOption?.forEach((option) => {
+    video.options?.forEach((option) => {
         compileVideoOption(option, video, fileNode);
     });
 }
@@ -172,12 +172,12 @@ function compileVisualElementOption(option: VisualElementOption, video: VideoEle
             if (option.alignmentY === 'center')
                 y = `'center'`;
             if (option.alignmentX === 'right'){
-                x = 1920 - (getResolution(video.videoOption.find(isVisualElementSizeResolution)?.resolution||'')?.width || video.videoOption.find(isVisualElementSizePixels)?.width || 0);
+                x = 1920 - (getResolution(video.options.find(isVisualElementSizeResolution)?.resolution||'')?.width || video.options.find(isVisualElementSizePixels)?.width || 0);
             }
             if (option.alignmentX === 'left')
                 x = 0;
             if (option.alignmentY === 'bottom')
-                y = 1080 - (getResolution(video.videoOption.find(isVisualElementSizeResolution)?.resolution||'')?.height || video.videoOption.find(isVisualElementSizePixels)?.height || 0);
+                y = 1080 - (getResolution(video.options.find(isVisualElementSizeResolution)?.resolution||'')?.height || video.options.find(isVisualElementSizePixels)?.height || 0);
             if (option.alignmentY === 'top')
                 y = 0;
         }

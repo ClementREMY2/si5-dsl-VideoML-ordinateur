@@ -644,8 +644,8 @@ export class VideoMlValidator {
     }
 
     checkVideoElement(element: VideoElement, accept: ValidationAcceptor): void {
-        if (element.videoOption) {
-            element.videoOption.forEach((option) => {
+        if (element.options) {
+            element.options.forEach((option) => {
                 this.checkVideoOption(option, accept);
             });
         }
@@ -711,8 +711,8 @@ export class VideoMlValidator {
 
     // Audio effects ************************************************************************************************
     checkAudioElement(element: AudioElement, accept: ValidationAcceptor): void {
-        if (element.audioOptions) {
-            element.audioOptions.forEach((option) => {
+        if (element.options) {
+            element.options.forEach((option) => {
                 this.checkAudioOption(option, accept);
             });
         }

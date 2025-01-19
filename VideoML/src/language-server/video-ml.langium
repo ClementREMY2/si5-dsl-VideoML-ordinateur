@@ -16,7 +16,7 @@ Element:
 
 AudioElement:
 	(AudioOriginal | AudioExtract)
-	(audioOptions+=AudioOption)*;
+	(options+=AudioOption)*;
 
 AudioOriginal:
 	'load' 'audio' filePath=STRING;
@@ -90,7 +90,7 @@ TextOption:
 
 VideoElement:
 	(VideoOriginal | VideoExtract)
-	(videoOption+=VideoOption)*;
+	(options+=VideoOption)*;
 
 VideoOriginal:
 	'load' 'video' filePath=STRING;
