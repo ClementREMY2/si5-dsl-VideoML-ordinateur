@@ -21,7 +21,6 @@ import {
     isTextualElement,
     isVisualElementPosition,
     isTextFont,
-    isTextAligment,
     isTextFontSize,
     TextFont,
     TextualElement,
@@ -57,6 +56,7 @@ import {
     TextOption,
     VideoOption,
     AudioOption,
+    isSubtitle,
 } from './generated/ast.js';
 import type { VideoMlServices } from './video-ml-module.js';
 import { validateFilePath } from './validators/special-validators.js';
@@ -582,7 +582,7 @@ export class VideoMlValidator {
     }
 
     checkTextualElement(element: TextualElement, accept: ValidationAcceptor): void {
-        if (element.type === 'subtitle') {
+        if (isSubtitle(element)) {
             this.checkSubtitleLength(element, accept);
         }
         if (!element.options) return;
@@ -594,15 +594,10 @@ export class VideoMlValidator {
     checkTextOption(option: TextOption, accept: ValidationAcceptor, element?: TextualElement): void {
         if (isTextFontColor(option)) {
             this.checkColor(option.color, option, 'color', accept);
-        } else if(isVisualElementPosition(option) && (element?.type === 'subtitle' || false)) {
+        } else if(isVisualElementPosition(option) && isSubtitle(element)) {
             accept('error', 'Position is not allowed in subtitle elements', { node: option });
         } else if (isTextFont(option)) {
             this.checkFontSetting(option, accept);
-        } else if (isTextAligment(option)) {
-            const validAlignments = ['left', 'center', 'right'];
-            if (!validAlignments.includes(option.alignment)) {
-                accept('error', 'Alignment must be "left", "center" or "right"', { node: option, property: 'alignment' });
-            }
         } else if (isTextFont(option)) {
             this.checkFontSetting(option, accept);
         } else if (isTextFontSize(option)) {
