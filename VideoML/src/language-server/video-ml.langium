@@ -7,9 +7,7 @@ entry VideoProject:
 
 	(groupOptions+=GroupOption)*
 
-	(timelineElements+=TimelineElement)+
-
-	(videoTransitions+=VideoTransition)*;
+	(timelineElements+=TimelineElement)+;
 
 
 Element:
@@ -51,7 +49,7 @@ VisualElementSize:
 	'size' (width=INT ',' height=INT | resolution=STRING);
 
 TextSpecificOption:
-	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment;
+	TextFontSize | TextFontColor | TextFont | TextShadow | TextAligment | TextEffect;
 
 TextFontSize:
 	'fontsize' size=INT;
@@ -67,6 +65,9 @@ TextShadow:
 
 TextAligment:
 	'alignment' alignment=STRING;
+
+TextEffect:
+	type=('grouping'| 'falling');
 
 TextualElement:
 	type=('text' | 'subtitle') text=STRING options+=TextOption*;
@@ -102,7 +103,7 @@ VideoOption:
 	(VideoSpecificOption | VisualElementOption);
 
 VideoSpecificOption: 
-	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity  | VideoScale | VideoRotation | VideoTransition);
+	(VideoContrast | VideoSaturation | VideoBrightness | VideoOpacity | VideoScale | VideoRotation | VideoTransition);
 
 VideoContrast:
 	'contrast' contrast=FLOAT;
@@ -152,8 +153,6 @@ AudioStereoVolume:
 hidden terminal WS: /\s+/;
 // Hashtag ID forma
 terminal HASHTAG_ID returns string: /#[0-9]+/;
-// FADE_IN
-terminal FADEIN returns string: 'fade_in';
 // ID format: text starting with a letter or underscore followed by zero or more letters, digits or underscores
 terminal ID: /[_a-zA-Z][\w_]*/;
 // RELATIVE_TIME format: (+|-)TIME
@@ -163,9 +162,7 @@ terminal TIME returns string: /[0-5][0-9]:[0-5][0-9](\.[0-9]{1,3})?/;
 // FLOAT format : 0 or non-zero digit followed by zero or more digits
 terminal FLOAT returns number: /-?[0-9]*\.[0-9]+/;
 // INT format: 0 or non-zero digit followed by zero or more digits
-terminal INT returns number: /-?[0-9]+/;
-// BOOLEAN format: true or false
-terminal BOOLEAN returns boolean: 'true' | 'false';
+terminal INT returns number: /[0-9]+/;
 // STRING format: "..."
 terminal STRING: /"[^"]*"|'[^']*'/;
 

@@ -1,5 +1,5 @@
 import { CompositeGeneratorNode, NL } from "langium/generate";
-import { TextualElement, GroupOptionText, TextOption, isTextAligment, isTextFont, isTextFontColor, isTextFontSize, isVisualElementBackground, isVisualElementPosition, isVisualElementSize } from "../language-server/generated/ast.js";
+import { TextualElement, GroupOptionText, TextOption, isTextAligment, isTextFont, isTextFontColor, isTextFontSize, isVisualElementBackground, isVisualElementPosition, isVisualElementSize, isTextEffect } from "../language-server/generated/ast.js";
 
 export function populateTextualElements(textualElements: TextualElement[], groupTextOptions: GroupOptionText[]): TextualElement[] {
     return textualElements.map((text) => {
@@ -37,7 +37,7 @@ export function compileTextualElement(text: TextualElement, fileNode: CompositeG
         fileNode.append(
             `
 # Load the text clip, to apply new effects
-${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text)})
+${text.name} = moviepy.TextClip(${compileOptionsToTextClip(text)}
             `, NL);
 }
 
@@ -53,8 +53,12 @@ function compileOptionsToTextClip(text: TextualElement): string {
     let align = 'left';
     let posX: number | string = `"center"`;
     let posY: number | string = `"center"`;
+    let effect = false;
 
     const applyOption = (option: TextOption) => {
+        if (isTextEffect(option)) {
+            effect = true;
+        }
         if (isTextFont(option)) {
             font = fontDependingOnOS(option.name); 
         } 
@@ -84,7 +88,7 @@ function compileOptionsToTextClip(text: TextualElement): string {
                     posX = 0;
                 }
                 if(option.alignmentx === 'right'){
-                    posX = 1920 - bgSizeX;              // on va surement avoir un problème ici
+                    posX = 1920 - bgSizeX;
                 }
             }
             if(option.alignmenty){
@@ -95,20 +99,20 @@ function compileOptionsToTextClip(text: TextualElement): string {
                     posY = 0;
                 }
                 if(option.alignmenty === 'bottom'){
-                    posY = 1080 - bgSizeY;              // on va surement avoir un problème ici
+                    posY = 1080 - bgSizeY;
                 }
             }
         }
     };
-    
-    text.options.forEach(applyOption);
-    
+
+    text.options?.forEach(applyOption);
+
     if (text.type === 'subtitle') {
         posY = 400;
-        posX = `"center"`
+        posX = `"center"`;
     }
-    
-    const optionsString = `
+
+    let optionsString = `
         text="${text.text}",
         ${bgColor !== 'no' ? `bg_color="${bgColor}",` : ''}
         font="${font}",
@@ -117,8 +121,93 @@ function compileOptionsToTextClip(text: TextualElement): string {
         text_align="${align}",
         size=(${bgSizeX}, ${bgSizeY}))
     `.trim().replace(/\s+/g, ' ');
+
+    if (effect === false) {
+        return `${optionsString}.with_position((${posX}, ${posY}))`;
+    }
+
+    let effectText;
+    let boolEffect = false;
+
+    text.options?.forEach(option => {
+        if (isTextEffect(option)) {
+            effectText = option.type;
+            boolEffect = true;
+            optionsString += `
+import numpy as np
+from scipy.ndimage import label, find_objects
+
+def find_objects_custom(mask):
+    from scipy.ndimage import label, find_objects
+
+    labeled_array, num_features = label(mask)
+
+    object_slices = find_objects(labeled_array)
+
+    return object_slices
+
+
+screensize = (1920, 1080)
+cvc = moviepy.CompositeVideoClip( [${text.name}.with_position('center')], size = screensize)
+
+rotMatrix = lambda a: np.array( [[np.cos(a), np.sin(a)], [-np.sin(a), np.cos(a)]] )
+`};})
+
+if (effectText === 'grouping') {
+    optionsString += `
+def grouping(screenpos, i, nletters):
+    d = lambda t : 1.0/(0.3 + t**8)
+    a = i * np.pi / nletters 
+    v = rotMatrix(a).dot([-1, 0])
+     
+    if i % 2 : v[1] = -v[1]
+         
+    return lambda t: screenpos + 400 * d(t)*rotMatrix(0.5 * d(t)*a).dot(v)
+`
+}
+
+else if (effectText === 'falling') {
+    optionsString += `
+def falling(screenpos, i, nletters):
+    v = np.array([0, -1])
+     
+    d = lambda t : 1 if t<0 else abs(np.sinc(t)/(1 + t**4))
+     
+    return lambda t: screenpos + v * 400 * d(t-0.15 * i)
+`
+}
+
+if (boolEffect) {
+optionsString += `
+binary_mask = title1.mask.get_frame(0)
+letters = find_objects_custom(binary_mask)
+
+if not letters:
+    print("Aucun objet trouvé dans le masque binaire.")
+else:
+    print(f"{len(letters)} objets trouvés dans le masque.")
+
+def moveLetters(letters, funcpos, original_clip):
+    animated_letters = []
+    for i, letter_slice in enumerate(letters):
+        # Créer un sous-clip pour chaque lettre
+        x_min, x_max = letter_slice[1].start, letter_slice[1].stop
+        y_min, y_max = letter_slice[0].start, letter_slice[0].stop
+        
+        cropped_letter = original_clip.cropped(x1=x_min, x2=x_max, y1=y_min, y2=y_max)
+
+        # Appliquer la position animée
+        animated_letter = cropped_letter.with_position(funcpos((x_min, y_min), i, len(letters)))
+        animated_letters.append(animated_letter)
     
-    return `${optionsString}.with_position((${posX}, ${posY})`;
+    return animated_letters
+
+animated_letters = moveLetters(letters, ${effectText}, title1)
+
+${text.name} = moviepy.CompositeVideoClip( animated_letters, size = screensize).subclipped(0, 5).with_position((${posX}, ${posY}))
+`
+}
+    return optionsString;
 }
     
 function fontDependingOnOS(font?: string) {
@@ -135,5 +224,5 @@ function fontDependingOnOS(font?: string) {
         }
         return 'Arial';
     }
-}
+};
     

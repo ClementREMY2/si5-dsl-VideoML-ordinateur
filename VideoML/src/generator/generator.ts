@@ -10,11 +10,11 @@ import {
     isAudioElement,
     GroupOptionAudio,
     isGroupOptionAudio,
-    FixedTimelineElement,
-    RelativeTimelineElement,
     TimelineElement,
-    isFixedTimelineElement,
     isRelativeTimelineElement,
+    isFixedTimelineElement,
+    RelativeTimelineElement,
+    FixedTimelineElement,
     isVideoExtract,
     isVideoOriginal,
 } from '../language-server/generated/ast.js';
@@ -49,7 +49,7 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
     const groupTextOptions: GroupOptionText[] = videoProject.groupOptions.filter(isGroupOptionText);
     const populatedTextualElements = populateTextualElements(textualElements, groupTextOptions);
     populatedTextualElements.forEach((text) => compileTextualElement(text, fileNode));
-
+    
     const audioElements = videoProject.elements.filter(isAudioElement);
     const groupAudioOptions: GroupOptionAudio[] = videoProject.groupOptions.filter(isGroupOptionAudio);
     const populatedAudioElements = populateAudioElements(audioElements, groupAudioOptions);
@@ -67,7 +67,6 @@ function compile(videoProject:VideoProject, fileNode:CompositeGeneratorNode){
 `# Export the final video
 final_video.write_videofile("${videoProject.outputName}.mp4")`, NL);
 }
-
 
 function compileTimelineElement(te: TimelineElement, fileNode: CompositeGeneratorNode, videoProject: VideoProject) {
     fileNode.append(`${formatTimelineElementName(te.name)} = `);
